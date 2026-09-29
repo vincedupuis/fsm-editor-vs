@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Visual Studio 2022+ extension (VSIX). On Windows, building produces
+    bin/<Configuration>/FsmEditor.vsix; F5 starts the experimental instance.
+    On other systems the VSSDK build tools are skipped, so `dotnet build`
+    only compiles the code (useful to type-check it).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>FsmEditor</RootNamespace>
+    <AssemblyName>FsmEditor</AssemblyName>
+    <Version>0.3.0</Version>
+    <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
+
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <UseCodebase>true</UseCodebase>
+    <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
+    <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
+    <IncludeDebugSymbolsInLocalVSIXDeployment>true</IncludeDebugSymbolsInLocalVSIXDeployment>
+    <CopyBuildOutputToOutputDirectory>true</CopyBuildOutputToOutputDirectory>
+    <CopyOutputSymbolsToOutputDirectory>true</CopyOutputSymbolsToOutputDirectory>
+    <VSSDKTargetPlatformRegRootSuffix>Exp</VSSDKTargetPlatformRegRootSuffix>
+    <StartAction>Program</StartAction>
+    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix Exp</StartArguments>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Provided by Visual Studio at run time. -->
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime" />
+    <!-- Shipped in the VSIX. -->
+    <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.551" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2142" Condition="'$(IsWindows)' == 'true'">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.ComponentModel.Composition" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FsmEditor.Core\FsmEditor.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="source.extension.vsixmanifest" SubType="Designer" />
+    <VSCTCompile Include="VSCommandTable.vsct" ResourceName="Menus.ctmenu" Condition="'$(IsWindows)' == 'true'" />
+    <None Include="VSCommandTable.vsct" Condition="'$(IsWindows)' != 'true'" />
+    <EmbeddedResource Update="VSPackage.resx" MergeWithCTO="true" ManifestResourceName="VSPackage" />
+    <Content Include="Resources\icon.png" IncludeInVSIX="true" />
+    <Content Include="Resources\LICENSE.txt" IncludeInVSIX="true" />
+  </ItemGroup>
+
+  <!--
+    The `fsm` code generation CLI (from FSM Editor for VS Code) and its templates,
+    copied into cli/ by scripts/fetch-cli.ps1 or scripts/fetch-cli.sh.
+  -->
+  <ItemGroup>
+    <Content Include="cli\**\*" IncludeInVSIX="true" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="WarnMissingCli" BeforeTargets="Build" Condition="!Exists('cli\fsm.exe')">
+    <Warning Text="cli\fsm.exe is missing: run scripts\fetch-cli.ps1 (or scripts/fetch-cli.sh) so the VSIX bundles the code generator. Without it, code generation uses the 'CLI path' option or an fsm on the PATH." />
+  </Target>
+
+</Project>

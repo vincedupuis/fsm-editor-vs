@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+
+  <!-- Keep the ids in sync with PackageIds.cs. -->
+  <Commands package="guidFsmEditorPackage">
+    <Menus>
+      <Menu guid="guidFsmEditorCmdSet" id="ToolsSubMenu" priority="0x0100" type="Menu">
+        <Parent guid="guidFsmEditorCmdSet" id="ToolsMenuGroup" />
+        <Strings>
+          <ButtonText>FSM Editor</ButtonText>
+        </Strings>
+      </Menu>
+    </Menus>
+
+    <Groups>
+      <Group guid="guidFsmEditorCmdSet" id="ToolsMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
+      </Group>
+      <Group guid="guidFsmEditorCmdSet" id="ToolsSubMenuGroup" priority="0x0100">
+        <Parent guid="guidFsmEditorCmdSet" id="ToolsSubMenu" />
+      </Group>
+      <Group guid="guidFsmEditorCmdSet" id="ItemContextGroup" priority="0x0200">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE" />
+      </Group>
+      <Group guid="guidFsmEditorCmdSet" id="FolderContextGroup" priority="0x0200">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_FOLDERNODE" />
+      </Group>
+      <Group guid="guidFsmEditorCmdSet" id="ProjectContextGroup" priority="0x0200">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE" />
+      </Group>
+      <Group guid="guidFsmEditorCmdSet" id="DocTabContextGroup" priority="0x0100">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_EZDOCWINTAB" />
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidFsmEditorCmdSet" id="cmdidNewStateMachine" priority="0x0100" type="Button">
+        <Parent guid="guidFsmEditorCmdSet" id="ToolsSubMenuGroup" />
+        <Strings>
+          <ButtonText>New State Machine...</ButtonText>
+          <LocCanonicalName>.FSM.NewStateMachine</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidFsmEditorCmdSet" id="cmdidGenerateCode" priority="0x0200" type="Button">
+        <Parent guid="guidFsmEditorCmdSet" id="ToolsSubMenuGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>AllowParams</CommandFlag>
+        <Strings>
+          <ButtonText>Generate Code...</ButtonText>
+          <LocCanonicalName>.FSM.GenerateCode</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidFsmEditorCmdSet" id="cmdidExportSvg" priority="0x0300" type="Button">
+        <Parent guid="guidFsmEditorCmdSet" id="ToolsSubMenuGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Export as SVG...</ButtonText>
+          <LocCanonicalName>.FSM.ExportSvg</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidFsmEditorCmdSet" id="cmdidOpenAsText" priority="0x0400" type="Button">
+        <Parent guid="guidFsmEditorCmdSet" id="ToolsSubMenuGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Open as XMI Text</ButtonText>
+          <LocCanonicalName>.FSM.OpenAsText</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidFsmEditorCmdSet" id="cmdidOpenDiagram" priority="0x0500" type="Button">
+        <Parent guid="guidFsmEditorCmdSet" id="ToolsSubMenuGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Open in FSM Editor</ButtonText>
+          <LocCanonicalName>.FSM.OpenDiagram</LocCanonicalName>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <CommandPlacements>
+    <CommandPlacement guid="guidFsmEditorCmdSet" id="cmdidNewStateMachine" priority="0x0100">
+      <Parent guid="guidFsmEditorCmdSet" id="FolderContextGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsmEditorCmdSet" id="cmdidNewStateMachine" priority="0x0100">
+      <Parent guid="guidFsmEditorCmdSet" id="ProjectContextGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsmEditorCmdSet" id="cmdidGenerateCode" priority="0x0100">
+      <Parent guid="guidFsmEditorCmdSet" id="ItemContextGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsmEditorCmdSet" id="cmdidOpenDiagram" priority="0x0200">
+      <Parent guid="guidFsmEditorCmdSet" id="ItemContextGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsmEditorCmdSet" id="cmdidOpenAsText" priority="0x0100">
+      <Parent guid="guidFsmEditorCmdSet" id="DocTabContextGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsmEditorCmdSet" id="cmdidOpenDiagram" priority="0x0200">
+      <Parent guid="guidFsmEditorCmdSet" id="DocTabContextGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsmEditorCmdSet" id="cmdidGenerateCode" priority="0x0300">
+      <Parent guid="guidFsmEditorCmdSet" id="DocTabContextGroup" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidFsmEditorCmdSet" id="cmdidExportSvg" priority="0x0400">
+      <Parent guid="guidFsmEditorCmdSet" id="DocTabContextGroup" />
+    </CommandPlacement>
+  </CommandPlacements>
+
+  <!-- Show the Solution Explorer commands for .fsm files before the package is loaded. -->
+  <VisibilityConstraints>
+    <VisibilityItem guid="guidFsmEditorCmdSet" id="cmdidGenerateCode" context="guidFsmFileSelectedRule" />
+    <VisibilityItem guid="guidFsmEditorCmdSet" id="cmdidOpenDiagram" context="guidFsmFileSelectedRule" />
+    <VisibilityItem guid="guidFsmEditorCmdSet" id="cmdidExportSvg" context="guidFsmEditorFactory" />
+    <VisibilityItem guid="guidFsmEditorCmdSet" id="cmdidOpenAsText" context="guidFsmEditorFactory" />
+  </VisibilityConstraints>
+
+  <Symbols>
+    <GuidSymbol name="guidFsmEditorPackage" value="{43c53194-4f12-42ec-8fcc-0bbca916caaf}" />
+    <GuidSymbol name="guidFsmEditorFactory" value="{66c7b80a-5999-47c1-838f-fe34d6caeb45}" />
+    <GuidSymbol name="guidFsmFileSelectedRule" value="{ad807c01-9753-4922-8090-a020f6c165e2}" />
+    <GuidSymbol name="guidFsmEditorCmdSet" value="{17a524b9-398e-41e9-a5c4-83d740321394}">
+      <IDSymbol name="ToolsMenuGroup" value="0x1000" />
+      <IDSymbol name="ToolsSubMenu" value="0x1001" />
+      <IDSymbol name="ToolsSubMenuGroup" value="0x1002" />
+      <IDSymbol name="ItemContextGroup" value="0x1010" />
+      <IDSymbol name="FolderContextGroup" value="0x1011" />
+      <IDSymbol name="ProjectContextGroup" value="0x1012" />
+      <IDSymbol name="DocTabContextGroup" value="0x1013" />
+      <IDSymbol name="cmdidNewStateMachine" value="0x0100" />
+      <IDSymbol name="cmdidGenerateCode" value="0x0101" />
+      <IDSymbol name="cmdidExportSvg" value="0x0102" />
+      <IDSymbol name="cmdidOpenAsText" value="0x0103" />
+      <IDSymbol name="cmdidOpenDiagram" value="0x0104" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

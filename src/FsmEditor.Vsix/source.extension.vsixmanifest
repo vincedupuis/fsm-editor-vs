@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="FsmEditor.VisualStudio.43c53194-4f12-42ec-8fcc-0bbca916caaf" Version="0.3.0" Language="en-US" Publisher="VinceGoSoftware" />
+    <DisplayName>FSM Editor — UML State Machines</DisplayName>
+    <Description xml:space="preserve">Visual editor to create, edit and visualize UML 2.5.1 state machines (composite/orthogonal states, submachines with connection point references, all pseudostates, protocol state machines) stored as standard XMI with UML DI layout, with a toolbox, validation in the Error List, SVG export and code generation from Handlebars templates.</Description>
+    <MoreInfo>https://github.com/vincedupuis/fsm-editor-vs</MoreInfo>
+    <License>Resources\LICENSE.txt</License>
+    <Icon>Resources\icon.png</Icon>
+    <Tags>uml, state machine, fsm, statechart, diagram, xmi, umldi, code generation</Tags>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 19.0)">
+      <ProductArchitecture>arm64</ProductArchitecture>
+    </InstallationTarget>
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.8,)" />
+  </Dependencies>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,)" DisplayName="Visual Studio core editor" />
+  </Prerequisites>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+  </Assets>
+</PackageManifest>

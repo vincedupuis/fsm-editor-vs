@@ -1,0 +1,1263 @@
+{
+  "examples": {
+    "MediaPlayer.fsm": {
+      "roundTripSame": true,
+      "issues": []
+    },
+    "Order.fsm": {
+      "roundTripSame": true,
+      "issues": []
+    },
+    "Payment.fsm": {
+      "roundTripSame": true,
+      "issues": []
+    }
+  },
+  "cases": {
+    "grammar": {
+      "issues": [
+        {
+          "id": "t3",
+          "severity": "error",
+          "message": "Transitions leaving a pseudostate cannot have triggers (from choice)."
+        },
+        {
+          "id": "a",
+          "severity": "error",
+          "message": "entry of 'A': '1' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+        },
+        {
+          "id": "a",
+          "severity": "error",
+          "message": "exit of 'A': Dotted names are not allowed: use a single function name like doThing()."
+        },
+        {
+          "id": "a",
+          "severity": "error",
+          "message": "do of 'A': Actions cannot use !, && or ||: separate several calls with ;"
+        },
+        {
+          "id": "a",
+          "severity": "error",
+          "message": "Invariant of 'A': '>' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+        },
+        {
+          "id": "a",
+          "severity": "error",
+          "message": "Stereotype of 'A': '1bad' is not a valid name: use letters, digits and _ only, not starting with a digit."
+        },
+        {
+          "id": "a",
+          "severity": "error",
+          "message": "Deferrable event of 'A': A time event cannot be deferred; use a named event."
+        },
+        {
+          "id": "a",
+          "severity": "error",
+          "message": "Deferrable event of 'A': Events are plain names without (): write go."
+        },
+        {
+          "id": "t1",
+          "severity": "error",
+          "message": "Trigger: Change events (when) are not supported: use a named event or after(...)."
+        },
+        {
+          "id": "t1",
+          "severity": "error",
+          "message": "Trigger: The time of an after() trigger must be greater than zero."
+        },
+        {
+          "id": "t1",
+          "severity": "error",
+          "message": "Guard: '>' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+        },
+        {
+          "id": "t1",
+          "severity": "error",
+          "message": "Effect: Actions cannot use !, && or ||: separate several calls with ;"
+        },
+        {
+          "id": "t2",
+          "severity": "error",
+          "message": "Guard: [else] is only allowed on transitions leaving a choice or junction."
+        },
+        {
+          "id": "t3",
+          "severity": "error",
+          "message": "Time triggers (after) can only be used on transitions leaving a state."
+        }
+      ]
+    },
+    "structure": {
+      "issues": [
+        {
+          "id": "s1",
+          "severity": "error",
+          "message": "Duplicate id 's1'."
+        },
+        {
+          "id": "ep",
+          "severity": "error",
+          "message": "Duplicate id 'ep'."
+        },
+        {
+          "id": "t1",
+          "severity": "error",
+          "message": "Duplicate id 't1'."
+        },
+        {
+          "id": "ep",
+          "severity": "warning",
+          "message": "Only composite states can have entry/exit points; add a region to 'Dup'."
+        },
+        {
+          "id": "ref",
+          "severity": "error",
+          "message": "A connection point reference must be placed on the border of a submachine state."
+        },
+        {
+          "id": "ep",
+          "severity": "warning",
+          "message": "Only composite states can have entry/exit points; add a region to 'Dup'."
+        },
+        {
+          "id": "mp",
+          "severity": "warning",
+          "message": "Connection points of the state machine need a name so submachine states can reference them."
+        },
+        {
+          "id": "i2",
+          "severity": "error",
+          "message": "A top-level region can contain at most one initial pseudostate."
+        },
+        {
+          "id": "h",
+          "severity": "warning",
+          "message": "History pseudostates are only meaningful inside a composite state."
+        },
+        {
+          "id": "comp",
+          "severity": "warning",
+          "message": "'Comp' is entered by default but its region 'upper' has no initial pseudostate."
+        },
+        {
+          "id": "comp",
+          "severity": "warning",
+          "message": "'Comp' is entered by default but its region has no initial pseudostate."
+        },
+        {
+          "id": "s2",
+          "severity": "warning",
+          "message": "Another state named 'S' exists in the same region."
+        },
+        {
+          "id": "t1",
+          "severity": "error",
+          "message": "The transition leaving an initial pseudostate cannot have a guard."
+        },
+        {
+          "id": "h",
+          "severity": "error",
+          "message": "A history pseudostate can have at most one outgoing (default) transition."
+        },
+        {
+          "id": "t13",
+          "severity": "error",
+          "message": "Transitions leaving entry point entry point must target a vertex inside 'Dup'."
+        },
+        {
+          "id": "ref",
+          "severity": "error",
+          "message": "The connection point reference does not refer to an entry or exit point of the submachine."
+        },
+        {
+          "id": "t16",
+          "severity": "error",
+          "message": "Transitions into entry reference connection point reference must come from outside 'S'."
+        },
+        {
+          "id": "t14",
+          "severity": "error",
+          "message": "Transitions leaving exit point exit point must target a vertex outside 'Comp'."
+        },
+        {
+          "id": "f",
+          "severity": "error",
+          "message": "A fork must have exactly one incoming transition."
+        },
+        {
+          "id": "f",
+          "severity": "error",
+          "message": "A fork must have at least two outgoing transitions."
+        },
+        {
+          "id": "t6",
+          "severity": "error",
+          "message": "Transitions leaving a fork cannot have guards or triggers."
+        },
+        {
+          "id": "j",
+          "severity": "error",
+          "message": "A join must have at least two incoming transitions."
+        },
+        {
+          "id": "t8",
+          "severity": "error",
+          "message": "Transitions entering a join cannot have guards or triggers."
+        },
+        {
+          "id": "fin",
+          "severity": "error",
+          "message": "A final state cannot have outgoing transitions."
+        },
+        {
+          "id": "term",
+          "severity": "error",
+          "message": "A terminate pseudostate cannot have outgoing transitions."
+        },
+        {
+          "id": "j2",
+          "severity": "error",
+          "message": "A junction must have at least one incoming transition."
+        },
+        {
+          "id": "t13",
+          "severity": "error",
+          "message": "Transitions leaving entry point entry point must target a vertex inside 'Dup'."
+        },
+        {
+          "id": "mp",
+          "severity": "warning",
+          "message": "Entry point entry point of the state machine has no outgoing transition."
+        },
+        {
+          "id": "t15",
+          "severity": "error",
+          "message": "Exit point 'out' of the state machine cannot have outgoing transitions; the referencing submachine state continues from its connection point reference."
+        },
+        {
+          "id": "t3",
+          "severity": "warning",
+          "message": "'Dup' has several completion transitions without triggers or guards."
+        },
+        {
+          "id": "t4",
+          "severity": "warning",
+          "message": "'Dup' has several completion transitions without triggers or guards."
+        },
+        {
+          "id": "t10",
+          "severity": "error",
+          "message": "An internal transition must start and end on the same state."
+        },
+        {
+          "id": "t10",
+          "severity": "warning",
+          "message": "'Dup' has several completion transitions without triggers or guards."
+        },
+        {
+          "id": "t11",
+          "severity": "error",
+          "message": "A local transition must go from a composite state to a vertex it contains."
+        },
+        {
+          "id": "t11",
+          "severity": "warning",
+          "message": "'Dup' has several completion transitions without triggers or guards."
+        },
+        {
+          "id": "t17",
+          "severity": "error",
+          "message": "Comments cannot be connected by transitions."
+        },
+        {
+          "id": "t18",
+          "severity": "error",
+          "message": "Transition target 'nope' does not exist."
+        },
+        {
+          "id": "t19",
+          "severity": "error",
+          "message": "Transitions leaving a pseudostate cannot have triggers (from terminate)."
+        },
+        {
+          "id": "t19",
+          "severity": "error",
+          "message": "Time triggers (after) can only be used on transitions leaving a state."
+        }
+      ]
+    },
+    "protocol": {
+      "issues": [
+        {
+          "id": "o",
+          "severity": "error",
+          "message": "States of a protocol state machine cannot have entry/exit/do behaviors ('Open')."
+        },
+        {
+          "id": "t2",
+          "severity": "error",
+          "message": "Protocol transitions cannot have effects."
+        }
+      ]
+    }
+  },
+  "grammar": [
+    {
+      "text": "",
+      "condition": {
+        "ok": true,
+        "value": ""
+      },
+      "guard": {
+        "ok": true,
+        "value": ""
+      },
+      "guardNoElse": {
+        "ok": true,
+        "value": ""
+      },
+      "actions": {
+        "ok": true,
+        "value": ""
+      },
+      "event": {
+        "ok": false,
+        "error": "Empty event name."
+      },
+      "name": {
+        "ok": true,
+        "value": ""
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Empty trigger."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": true,
+        "value": [
+          "after(1h)"
+        ]
+      }
+    },
+    {
+      "text": "a()",
+      "condition": {
+        "ok": true,
+        "value": "a()"
+      },
+      "guard": {
+        "ok": true,
+        "value": "a()"
+      },
+      "guardNoElse": {
+        "ok": true,
+        "value": "a()"
+      },
+      "actions": {
+        "ok": true,
+        "value": "a()"
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write a."
+      },
+      "name": {
+        "ok": false,
+        "error": "'a()' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      }
+    },
+    {
+      "text": "a();",
+      "condition": {
+        "ok": false,
+        "error": "Unexpected ';'."
+      },
+      "guard": {
+        "ok": false,
+        "error": "Unexpected ';'."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "Unexpected ';'."
+      },
+      "actions": {
+        "ok": true,
+        "value": "a()"
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write a."
+      },
+      "name": {
+        "ok": false,
+        "error": "'a();' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      }
+    },
+    {
+      "text": " a() ; b() ",
+      "condition": {
+        "ok": false,
+        "error": "Unexpected ';'."
+      },
+      "guard": {
+        "ok": false,
+        "error": "Unexpected ';'."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "Unexpected ';'."
+      },
+      "actions": {
+        "ok": true,
+        "value": "a(); b()"
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write a."
+      },
+      "name": {
+        "ok": false,
+        "error": "'a() ; b()' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      }
+    },
+    {
+      "text": "a() && b()",
+      "condition": {
+        "ok": true,
+        "value": "a() && b()"
+      },
+      "guard": {
+        "ok": true,
+        "value": "a() && b()"
+      },
+      "guardNoElse": {
+        "ok": true,
+        "value": "a() && b()"
+      },
+      "actions": {
+        "ok": false,
+        "error": "Actions cannot use !, && or ||: separate several calls with ;"
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write a."
+      },
+      "name": {
+        "ok": false,
+        "error": "'a() && b()' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      }
+    },
+    {
+      "text": "!(a() || b()) && c()",
+      "condition": {
+        "ok": true,
+        "value": "!(a() || b()) && c()"
+      },
+      "guard": {
+        "ok": true,
+        "value": "!(a() || b()) && c()"
+      },
+      "guardNoElse": {
+        "ok": true,
+        "value": "!(a() || b()) && c()"
+      },
+      "actions": {
+        "ok": false,
+        "error": "Expected a function call, found '!'."
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write !."
+      },
+      "name": {
+        "ok": false,
+        "error": "'!(a() || b()) && c()' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write !. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write !. The only exception is after(...)."
+      }
+    },
+    {
+      "text": "((a()))",
+      "condition": {
+        "ok": true,
+        "value": "((a()))"
+      },
+      "guard": {
+        "ok": true,
+        "value": "((a()))"
+      },
+      "guardNoElse": {
+        "ok": true,
+        "value": "((a()))"
+      },
+      "actions": {
+        "ok": false,
+        "error": "Expected a function call, found '('."
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write ."
+      },
+      "name": {
+        "ok": false,
+        "error": "'((a()))' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write . The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write . The only exception is after(...)."
+      }
+    },
+    {
+      "text": "!!a()",
+      "condition": {
+        "ok": true,
+        "value": "!!a()"
+      },
+      "guard": {
+        "ok": true,
+        "value": "!!a()"
+      },
+      "guardNoElse": {
+        "ok": true,
+        "value": "!!a()"
+      },
+      "actions": {
+        "ok": false,
+        "error": "Expected a function call, found '!'."
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write !!a."
+      },
+      "name": {
+        "ok": false,
+        "error": "'!!a()' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write !!a. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write !!a. The only exception is after(...)."
+      }
+    },
+    {
+      "text": "a",
+      "condition": {
+        "ok": false,
+        "error": "'a' must be a function call: write a()."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'a' must be a function call: write a()."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'a' must be a function call: write a()."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'a' must be a function call: write a()."
+      },
+      "event": {
+        "ok": true,
+        "value": "a"
+      },
+      "name": {
+        "ok": true,
+        "value": "a"
+      },
+      "trigger": {
+        "ok": true,
+        "value": "a"
+      },
+      "ms": null,
+      "triggers": {
+        "ok": true,
+        "value": [
+          "a",
+          "after(1h)"
+        ]
+      }
+    },
+    {
+      "text": "a(1)",
+      "condition": {
+        "ok": false,
+        "error": "'1' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'1' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'1' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'1' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write a."
+      },
+      "name": {
+        "ok": false,
+        "error": "'a(1)' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      }
+    },
+    {
+      "text": "x.y()",
+      "condition": {
+        "ok": false,
+        "error": "Dotted names are not allowed: use a single function name like doThing()."
+      },
+      "guard": {
+        "ok": false,
+        "error": "Dotted names are not allowed: use a single function name like doThing()."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "Dotted names are not allowed: use a single function name like doThing()."
+      },
+      "actions": {
+        "ok": false,
+        "error": "Dotted names are not allowed: use a single function name like doThing()."
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write x.y."
+      },
+      "name": {
+        "ok": false,
+        "error": "'x.y()' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write x.y. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write x.y. The only exception is after(...)."
+      }
+    },
+    {
+      "text": "a() b()",
+      "condition": {
+        "ok": false,
+        "error": "Unexpected 'b'."
+      },
+      "guard": {
+        "ok": false,
+        "error": "Unexpected 'b'."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "Unexpected 'b'."
+      },
+      "actions": {
+        "ok": false,
+        "error": "Unexpected 'b': separate several calls with ;"
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write a."
+      },
+      "name": {
+        "ok": false,
+        "error": "'a() b()' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      }
+    },
+    {
+      "text": "(a()",
+      "condition": {
+        "ok": false,
+        "error": "Missing closing parenthesis."
+      },
+      "guard": {
+        "ok": false,
+        "error": "Missing closing parenthesis."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "Missing closing parenthesis."
+      },
+      "actions": {
+        "ok": false,
+        "error": "Expected a function call, found '('."
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write ."
+      },
+      "name": {
+        "ok": false,
+        "error": "'(a()' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write . The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write . The only exception is after(...)."
+      }
+    },
+    {
+      "text": "else",
+      "condition": {
+        "ok": false,
+        "error": "'else' must be a function call: write else()."
+      },
+      "guard": {
+        "ok": true,
+        "value": "else"
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "[else] is only allowed on transitions leaving a choice or junction."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'else' must be a function call: write else()."
+      },
+      "event": {
+        "ok": true,
+        "value": "else"
+      },
+      "name": {
+        "ok": true,
+        "value": "else"
+      },
+      "trigger": {
+        "ok": true,
+        "value": "else"
+      },
+      "ms": null,
+      "triggers": {
+        "ok": true,
+        "value": [
+          "else",
+          "after(1h)"
+        ]
+      }
+    },
+    {
+      "text": "v > 3",
+      "condition": {
+        "ok": false,
+        "error": "'>' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'>' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'>' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'>' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "event": {
+        "ok": false,
+        "error": "'v > 3' is not a valid event name (letters, digits and _ only)."
+      },
+      "name": {
+        "ok": false,
+        "error": "'v > 3' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "'v > 3' is not a valid event name (letters, digits and _ only)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "'v > 3' is not a valid event name (letters, digits and _ only)."
+      }
+    },
+    {
+      "text": "after(2s)",
+      "condition": {
+        "ok": false,
+        "error": "'2' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'2' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'2' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'2' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "event": {
+        "ok": false,
+        "error": "A time event cannot be deferred; use a named event."
+      },
+      "name": {
+        "ok": false,
+        "error": "'after(2s)' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": true,
+        "value": "after(2s)"
+      },
+      "ms": 2000,
+      "triggers": {
+        "ok": true,
+        "value": [
+          "after(2s)",
+          "after(1h)"
+        ]
+      }
+    },
+    {
+      "text": "after(1.5m)",
+      "condition": {
+        "ok": false,
+        "error": "'1' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'1' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'1' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'1' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "event": {
+        "ok": false,
+        "error": "A time event cannot be deferred; use a named event."
+      },
+      "name": {
+        "ok": false,
+        "error": "'after(1.5m)' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": true,
+        "value": "after(1.5m)"
+      },
+      "ms": 90000,
+      "triggers": {
+        "ok": true,
+        "value": [
+          "after(1.5m)",
+          "after(1h)"
+        ]
+      }
+    },
+    {
+      "text": "after(0ms)",
+      "condition": {
+        "ok": false,
+        "error": "'0' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'0' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'0' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'0' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "event": {
+        "ok": false,
+        "error": "A time event cannot be deferred; use a named event."
+      },
+      "name": {
+        "ok": false,
+        "error": "'after(0ms)' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "The time of an after() trigger must be greater than zero."
+      },
+      "ms": 0,
+      "triggers": {
+        "ok": false,
+        "error": "The time of an after() trigger must be greater than zero."
+      }
+    },
+    {
+      "text": "after(2 days)",
+      "condition": {
+        "ok": false,
+        "error": "'2' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'2' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'2' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'2' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "event": {
+        "ok": false,
+        "error": "A time event cannot be deferred; use a named event."
+      },
+      "name": {
+        "ok": false,
+        "error": "'after(2 days)' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Time triggers are written after(<number><unit>) with unit ms, s, m or h, e.g. after(500ms) or after(2s)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Time triggers are written after(<number><unit>) with unit ms, s, m or h, e.g. after(500ms) or after(2s)."
+      }
+    },
+    {
+      "text": "when(x)",
+      "condition": {
+        "ok": false,
+        "error": "Functions take no arguments: write when()."
+      },
+      "guard": {
+        "ok": false,
+        "error": "Functions take no arguments: write when()."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "Functions take no arguments: write when()."
+      },
+      "actions": {
+        "ok": false,
+        "error": "Functions take no arguments: write when()."
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write when."
+      },
+      "name": {
+        "ok": false,
+        "error": "'when(x)' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Change events (when) are not supported: use a named event or after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Change events (when) are not supported: use a named event or after(...)."
+      }
+    },
+    {
+      "text": "go",
+      "condition": {
+        "ok": false,
+        "error": "'go' must be a function call: write go()."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'go' must be a function call: write go()."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'go' must be a function call: write go()."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'go' must be a function call: write go()."
+      },
+      "event": {
+        "ok": true,
+        "value": "go"
+      },
+      "name": {
+        "ok": true,
+        "value": "go"
+      },
+      "trigger": {
+        "ok": true,
+        "value": "go"
+      },
+      "ms": null,
+      "triggers": {
+        "ok": true,
+        "value": [
+          "go",
+          "after(1h)"
+        ]
+      }
+    },
+    {
+      "text": "go()",
+      "condition": {
+        "ok": true,
+        "value": "go()"
+      },
+      "guard": {
+        "ok": true,
+        "value": "go()"
+      },
+      "guardNoElse": {
+        "ok": true,
+        "value": "go()"
+      },
+      "actions": {
+        "ok": true,
+        "value": "go()"
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write go."
+      },
+      "name": {
+        "ok": false,
+        "error": "'go()' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write go. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write go. The only exception is after(...)."
+      }
+    },
+    {
+      "text": "_x9",
+      "condition": {
+        "ok": false,
+        "error": "'_x9' must be a function call: write _x9()."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'_x9' must be a function call: write _x9()."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'_x9' must be a function call: write _x9()."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'_x9' must be a function call: write _x9()."
+      },
+      "event": {
+        "ok": true,
+        "value": "_x9"
+      },
+      "name": {
+        "ok": true,
+        "value": "_x9"
+      },
+      "trigger": {
+        "ok": true,
+        "value": "_x9"
+      },
+      "ms": null,
+      "triggers": {
+        "ok": true,
+        "value": [
+          "_x9",
+          "after(1h)"
+        ]
+      }
+    },
+    {
+      "text": "9x",
+      "condition": {
+        "ok": false,
+        "error": "'9' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'9' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'9' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'9' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "event": {
+        "ok": false,
+        "error": "'9x' is not a valid event name (letters, digits and _ only)."
+      },
+      "name": {
+        "ok": false,
+        "error": "'9x' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "'9x' is not a valid event name (letters, digits and _ only)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "'9x' is not a valid event name (letters, digits and _ only)."
+      }
+    },
+    {
+      "text": "a-b",
+      "condition": {
+        "ok": false,
+        "error": "'-' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guard": {
+        "ok": false,
+        "error": "'-' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "'-' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "actions": {
+        "ok": false,
+        "error": "'-' is not allowed: the state machine has no variables, so use function calls like isReady() combined with !, && and ||."
+      },
+      "event": {
+        "ok": false,
+        "error": "'a-b' is not a valid event name (letters, digits and _ only)."
+      },
+      "name": {
+        "ok": false,
+        "error": "'a-b' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "'a-b' is not a valid event name (letters, digits and _ only)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "'a-b' is not a valid event name (letters, digits and _ only)."
+      }
+    },
+    {
+      "text": "a();;",
+      "condition": {
+        "ok": false,
+        "error": "Unexpected ';'."
+      },
+      "guard": {
+        "ok": false,
+        "error": "Unexpected ';'."
+      },
+      "guardNoElse": {
+        "ok": false,
+        "error": "Unexpected ';'."
+      },
+      "actions": {
+        "ok": false,
+        "error": "Expected a function call."
+      },
+      "event": {
+        "ok": false,
+        "error": "Events are plain names without (): write a."
+      },
+      "name": {
+        "ok": false,
+        "error": "'a();;' is not a valid name: use letters, digits and _ only, not starting with a digit."
+      },
+      "trigger": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      },
+      "ms": null,
+      "triggers": {
+        "ok": false,
+        "error": "Events are plain names without (): write a. The only exception is after(...)."
+      }
+    }
+  ]
+}

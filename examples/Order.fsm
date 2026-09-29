@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="sm_model" name="Order">
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="sm" name="Order">
+      <ownedComment xmi:type="uml:Comment" xmi:id="sm_doc" annotatedElement="sm">
+        <body>Uses the Payment state machine as a submachine, entering and leaving it through connection point references.</body>
+      </ownedComment>
+      <region xmi:type="uml:Region" xmi:id="r_root">
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="o_init" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="o_cart" name="Cart"/>
+        <subvertex xmi:type="uml:State" xmi:id="o_pay" name="Payment">
+          <connection xmi:type="uml:ConnectionPointReference" xmi:id="o_ref_retry">
+            <entry href="Payment.fsm#p_retry"/>
+          </connection>
+          <connection xmi:type="uml:ConnectionPointReference" xmi:id="o_ref_failed">
+            <exit href="Payment.fsm#p_failed"/>
+          </connection>
+          <connection xmi:type="uml:ConnectionPointReference" xmi:id="o_ref_cancel">
+            <exit href="Payment.fsm#p_cancelled"/>
+          </connection>
+          <submachine href="Payment.fsm#sm"/>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="o_shipped" name="Shipped">
+          <entry xmi:type="uml:OpaqueBehavior" xmi:id="o_shipped_entry">
+            <language>FSM</language>
+            <body>ship()</body>
+          </entry>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="o_failed" name="PaymentFailed">
+          <entry xmi:type="uml:OpaqueBehavior" xmi:id="o_failed_entry">
+            <language>FSM</language>
+            <body>notifyCustomer()</body>
+          </entry>
+        </subvertex>
+        <subvertex xmi:type="uml:FinalState" xmi:id="o_final"/>
+        <transition xmi:type="uml:Transition" xmi:id="ot1" kind="external" source="o_init" target="o_cart"/>
+        <transition xmi:type="uml:Transition" xmi:id="ot2" kind="external" source="o_cart" target="o_pay">
+          <trigger xmi:type="uml:Trigger" xmi:id="ot2_trigger1" name="checkout" event="ev_checkout"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="ot3" kind="external" source="o_pay" target="o_shipped"/>
+        <transition xmi:type="uml:Transition" xmi:id="ot4" kind="external" source="o_ref_failed" target="o_failed"/>
+        <transition xmi:type="uml:Transition" xmi:id="ot5" kind="external" source="o_failed" target="o_ref_retry">
+          <trigger xmi:type="uml:Trigger" xmi:id="ot5_trigger1" name="retryPayment" event="ev_retryPayment"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="ot6" kind="external" source="o_ref_cancel" target="o_cart"/>
+        <transition xmi:type="uml:Transition" xmi:id="ot7" kind="external" source="o_shipped" target="o_final"/>
+      </region>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_checkout" name="checkout" signal="sig_checkout"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_checkout" name="checkout"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_retryPayment" name="retryPayment" signal="sig_retryPayment"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_retryPayment" name="retryPayment"/>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="Order" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o_init" modelElement="o_init">
+      <bounds xmi:type="dc:Bounds" x="40" y="100" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o_cart" modelElement="o_cart">
+      <bounds xmi:type="dc:Bounds" x="100" y="80" width="120" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o_pay" modelElement="o_pay">
+      <bounds xmi:type="dc:Bounds" x="300" y="70" width="180" height="80"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o_ref_retry" modelElement="o_ref_retry">
+      <bounds xmi:type="dc:Bounds" x="292" y="122" width="16" height="16"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o_ref_failed" modelElement="o_ref_failed">
+      <bounds xmi:type="dc:Bounds" x="472" y="106" width="16" height="16"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o_ref_cancel" modelElement="o_ref_cancel">
+      <bounds xmi:type="dc:Bounds" x="382" y="62" width="16" height="16"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o_shipped" modelElement="o_shipped">
+      <bounds xmi:type="dc:Bounds" x="580" y="10" width="120" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o_failed" modelElement="o_failed">
+      <bounds xmi:type="dc:Bounds" x="560" y="170" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o_final" modelElement="o_final">
+      <bounds xmi:type="dc:Bounds" x="760" y="27" width="26" height="26"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_ot1" modelElement="ot1" source="di_o_init" target="di_o_cart">
+      <waypoint xmi:type="dc:Point" x="50" y="110"/>
+      <waypoint xmi:type="dc:Point" x="160" y="110"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_ot2" modelElement="ot2" source="di_o_cart" target="di_o_pay">
+      <waypoint xmi:type="dc:Point" x="160" y="110"/>
+      <waypoint xmi:type="dc:Point" x="390" y="110"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_ot3" modelElement="ot3" source="di_o_pay" target="di_o_shipped">
+      <waypoint xmi:type="dc:Point" x="390" y="110"/>
+      <waypoint xmi:type="dc:Point" x="640" y="40"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_ot4" modelElement="ot4" source="di_o_ref_failed" target="di_o_failed">
+      <waypoint xmi:type="dc:Point" x="480" y="114"/>
+      <waypoint xmi:type="dc:Point" x="630" y="200"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_ot5" modelElement="ot5" source="di_o_failed" target="di_o_ref_retry">
+      <waypoint xmi:type="dc:Point" x="630" y="200"/>
+      <waypoint xmi:type="dc:Point" x="630" y="270"/>
+      <waypoint xmi:type="dc:Point" x="260" y="270"/>
+      <waypoint xmi:type="dc:Point" x="260" y="130"/>
+      <waypoint xmi:type="dc:Point" x="300" y="130"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_ot6" modelElement="ot6" source="di_o_ref_cancel" target="di_o_cart">
+      <waypoint xmi:type="dc:Point" x="390" y="70"/>
+      <waypoint xmi:type="dc:Point" x="390" y="30"/>
+      <waypoint xmi:type="dc:Point" x="160" y="30"/>
+      <waypoint xmi:type="dc:Point" x="160" y="110"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_ot7" modelElement="ot7" source="di_o_shipped" target="di_o_final">
+      <waypoint xmi:type="dc:Point" x="640" y="40"/>
+      <waypoint xmi:type="dc:Point" x="773" y="40"/>
+    </ownedElement>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>

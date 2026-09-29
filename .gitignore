@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+# Copied by scripts/fetch-cli.* (the fsm code generator, ~85 MB)
+src/FsmEditor.Vsix/cli/

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:FsmStereotypes="https://github.com/vincedupuis/fsm-editor/profiles/FsmStereotypes">
+  <uml:Model xmi:id="sm_model" name="Grammar">
+    <profileApplication xmi:type="uml:ProfileApplication" xmi:id="fsm_profile_app" appliedProfile="fsm_profile"/>
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="sm" name="Grammar">
+      <region xmi:type="uml:Region" xmi:id="r">
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="i" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="a" name="A">
+          <entry xmi:type="uml:OpaqueBehavior" xmi:id="a_entry">
+            <language>FSM</language>
+            <body>start(1)</body>
+          </entry>
+          <exit xmi:type="uml:OpaqueBehavior" xmi:id="a_exit">
+            <language>FSM</language>
+            <body>a.b()</body>
+          </exit>
+          <doActivity xmi:type="uml:OpaqueBehavior" xmi:id="a_do">
+            <language>FSM</language>
+            <body>x() &amp;&amp; y()</body>
+          </doActivity>
+          <stateInvariant xmi:type="uml:Constraint" xmi:id="a_inv">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="a_inv_spec">
+              <language>FSM</language>
+              <body>v &gt; 3</body>
+            </specification>
+          </stateInvariant>
+          <deferrableTrigger xmi:type="uml:Trigger" xmi:id="a_deferrableTrigger1" name="after(2s)" event="ev_after_2s_"/>
+          <deferrableTrigger xmi:type="uml:Trigger" xmi:id="a_deferrableTrigger2" name="go()" event="ev_go__"/>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="b" name="B"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="c" kind="choice"/>
+        <transition xmi:type="uml:Transition" xmi:id="t0" kind="external" source="i" target="a"/>
+        <transition xmi:type="uml:Transition" xmi:id="t1" kind="external" source="a" target="b">
+          <trigger xmi:type="uml:Trigger" xmi:id="t1_trigger1" name="when(x)" event="ev_when_x_"/>
+          <trigger xmi:type="uml:Trigger" xmi:id="t1_trigger2" name="after(0s)" event="ev_after_0s_"/>
+          <trigger xmi:type="uml:Trigger" xmi:id="t1_trigger3" name="go" event="ev_go"/>
+          <guard xmi:type="uml:Constraint" xmi:id="t1_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t1_guard_spec">
+              <language>FSM</language>
+              <body>volume &gt; 3</body>
+            </specification>
+          </guard>
+          <effect xmi:type="uml:OpaqueBehavior" xmi:id="t1_effect">
+            <language>FSM</language>
+            <body>a() &amp;&amp; b()</body>
+          </effect>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t2" kind="external" source="b" target="c">
+          <guard xmi:type="uml:Constraint" xmi:id="t2_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t2_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t3" kind="external" source="c" target="a">
+          <trigger xmi:type="uml:Trigger" xmi:id="t3_trigger1" name="after(2s)" event="ev_after_2s_"/>
+          <guard xmi:type="uml:Constraint" xmi:id="t3_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t3_guard_spec">
+              <language>FSM</language>
+              <body>isOk()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t4" kind="external" source="c" target="b">
+          <guard xmi:type="uml:Constraint" xmi:id="t4_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t4_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+      </region>
+    </packagedElement>
+    <packagedElement xmi:type="uml:TimeEvent" xmi:id="ev_after_2s_" name="after(2s)" isRelative="true">
+      <when xmi:type="uml:TimeExpression" xmi:id="ev_after_2s__when">
+        <expr xmi:type="uml:LiteralString" xmi:id="ev_after_2s__expr" value="2s"/>
+      </when>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_go__" name="go()" signal="sig_go__"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_go__" name="go()"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_when_x_" name="when(x)" signal="sig_when_x_"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_when_x_" name="when(x)"/>
+    <packagedElement xmi:type="uml:TimeEvent" xmi:id="ev_after_0s_" name="after(0s)" isRelative="true">
+      <when xmi:type="uml:TimeExpression" xmi:id="ev_after_0s__when">
+        <expr xmi:type="uml:LiteralString" xmi:id="ev_after_0s__expr" value="0s"/>
+      </when>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_go" name="go" signal="sig_go"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_go" name="go"/>
+    <packagedElement xmi:type="uml:Profile" xmi:id="fsm_profile" name="FsmStereotypes" URI="https://github.com/vincedupuis/fsm-editor/profiles/FsmStereotypes">
+      <metaclassReference xmi:type="uml:ElementImport" xmi:id="fsm_profile_state">
+        <importedElement xmi:type="uml:Class" href="http://www.omg.org/spec/UML/20161101/UML.xmi#State"/>
+      </metaclassReference>
+      <packagedElement xmi:type="uml:Stereotype" xmi:id="st_1bad" name="1bad">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="st_1bad_base" name="base_State" association="ext_1bad">
+          <type href="http://www.omg.org/spec/UML/20161101/UML.xmi#State"/>
+        </ownedAttribute>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Extension" xmi:id="ext_1bad" name="E_1bad_State" memberEnd="st_1bad_base ext_1bad_end">
+        <ownedEnd xmi:type="uml:ExtensionEnd" xmi:id="ext_1bad_end" name="extension_1bad" type="st_1bad" association="ext_1bad" aggregation="composite"/>
+      </packagedElement>
+    </packagedElement>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="Grammar" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_i" modelElement="i">
+      <bounds xmi:type="dc:Bounds" x="0" y="0" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_a" modelElement="a">
+      <bounds xmi:type="dc:Bounds" x="100" y="0" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_b" modelElement="b">
+      <bounds xmi:type="dc:Bounds" x="300" y="10" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_c" modelElement="c">
+      <bounds xmi:type="dc:Bounds" x="200" y="200" width="28" height="28"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t0" modelElement="t0" source="di_i" target="di_a">
+      <waypoint xmi:type="dc:Point" x="10" y="10"/>
+      <waypoint xmi:type="dc:Point" x="170" y="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t1" modelElement="t1" source="di_a" target="di_b">
+      <waypoint xmi:type="dc:Point" x="170" y="30"/>
+      <waypoint xmi:type="dc:Point" x="370" y="40"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t2" modelElement="t2" source="di_b" target="di_c">
+      <waypoint xmi:type="dc:Point" x="370" y="40"/>
+      <waypoint xmi:type="dc:Point" x="214" y="214"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t3" modelElement="t3" source="di_c" target="di_a">
+      <waypoint xmi:type="dc:Point" x="214" y="214"/>
+      <waypoint xmi:type="dc:Point" x="170" y="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t4" modelElement="t4" source="di_c" target="di_b">
+      <waypoint xmi:type="dc:Point" x="214" y="214"/>
+      <waypoint xmi:type="dc:Point" x="370" y="40"/>
+    </ownedElement>
+  </umldi:UMLStateMachineDiagram>
+  <FsmStereotypes:1bad xmi:id="a_st" base_State="a"/>
+</xmi:XMI>

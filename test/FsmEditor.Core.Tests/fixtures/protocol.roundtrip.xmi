@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:FsmStereotypes="https://github.com/vincedupuis/fsm-editor/profiles/FsmStereotypes">
+  <uml:Model xmi:id="p_model" name="Door">
+    <profileApplication xmi:type="uml:ProfileApplication" xmi:id="fsm_profile_app" appliedProfile="fsm_profile"/>
+    <packagedElement xmi:type="uml:Class" xmi:id="p_context" name="DoorController" classifierBehavior="p">
+      <ownedBehavior xmi:type="uml:ProtocolStateMachine" xmi:id="p" name="Door">
+        <ownedComment xmi:type="uml:Comment" xmi:id="p_doc" annotatedElement="p">
+          <body>A door &amp; its &quot;lock&quot; &lt;protocol&gt;.
+Second line.</body>
+        </ownedComment>
+        <region xmi:type="uml:Region" xmi:id="r" name="main">
+          <subvertex xmi:type="uml:Pseudostate" xmi:id="i" kind="initial"/>
+          <subvertex xmi:type="uml:State" xmi:id="o" name="Open">
+            <entry xmi:type="uml:OpaqueBehavior" xmi:id="o_entry">
+              <language>FSM</language>
+              <body>light()</body>
+            </entry>
+          </subvertex>
+          <subvertex xmi:type="uml:State" xmi:id="c" name="Closed">
+            <stateInvariant xmi:type="uml:Constraint" xmi:id="c_inv">
+              <specification xmi:type="uml:OpaqueExpression" xmi:id="c_inv_spec">
+                <language>FSM</language>
+                <body>!isOpen() &amp;&amp; (isShut() || (isLocked()))</body>
+              </specification>
+            </stateInvariant>
+          </subvertex>
+          <subvertex xmi:type="uml:State" xmi:id="l" name="Locked">
+            <deferrableTrigger xmi:type="uml:Trigger" xmi:id="l_deferrableTrigger1" name="knock" event="ev_knock"/>
+          </subvertex>
+          <transition xmi:type="uml:ProtocolTransition" xmi:id="t0" kind="external" source="i" target="o"/>
+          <transition xmi:type="uml:ProtocolTransition" xmi:id="t1" kind="external" source="o" target="c">
+            <trigger xmi:type="uml:Trigger" xmi:id="t1_trigger1" name="close" event="ev_close"/>
+            <preCondition xmi:type="uml:Constraint" xmi:id="t1_pre">
+              <specification xmi:type="uml:OpaqueExpression" xmi:id="t1_pre_spec">
+                <language>FSM</language>
+                <body>isClear()</body>
+              </specification>
+            </preCondition>
+            <postCondition xmi:type="uml:Constraint" xmi:id="t1_post">
+              <specification xmi:type="uml:OpaqueExpression" xmi:id="t1_post_spec">
+                <language>FSM</language>
+                <body>isShut()</body>
+              </specification>
+            </postCondition>
+          </transition>
+          <transition xmi:type="uml:ProtocolTransition" xmi:id="t2" kind="external" source="c" target="o">
+            <trigger xmi:type="uml:Trigger" xmi:id="t2_trigger1" name="open" event="ev_open"/>
+            <effect xmi:type="uml:OpaqueBehavior" xmi:id="t2_effect">
+              <language>FSM</language>
+              <body>e()</body>
+            </effect>
+          </transition>
+          <transition xmi:type="uml:ProtocolTransition" xmi:id="t3" kind="external" source="c" target="l">
+            <trigger xmi:type="uml:Trigger" xmi:id="t3_trigger1" name="lock" event="ev_lock"/>
+            <trigger xmi:type="uml:Trigger" xmi:id="t3_trigger2" name="after(1.5s)" event="ev_after_1_5s_"/>
+          </transition>
+        </region>
+      </ownedBehavior>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_knock" name="knock" signal="sig_knock"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_knock" name="knock"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_close" name="close" signal="sig_close"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_close" name="close"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_open" name="open" signal="sig_open"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_open" name="open"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_lock" name="lock" signal="sig_lock"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_lock" name="lock"/>
+    <packagedElement xmi:type="uml:TimeEvent" xmi:id="ev_after_1_5s_" name="after(1.5s)" isRelative="true">
+      <when xmi:type="uml:TimeExpression" xmi:id="ev_after_1_5s__when">
+        <expr xmi:type="uml:LiteralString" xmi:id="ev_after_1_5s__expr" value="1.5s"/>
+      </when>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Profile" xmi:id="fsm_profile" name="FsmStereotypes" URI="https://github.com/vincedupuis/fsm-editor/profiles/FsmStereotypes">
+      <metaclassReference xmi:type="uml:ElementImport" xmi:id="fsm_profile_state">
+        <importedElement xmi:type="uml:Class" href="http://www.omg.org/spec/UML/20161101/UML.xmi#State"/>
+      </metaclassReference>
+      <packagedElement xmi:type="uml:Stereotype" xmi:id="st_Critical" name="Critical">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="st_Critical_base" name="base_State" association="ext_Critical">
+          <type href="http://www.omg.org/spec/UML/20161101/UML.xmi#State"/>
+        </ownedAttribute>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Extension" xmi:id="ext_Critical" name="E_Critical_State" memberEnd="st_Critical_base ext_Critical_end">
+        <ownedEnd xmi:type="uml:ExtensionEnd" xmi:id="ext_Critical_end" name="extension_Critical" type="st_Critical" association="ext_Critical" aggregation="composite"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Stereotype" xmi:id="st_Safe" name="Safe">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="st_Safe_base" name="base_State" association="ext_Safe">
+          <type href="http://www.omg.org/spec/UML/20161101/UML.xmi#State"/>
+        </ownedAttribute>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Extension" xmi:id="ext_Safe" name="E_Safe_State" memberEnd="st_Safe_base ext_Safe_end">
+        <ownedEnd xmi:type="uml:ExtensionEnd" xmi:id="ext_Safe_end" name="extension_Safe" type="st_Safe" association="ext_Safe" aggregation="composite"/>
+      </packagedElement>
+    </packagedElement>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="p_diagram" name="Door" modelElement="p" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_i" modelElement="i">
+      <bounds xmi:type="dc:Bounds" x="0" y="0" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_o" modelElement="o">
+      <bounds xmi:type="dc:Bounds" x="0" y="0" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_c" modelElement="c">
+      <bounds xmi:type="dc:Bounds" x="300" y="0" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_l" modelElement="l">
+      <bounds xmi:type="dc:Bounds" x="300" y="200" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t0" modelElement="t0" source="di_i" target="di_o">
+      <waypoint xmi:type="dc:Point" x="10" y="10"/>
+      <waypoint xmi:type="dc:Point" x="70" y="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t1" modelElement="t1" source="di_o" target="di_c">
+      <waypoint xmi:type="dc:Point" x="70" y="30"/>
+      <waypoint xmi:type="dc:Point" x="370" y="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t2" modelElement="t2" source="di_c" target="di_o">
+      <waypoint xmi:type="dc:Point" x="370" y="30"/>
+      <waypoint xmi:type="dc:Point" x="70" y="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t3" modelElement="t3" source="di_c" target="di_l">
+      <waypoint xmi:type="dc:Point" x="370" y="30"/>
+      <waypoint xmi:type="dc:Point" x="370" y="230"/>
+      <ownedElement xmi:type="umldi:UMLLabel" xmi:id="di_t3_label" modelElement="t3">
+        <bounds xmi:type="dc:Bounds" x="320" y="122" width="100" height="16"/>
+      </ownedElement>
+    </ownedElement>
+  </umldi:UMLStateMachineDiagram>
+  <FsmStereotypes:Critical xmi:id="o_st" base_State="o"/>
+  <FsmStereotypes:Critical xmi:id="c_st" base_State="c"/>
+  <FsmStereotypes:Safe xmi:id="l_st" base_State="l"/>
+</xmi:XMI>
