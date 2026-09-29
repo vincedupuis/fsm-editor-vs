@@ -1,8 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project>
+
+  <!-- Explicit SDK imports: the VSSDK targets must be imported after the .NET SDK targets (see the end). -->
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <!--
     Visual Studio 2022+ extension (VSIX). On Windows, building produces
-    bin/<Configuration>/FsmEditor.vsix; F5 starts the experimental instance.
+    bin/<Configuration>/net48/FsmEditor.vsix; F5 starts the experimental instance.
     On other systems the VSSDK build tools are skipped, so `dotnet build`
     only compiles the code (useful to type-check it).
   -->
@@ -69,6 +72,17 @@
   </ItemGroup>
   <Target Name="WarnMissingCli" BeforeTargets="Build" Condition="!Exists('cli\fsm.exe')">
     <Warning Text="cli\fsm.exe is missing: run scripts\fetch-cli.ps1 (or scripts/fetch-cli.sh) so the VSIX bundles the code generator. Without it, code generation uses the 'CLI path' option or an fsm on the PATH." />
+  </Target>
+
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <!--
+    The VSIX build (command table, pkgdef, .vsix container). Microsoft.VSSDK.BuildTools
+    only sets VSToolsPath; the project imports the targets itself.
+  -->
+  <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(IsWindows)' == 'true' And Exists('$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets')" />
+  <Target Name="CheckVsSdkTargets" BeforeTargets="Build" Condition="'$(IsWindows)' == 'true' And !Exists('$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets')">
+    <Error Text="The VSSDK build targets were not found under '$(VSToolsPath)'. Restore the Microsoft.VSSDK.BuildTools package (or install the Visual Studio extension development workload)." />
   </Target>
 
 </Project>

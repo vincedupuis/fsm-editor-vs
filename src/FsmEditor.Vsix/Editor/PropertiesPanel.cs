@@ -261,10 +261,10 @@ namespace FsmEditor.Editor
         private DockPanel Row(UIElement main, params UIElement[] trailing)
         {
             var row = new DockPanel { Margin = new Thickness(0, 0, 0, 8), LastChildFill = true };
-            foreach (var t in trailing.Reverse())
+            for (int i = trailing.Length - 1; i >= 0; i--)
             {
-                DockPanel.SetDock(t, Dock.Right);
-                row.Children.Add(t);
+                DockPanel.SetDock(trailing[i], Dock.Right);
+                row.Children.Add(trailing[i]);
             }
             row.Children.Add(main);
             return row;

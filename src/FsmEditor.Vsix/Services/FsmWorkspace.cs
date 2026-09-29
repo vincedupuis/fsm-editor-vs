@@ -192,11 +192,17 @@ namespace FsmEditor.Services
                 try
                 {
                     var w = new FileSystemWatcher(root, "*.fsm") { IncludeSubdirectories = true, NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite };
-                    void Changed(object s, FileSystemEventArgs e) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                    // The watcher raises events on a thread pool thread; the package's task factory
+                    // tracks the switch to the UI thread so it doesn't outlive Visual Studio's shutdown.
+                    void Changed(object s, FileSystemEventArgs e)
                     {
-                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                        ResyncAll();
-                    }).FileAndForget("FsmEditor/Watch");
+                        var jtf = FsmEditorPackage.Instance?.JoinableTaskFactory;
+                        jtf?.RunAsync(async () =>
+                        {
+                            await jtf.SwitchToMainThreadAsync();
+                            ResyncAll();
+                        }).FileAndForget("FsmEditor/Watch");
+                    }
                     w.Changed += Changed;
                     w.Created += Changed;
                     w.Deleted += Changed;
