@@ -1,0 +1,64 @@
+# On a version tag (v0.3.0), builds the VSIX on Windows (the VSSDK packaging
+# steps only run there) and attaches it to the GitHub Release of that tag.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+env:
+  # Release of FSM Editor for VS Code whose `fsm` code generator the VSIX bundles.
+  FSM_CLI_VERSION: 0.3.1
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches the manifest version
+        shell: pwsh
+        run: |
+          [xml]$manifest = Get-Content src\FsmEditor.Vsix\source.extension.vsixmanifest
+          $version = $manifest.PackageManifest.Metadata.Identity.Version
+          if ("v$version" -ne $env:GITHUB_REF_NAME) {
+            throw "Tag $env:GITHUB_REF_NAME doesn't match the manifest version $version"
+          }
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Test
+        run: dotnet test test/FsmEditor.Core.Tests
+
+      - name: Fetch the fsm code generator
+        shell: pwsh
+        run: |
+          $name = "fsm-$env:FSM_CLI_VERSION-windows-x64"
+          Invoke-WebRequest "https://github.com/vincedupuis/fsm-editor-vscode/releases/download/v$env:FSM_CLI_VERSION/$name.zip" -OutFile "$env:RUNNER_TEMP\fsm.zip"
+          Expand-Archive "$env:RUNNER_TEMP\fsm.zip" -DestinationPath $env:RUNNER_TEMP
+          New-Item -ItemType Directory -Force src\FsmEditor.Vsix\cli | Out-Null
+          Copy-Item -Recurse -Force "$env:RUNNER_TEMP\$name\*" src\FsmEditor.Vsix\cli
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Build the VSIX
+        run: msbuild src\FsmEditor.Vsix\FsmEditor.Vsix.csproj /restore /p:Configuration=Release /v:minimal
+
+      - name: Attach the VSIX to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          $vsix = "$env:RUNNER_TEMP\fsm-editor-vs-$version.vsix"
+          Copy-Item src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix $vsix
+          gh release view $env:GITHUB_REF_NAME *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:GITHUB_REF_NAME $vsix --clobber
+          } else {
+            gh release create $env:GITHUB_REF_NAME $vsix --title "FSM Editor for Visual Studio $version" --generate-notes
+          }
