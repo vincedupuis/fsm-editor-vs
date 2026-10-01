@@ -14,11 +14,11 @@ The editor covers UML 2.5.1 state machines: composite, orthogonal and submachine
 
 Behaviors and conditions are argument-less function calls (`rewind(); showTime()`, `hasDisc() && !isJammed()`), and triggers are event names or `after(2s)`. Submachine states reuse another state machine file. They're entered and left through connection point references bound to that machine's entry and exit points:
 
-![A submachine state Payment with retry, failed and cancelled connection point references, and the properties panel listing the referenced machine's points](https://raw.githubusercontent.com/vincedupuis/fsm-editor-vs/main/images/submachine.png)
+![The Order state machine, whose submachine state Payment is entered through the retry connection point reference and left through failed and cancelled](https://raw.githubusercontent.com/vincedupuis/fsm-editor-vs/main/images/submachine.png)
 
-Text that breaks the rules is refused as you type, and the validator flags problems on the diagram, in the editor's status bar and in the Error List:
+![The Payment state machine with its retry entry point and its failed and cancelled exit points](https://raw.githubusercontent.com/vincedupuis/fsm-editor-vs/main/images/payment.png)
 
-![A guard 'volume > 3' refused with an explanation, and a warning in the Error List that the state Standby can never be entered](https://raw.githubusercontent.com/vincedupuis/fsm-editor-vs/main/images/validation.png)
+Text that breaks the rules is refused as you type, and the validator flags problems on the diagram, in the editor's status bar and in the Error List.
 
 See **[docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blob/main/docs/UML-CONFORMANCE.md)** for the supported features, the text syntax, submachines, the file format, the deviations from UML 2.5.1 and every validation rule.
 
