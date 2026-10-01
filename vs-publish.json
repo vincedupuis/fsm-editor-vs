@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json.schemastore.org/vsix-publish",
+  "categories": [ "modeling", "coding" ],
+  "identity": {
+    "internalName": "fsm-editor-vs"
+  },
+  "overview": "README.md",
+  "priceCategory": "free",
+  "publisher": "VinceGoSoftware",
+  "private": false,
+  "qna": true,
+  "repo": "https://github.com/vincedupuis/fsm-editor-vs"
+}

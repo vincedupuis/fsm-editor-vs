@@ -70,8 +70,12 @@
   <ItemGroup>
     <Content Include="cli\**\*" IncludeInVSIX="true" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-  <Target Name="WarnMissingCli" BeforeTargets="Build" Condition="!Exists('cli\fsm.exe')">
+  <!-- A Release VSIX must bundle the generator; Debug builds only warn. -->
+  <Target Name="WarnMissingCli" BeforeTargets="Build" Condition="!Exists('cli\fsm.exe') And '$(Configuration)' != 'Release'">
     <Warning Text="cli\fsm.exe is missing: run scripts\fetch-cli.ps1 (or scripts/fetch-cli.sh) so the VSIX bundles the code generator. Without it, code generation uses the 'CLI path' option or an fsm on the PATH." />
+  </Target>
+  <Target Name="RequireCliForRelease" BeforeTargets="Build" Condition="!Exists('cli\fsm.exe') And '$(Configuration)' == 'Release' And '$(IsWindows)' == 'true'">
+    <Error Text="cli\fsm.exe is missing: run scripts\fetch-cli.ps1 before a Release build, so the published VSIX bundles the code generator." />
   </Target>
 
 

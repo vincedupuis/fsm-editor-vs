@@ -1,18 +1,26 @@
 # FSM Editor — UML State Machines for Visual Studio
 
+[![Visual Studio Marketplace version](https://badgen.net/vs-marketplace/v/VinceGoSoftware.fsm-editor-vs)](https://marketplace.visualstudio.com/items?itemName=VinceGoSoftware.fsm-editor-vs)
+
 A visual editor for UML 2.5.1 state machines in Visual Studio 2022 and later. Open any `*.fsm` file to get a canvas with a toolbox, a properties panel, live validation in the Error List, SVG export and code generation from templates. Files are standard XMI 2.5.1: the UML model plus its diagram layout in UML DI, in the same file.
 
 This is the Visual Studio edition of [FSM Editor for VS Code](https://github.com/vincedupuis/fsm-editor-vscode). Both editors use the same file format, rules and code generator, so a team can edit the same `.fsm` files in either, and copy and paste diagram elements between them.
+
+![The FSM Editor in Visual Studio showing a media player state machine with composite and orthogonal states, the toolbox on the left and the properties panel on the right](https://raw.githubusercontent.com/vincedupuis/fsm-editor-vs/main/images/overview.png)
 
 ## UML support
 
 The editor covers UML 2.5.1 state machines: composite, orthogonal and submachine states, all pseudostates, connection point references, entry/exit/do behaviors, deferrable events, the external, local and internal transition kinds, time triggers, and protocol state machines. A validator checks the well-formedness rules as you edit.
 
-Behaviors and conditions are argument-less function calls (`rewind(); showTime()`, `hasDisc() && !isJammed()`), and triggers are event names or `after(2s)`. Text that breaks the rules is refused as you type, and the validator flags problems on the diagram, in the editor's status bar and in the Error List.
+Behaviors and conditions are argument-less function calls (`rewind(); showTime()`, `hasDisc() && !isJammed()`), and triggers are event names or `after(2s)`. Submachine states reuse another state machine file. They're entered and left through connection point references bound to that machine's entry and exit points:
 
-Submachine states reuse another state machine file. They're entered and left through connection point references bound to that machine's entry and exit points.
+![A submachine state Payment with retry, failed and cancelled connection point references, and the properties panel listing the referenced machine's points](https://raw.githubusercontent.com/vincedupuis/fsm-editor-vs/main/images/submachine.png)
 
-See **[docs/UML-CONFORMANCE.md](docs/UML-CONFORMANCE.md)** for the supported features, the text syntax, submachines, the file format, the deviations from UML 2.5.1 and every validation rule.
+Text that breaks the rules is refused as you type, and the validator flags problems on the diagram, in the editor's status bar and in the Error List:
+
+![A guard 'volume > 3' refused with an explanation, and a warning in the Error List that the state Standby can never be entered](https://raw.githubusercontent.com/vincedupuis/fsm-editor-vs/main/images/validation.png)
+
+See **[docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blob/main/docs/UML-CONFORMANCE.md)** for the supported features, the text syntax, submachines, the file format, the deviations from UML 2.5.1 and every validation rule.
 
 ## Using the editor
 
@@ -36,7 +44,7 @@ Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Sol
 fsm "models/**/*.fsm" --template ts --out src/generated
 ```
 
-See **[docs/CODEGEN.md](docs/CODEGEN.md)** for the dialog, the Command Window arguments, builds, and where templates and the code model are documented.
+See **[docs/CODEGEN.md](https://github.com/vincedupuis/fsm-editor-vs/blob/main/docs/CODEGEN.md)** for the dialog, the Command Window arguments, builds, and where templates and the code model are documented.
 
 ## Development
 
@@ -49,6 +57,15 @@ dotnet test                  # model, file format, validation and editing tests
 ```
 
 Open `FsmEditor.sln`, set **FsmEditor.Vsix** as the startup project and press F5 to start the Visual Studio experimental instance, then open `examples\MediaPlayer.fsm`, or `examples\Order.fsm` for a submachine with connection point references (it uses `examples\Payment.fsm`). Building in Release produces `src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix`; double-click it to install it.
+
+To publish, build in Release (it fails if `fsm.exe` hasn't been fetched), then upload the `.vsix` with `vs-publish.json`, which describes the Marketplace listing and uses this README as its page:
+
+```powershell
+& "$env:VSINSTALLDIR\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish `
+  -payload src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix -publishManifest vs-publish.json -personalAccessToken <token>
+```
+
+Bump `Version` in both `source.extension.vsixmanifest` and `FsmEditor.Vsix.csproj` first.
 
 On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging steps only run on Windows) and `dotnet test` runs the tests.
 
@@ -64,4 +81,5 @@ On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging ste
   - `Commands/`, `VSCommandTable.vsct`: menu commands
 - `test/FsmEditor.Core.Tests/`: tests, including parity tests against reference results of the VS Code extension (`fixtures/`)
 - `scripts/fetch-cli.*`: copies the code generator into the VSIX
+- `vs-publish.json`: the Marketplace listing; `images/`: the README's screenshots
 - `docs/`: UML conformance and code generation
