@@ -12,7 +12,9 @@ This is the Visual Studio edition of [FSM Editor for VS Code](https://github.com
 
 The editor covers UML 2.5.1 state machines: composite, orthogonal and submachine states, all pseudostates, connection point references, entry/exit/do behaviors, deferrable events, the external, local and internal transition kinds, time triggers, and protocol state machines. A validator checks the well-formedness rules as you edit.
 
-Behaviors and conditions are argument-less function calls (`rewind(); showTime()`, `hasDisc() && !isJammed()`), and triggers are event names or `after(2s)`. Submachine states reuse another state machine file. They're entered and left through connection point references bound to that machine's entry and exit points:
+Behaviors and conditions are argument-less function calls (`rewind(); showTime()`, `hasDisc() && !isJammed()`), and triggers are event names or `after(2s)`.
+
+Submachine states reuse another state machine file. They're entered and left through connection point references bound to that machine's entry and exit points:
 
 ![The Order state machine, whose submachine state Payment is entered through the retry connection point reference and left through failed and cancelled](https://raw.githubusercontent.com/vincedupuis/fsm-editor-vs/main/images/submachine.png)
 
