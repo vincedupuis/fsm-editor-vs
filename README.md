@@ -69,7 +69,7 @@ To publish, build in Release (it fails if `fsm.exe` hasn't been fetched), then u
 
 Bump the version in `source.extension.vsixmanifest`, `FsmEditor.Vsix.csproj` and `InstalledProductRegistration` in `FsmEditorPackage.cs` first.
 
-Pushing a version tag (`git tag v0.3.2 && git push origin v0.3.2`) also builds the `.vsix` on GitHub Actions (`.github/workflows/release.yml`, which bundles the `fsm` generator of the FSM Editor for VS Code release set in `FSM_CLI_VERSION`) and attaches it to the GitHub Release of that tag. The tag must match the manifest version.
+Pushing a version tag (`git tag v0.3.3 && git push origin v0.3.3`) also builds the `.vsix` on GitHub Actions (`.github/workflows/release.yml`, which bundles the `fsm` generator of the FSM Editor for VS Code release set in `FSM_CLI_VERSION`) and attaches it to the GitHub Release of that tag. The tag must match the manifest version.
 
 On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging steps only run on Windows) and `dotnet test` runs the tests.
 

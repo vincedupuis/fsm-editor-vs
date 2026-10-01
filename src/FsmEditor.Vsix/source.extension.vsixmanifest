@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="FsmEditor.VisualStudio.43c53194-4f12-42ec-8fcc-0bbca916caaf" Version="0.3.2" Language="en-US" Publisher="Vincent Dupuis" />
-    <DisplayName>FSM Editor — UML State Machines</DisplayName>
+    <Identity Id="FsmEditor.VisualStudio.43c53194-4f12-42ec-8fcc-0bbca916caaf" Version="0.3.3" Language="en-US" Publisher="Vincent Dupuis" />
+    <DisplayName>FSM Editor for Visual Studio — UML State Machines</DisplayName>
     <Description xml:space="preserve">Visual editor to create, edit and visualize UML 2.5.1 state machines (composite/orthogonal states, submachines with connection point references, all pseudostates, protocol state machines) stored as standard XMI with UML DI layout, with a toolbox, validation in the Error List, SVG export and code generation from Handlebars templates.</Description>
     <MoreInfo>https://github.com/vincedupuis/fsm-editor-vs</MoreInfo>
     <License>Resources\LICENSE.txt</License>
