@@ -1,5 +1,8 @@
 # On a version tag (v0.3.0), builds the VSIX on Windows (the VSSDK packaging
-# steps only run there) and attaches it to the GitHub Release of that tag.
+# steps only run there), attaches it to the GitHub Release of that tag, and publishes
+# it to the Visual Studio Marketplace (listing: vs-publish.json) when the
+# VS_MARKETPLACE_PAT secret is set (an Azure DevOps token with the Marketplace >
+# Manage scope).
 name: Release
 
 on:
@@ -15,6 +18,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+    env:
+      VS_MARKETPLACE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
     steps:
       - uses: actions/checkout@v4
 
@@ -62,3 +67,12 @@ jobs:
           } else {
             gh release create $env:GITHUB_REF_NAME $vsix --title "FSM Editor for Visual Studio $version" --generate-notes
           }
+
+      - name: Publish to the Visual Studio Marketplace
+        if: env.VS_MARKETPLACE_PAT != ''
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $publisher = "$vs\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe"
+          & $publisher publish -payload src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix -publishManifest vs-publish.json -personalAccessToken $env:VS_MARKETPLACE_PAT
+          if ($LASTEXITCODE -ne 0) { throw "VsixPublisher failed" }
