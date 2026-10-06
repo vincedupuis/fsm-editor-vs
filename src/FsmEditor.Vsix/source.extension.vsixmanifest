@@ -7,7 +7,7 @@
     <MoreInfo>https://github.com/vincedupuis/fsm-editor-vs</MoreInfo>
     <License>Resources\LICENSE.txt</License>
     <Icon>Resources\icon.png</Icon>
-    <Tags>uml, state machine, fsm, statechart, diagram, xmi, umldi, code generation, code generator, handlebars</Tags>
+    <Tags>uml;state machine;fsm;statechart;diagram;xmi;umldi;code generation;code generator;handlebars</Tags>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 19.0)">
