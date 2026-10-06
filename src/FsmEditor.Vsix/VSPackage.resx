@@ -17,7 +17,7 @@
     <comment>Name of the diagram editor (Open With dialog)</comment>
   </data>
   <data name="111" xml:space="preserve">
-    <value>FSM Editor for Visual Studio — UML State Machines &amp; Code Generation</value>
+    <value>FSM Editor and Codegen for Visual Studio</value>
   </data>
   <data name="112" xml:space="preserve">
     <value>Visual editor and code generator for UML 2.5.1 state machines stored as XMI with UML DI layout, with validation and SVG export.</value>
