@@ -14,7 +14,7 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>FsmEditor</RootNamespace>
     <AssemblyName>FsmEditor</AssemblyName>
-    <Version>0.3.4</Version>
+    <Version>0.3.5</Version>
     <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
 
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
