@@ -21,7 +21,7 @@ using Task = System.Threading.Tasks.Task;
 namespace FsmEditor
 {
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-    [InstalledProductRegistration("#111", "#112", "0.3.6")]
+    [InstalledProductRegistration("#111", "#112", "0.3.7")]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(PackageGuids.PackageString)]
     [ProvideEditorFactory(typeof(FsmEditorFactory), 110, CommonPhysicalViewAttributes = (int)__VSPHYSICALVIEWATTRIBUTES.PVA_SupportsPreview, TrustLevel = __VSEDITORTRUSTLEVEL.ETL_AlwaysTrusted)]
