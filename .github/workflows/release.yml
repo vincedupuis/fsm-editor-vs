@@ -11,7 +11,7 @@ on:
 
 env:
   # Release of FSM Editor for VS Code whose `fsm` code generator the VSIX bundles.
-  FSM_CLI_VERSION: 0.3.1
+  FSM_CLI_VERSION: 0.4.0
 
 jobs:
   release:
