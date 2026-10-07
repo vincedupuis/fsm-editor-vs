@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="FsmEditor.VisualStudio.43c53194-4f12-42ec-8fcc-0bbca916caaf" Version="0.3.7" Language="en-US" Publisher="Vincent Dupuis" />
+    <Identity Id="FsmEditor.VisualStudio.43c53194-4f12-42ec-8fcc-0bbca916caaf" Version="0.4.0" Language="en-US" Publisher="Vincent Dupuis" />
     <DisplayName>FSM Editor and Codegen for Visual Studio</DisplayName>
     <Description xml:space="preserve">Visual editor and code generator for UML 2.5.1 state machines: draw composite, orthogonal and submachine states, then generate source code from Handlebars templates (TypeScript and C++ bundled). Standard XMI files with UML DI layout, validation in the Error List and SVG export.</Description>
     <MoreInfo>https://github.com/vincedupuis/fsm-editor-vs</MoreInfo>
