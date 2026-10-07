@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Item template of a new state machine. The build writes one copy per project
+  type, filling in the type below (General: File › New › File and solution
+  items; CSharp, VisualBasic, VC: Add › New Item in those projects).
+-->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>State Machine</Name>
+    <Description>A UML state machine (.fsm), edited as a diagram in FSM Editor.</Description>
+    <Icon>icon.png</Icon>
+    <TemplateID>FsmEditor.StateMachine.@ProjectType@</TemplateID>
+    <ProjectType>@ProjectType@</ProjectType>
+    <DefaultName>StateMachine.fsm</DefaultName>
+    <AppendDefaultFileExtension>true</AppendDefaultFileExtension>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.fsm" OpenInEditor="true">StateMachine.fsm</ProjectItem>
+  </TemplateContent>
+</VSTemplate>

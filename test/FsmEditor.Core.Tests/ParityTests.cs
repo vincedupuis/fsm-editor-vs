@@ -85,6 +85,13 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
+        public void ItemTemplateIsTheDefaultMachine()
+        {
+            var template = Read(Path.Combine(AppContext.BaseDirectory, "templates", "StateMachine.fsm"));
+            Assert.Equal(Xmi.ToXmi(FsmModel.CreateDefault("Machine")), template.Replace("$fileinputname$", "Machine"));
+        }
+
+        [Fact]
         public void GrammarMatches()
         {
             foreach (var c in Expected.GetProperty("grammar").EnumerateArray())

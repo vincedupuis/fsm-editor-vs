@@ -64,6 +64,32 @@
   </ItemGroup>
 
   <!--
+    The State Machine item template, zipped once per project type by ZipItemTemplates
+    (File › New › File and Add › New Item list templates by project type).
+  -->
+  <PropertyGroup>
+    <ItemTemplatesDir>$(BaseIntermediateOutputPath)ItemTemplates\</ItemTemplatesDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <ItemTemplateProjectType Include="General;CSharp;VisualBasic;VC" />
+    <Content Include="$(ItemTemplatesDir)General\StateMachine.zip" IncludeInVSIX="true" VSIXSubPath="ItemTemplates\General" />
+    <Content Include="$(ItemTemplatesDir)CSharp\StateMachine.zip" IncludeInVSIX="true" VSIXSubPath="ItemTemplates\CSharp" />
+    <Content Include="$(ItemTemplatesDir)VisualBasic\StateMachine.zip" IncludeInVSIX="true" VSIXSubPath="ItemTemplates\VisualBasic" />
+    <Content Include="$(ItemTemplatesDir)VC\StateMachine.zip" IncludeInVSIX="true" VSIXSubPath="ItemTemplates\VC" />
+  </ItemGroup>
+  <Target Name="ZipItemTemplates" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <_StateMachineVstemplate>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\ItemTemplates\StateMachine\StateMachine.vstemplate'))</_StateMachineVstemplate>
+    </PropertyGroup>
+    <Copy SourceFiles="ItemTemplates\StateMachine\StateMachine.fsm;Resources\icon.png" DestinationFolder="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\files" />
+    <WriteLinesToFile File="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\files\StateMachine.vstemplate"
+                      Lines="$([MSBuild]::Escape($(_StateMachineVstemplate.Replace('@ProjectType@', '%(ItemTemplateProjectType.Identity)'))))"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ZipDirectory SourceDirectory="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\files"
+                  DestinationFile="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\StateMachine.zip" Overwrite="true" />
+  </Target>
+
+  <!--
     The `fsm` code generation CLI (from FSM Editor for VS Code) and its templates,
     copied into cli/ by scripts/fetch-cli.ps1 or scripts/fetch-cli.sh.
   -->

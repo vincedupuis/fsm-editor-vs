@@ -46,7 +46,7 @@ See **[docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blo
 - **Shortcuts**: S state, X final, I initial, H history, C choice, J junction, N comment, T transition, R region, V/Esc select. Shift+click a tool to keep it active.
 - **Submachines**: Alt+double-click a submachine state, or use the button in its properties, to open the referenced machine.
 
-Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Solution Explorer and of the document tab): *New State Machine...*, *Generate Code...*, *Export as SVG...*, *Open as XMI Text*, *Open in FSM Editor*. *New State Machine...* is also on the context menu of projects and folders. The XMI text and the diagram can be open side by side: they edit the same document.
+Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Solution Explorer and of the document tab): *New State Machine...*, *Generate Code...*, *Export as SVG...*, *Open as XMI Text*, *Open in FSM Editor*. *New State Machine...* is also on the context menu of projects and folders. **File › New › File...** and **Add › New Item...** (General, C#, Visual Basic and C++ projects) also list a *State Machine* template. The XMI text and the diagram can be open side by side: they edit the same document.
 
 ## Development
 

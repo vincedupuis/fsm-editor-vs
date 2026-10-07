@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="sm_model" name="$fileinputname$">
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="sm" name="$fileinputname$">
+      <region xmi:type="uml:Region" xmi:id="r_root">
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="v_init" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="v_idle" name="Idle"/>
+        <transition xmi:type="uml:Transition" xmi:id="t_init" kind="external" source="v_init" target="v_idle"/>
+      </region>
+    </packagedElement>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="$fileinputname$" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_init" modelElement="v_init">
+      <bounds xmi:type="dc:Bounds" x="60" y="80" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_idle" modelElement="v_idle">
+      <bounds xmi:type="dc:Bounds" x="160" y="60" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_init" modelElement="t_init" source="di_v_init" target="di_v_idle">
+      <waypoint xmi:type="dc:Point" x="70" y="90"/>
+      <waypoint xmi:type="dc:Point" x="230" y="90"/>
+    </ownedElement>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>
