@@ -173,8 +173,8 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
                     const double f = 12;
                     sb.Append($"<path class=\"shape\" d=\"M{F(x)},{F(y)} H{F(x + w - f)} L{F(x + w)},{F(y + f)} V{F(y + h)} H{F(x)} Z\"/>");
                     sb.Append($"<path class=\"stroke\" d=\"M{F(x + w - f)},{F(y)} V{F(y + f)} H{F(x + w)}\" style=\"stroke-width:1\"/>");
-                    var lines = v.Text.Split('\n');
-                    for (int i = 0; i < lines.Length; i++)
+                    var lines = Geometry.CommentLines(v.Text, w - 16);
+                    for (int i = 0; i < lines.Count; i++)
                     {
                         if (16 + i * 14 < h) sb.Append(Text(x + 8, y + 17 + i * 14, "", lines[i], "start"));
                     }

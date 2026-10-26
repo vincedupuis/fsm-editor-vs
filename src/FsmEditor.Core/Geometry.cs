@@ -278,6 +278,43 @@ namespace FsmEditor.Core
         /// <summary>Estimated width of a transition label in the 11px diagram font.</summary>
         public static double EstimateLabelWidth(string label) => label.Length * 6.6;
 
+        /// <summary>
+        /// Splits a comment's text into the lines drawn in its box, wrapping at spaces (or inside words too long
+        /// for a line) so that each line is at most <paramref name="width"/> wide as measured by
+        /// <paramref name="measure"/> in the 11px diagram font.
+        /// </summary>
+        public static List<string> CommentLines(string text, double width, Func<string, double> measure = null)
+        {
+            measure = measure ?? EstimateLabelWidth;
+            var lines = new List<string>();
+            foreach (var para in text.Split('\n'))
+            {
+                var line = "";
+                foreach (var word in para.TrimEnd('\r').Split(' '))
+                {
+                    var candidate = line.Length > 0 ? line + " " + word : word;
+                    if (line.Length == 0 || measure(candidate) <= width)
+                    {
+                        line = candidate;
+                    }
+                    else
+                    {
+                        lines.Add(line);
+                        line = word;
+                    }
+                    while (line.Length > 1 && measure(line) > width)
+                    {
+                        var k = line.Length - 1;
+                        while (k > 1 && measure(line.Substring(0, k)) > width) k--;
+                        lines.Add(line.Substring(0, k));
+                        line = line.Substring(k);
+                    }
+                }
+                lines.Add(line);
+            }
+            return lines;
+        }
+
         /// <summary>Bounds of everything drawn, including captions and transition labels.</summary>
         public static RectD ContentBounds(ModelIndex ix, Func<string, double> labelWidth = null)
         {

@@ -378,10 +378,10 @@ namespace FsmEditor.Editor
                     var fold = StrokePen(1);
                     dc.DrawLine(fold, new Point(x + w - f, y), new Point(x + w - f, y + f));
                     dc.DrawLine(fold, new Point(x + w - f, y + f), new Point(x + w, y + f));
-                    var lines = v.Text.Split('\n');
-                    for (int i = 0; i < lines.Length; i++)
+                    var lines = Geo.CommentLines(v.Text, w - 16, LabelWidth);
+                    for (int i = 0; i < lines.Count; i++)
                     {
-                        if (16 + i * 14 < h) DrawText(dc, x + 8, y + 17 + i * 14, lines[i].TrimEnd('\r'), 11, textBrush, TextAnchor.Start);
+                        if (16 + i * 14 < h) DrawText(dc, x + 8, y + 17 + i * 14, lines[i], 11, textBrush, TextAnchor.Start);
                     }
                     break;
                 }
