@@ -147,8 +147,8 @@ namespace FsmEditor.Editor
             dc.PushTransform(new MatrixTransform(Zoom, 0, 0, Zoom, ViewX, ViewY));
             var ix = S.Index;
             var sorted = Geo.DrawingOrder(ix);
-            foreach (var v in sorted.Where(v => v.Type == VertexType.Comment)) DrawAnchors(dc, v);
             foreach (var v in sorted) DrawVertex(dc, v);
+            foreach (var v in sorted.Where(v => v.Type == VertexType.Comment)) DrawAnchors(dc, v);
             foreach (var t in S.Model.Transitions) DrawTransition(dc, t);
             DrawOverlay(dc);
             dc.Pop();

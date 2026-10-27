@@ -48,8 +48,8 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
             sb.Append($"<style>{Css}</style>\n");
             sb.Append($"<rect x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" fill=\"#fff\"/>\n");
             var sorted = Geometry.DrawingOrder(ix);
-            foreach (var v in sorted.Where(v => v.Type == VertexType.Comment)) Anchors(sb, ix, v);
             foreach (var v in sorted) VertexShape(sb, session, v);
+            foreach (var v in sorted.Where(v => v.Type == VertexType.Comment)) Anchors(sb, ix, v);
             foreach (var t in model.Transitions) TransitionShape(sb, ix, model, t);
             sb.Append("\n</svg>\n");
             return sb.ToString();
