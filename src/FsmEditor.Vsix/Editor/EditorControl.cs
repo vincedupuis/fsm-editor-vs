@@ -45,6 +45,17 @@ namespace FsmEditor.Editor
         private readonly ScrollViewer _toolbox = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Width = 176 };
         private readonly ScrollViewer _propsScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Width = 270 };
         private readonly Border _status = new Border();
+        private readonly ToolPane _toolboxPane;
+        private readonly ToolPane _propsPane;
+        private readonly Border _leftDock = new Border();
+        private readonly Border _rightDock = new Border();
+        private readonly StackPanel _leftTabs = new StackPanel();
+        private readonly StackPanel _rightTabs = new StackPanel();
+        private readonly Canvas _floatLayer = new Canvas { ClipToBounds = true };
+        private readonly DispatcherTimer _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+        private bool _draggingTool;
+        /// <summary>Raised by the editor whose panel layout changed, so that the other editors follow it.</summary>
+        private static event EventHandler PanesChanged;
         private readonly Border _problems = new Border { Visibility = Visibility.Collapsed };
         private readonly Border _toast = new Border { Visibility = Visibility.Collapsed, IsHitTestVisible = false };
         private readonly Border _parseError = new Border { Visibility = Visibility.Collapsed };
@@ -67,9 +78,13 @@ namespace FsmEditor.Editor
 
             SetDock(_toolbar, Dock.Top);
             SetDock(_status, Dock.Bottom);
-            SetDock(_toolbox, Dock.Left);
-            SetDock(_propsScroll, Dock.Right);
             _propsScroll.Content = _props;
+            _toolboxPane = new ToolPane("Toolbox", _toolbox, OnPaneChanged);
+            _propsPane = new ToolPane("Properties", _propsScroll, OnPaneChanged);
+            SetDock(_leftTabs, Dock.Left);
+            SetDock(_rightTabs, Dock.Right);
+            SetDock(_leftDock, Dock.Left);
+            SetDock(_rightDock, Dock.Right);
             _canvasHost.Children.Add(_canvas);
             _canvasHost.Children.Add(_overlay);
             _problems.HorizontalAlignment = HorizontalAlignment.Left;
@@ -82,10 +97,13 @@ namespace FsmEditor.Editor
             _canvasHost.Children.Add(_problems);
             _canvasHost.Children.Add(_toast);
             _canvasHost.Children.Add(_parseError);
+            _canvasHost.Children.Add(_floatLayer);
             Children.Add(_toolbar);
             Children.Add(_status);
-            Children.Add(_toolbox);
-            Children.Add(_propsScroll);
+            Children.Add(_leftTabs);
+            Children.Add(_rightTabs);
+            Children.Add(_leftDock);
+            Children.Add(_rightDock);
             Children.Add(_canvasHost);
 
             _canvas.ViewChanged += (s, e) => UpdateZoomLabel();
@@ -109,6 +127,21 @@ namespace FsmEditor.Editor
             };
             Theme.Changed += OnThemeChanged;
             Unloaded += (s, e) => Theme.Changed -= OnThemeChanged;
+            Loaded += (s, e) => PanesChanged += OnOtherPanesChanged;
+            Unloaded += (s, e) => PanesChanged -= OnOtherPanesChanged;
+            foreach (var pane in new[] { _toolboxPane, _propsPane })
+            {
+                pane.MouseLeave += (s, e) => RestartHideTimer();
+                pane.IsKeyboardFocusWithinChanged += (s, e) => RestartHideTimer();
+            }
+            _hideTimer.Tick += (s, e) =>
+            {
+                _hideTimer.Stop();
+                HideSlidPanes(true);
+            };
+            // Clicking the diagram takes the focus away from an auto-hidden panel.
+            _canvasHost.PreviewMouseDown += (s, e) => HideSlidPanes(false);
+            LoadPanes();
             BuildChrome();
         }
 
@@ -456,6 +489,153 @@ namespace FsmEditor.Editor
             _inline = null;
         }
 
+        // ---------------------------------------------------------------- side panels
+
+        private static PaneMode ParseMode(string name) =>
+            Enum.TryParse(name, out PaneMode mode) ? mode : PaneMode.Dock;
+
+        private void LoadPanes()
+        {
+            var layout = PanelLayout.Instance;
+            _toolboxPane.Set(ParseMode(layout.Toolbox), layout.ToolboxClosed);
+            _propsPane.Set(ParseMode(layout.Properties), layout.PropertiesClosed);
+        }
+
+        private void OnOtherPanesChanged(object sender, EventArgs e)
+        {
+            if (sender == this) return;
+            LoadPanes();
+            ArrangePanes();
+        }
+
+        /// <summary>A panel's mode changed in this editor: show it, save it and apply it to the other editors.</summary>
+        private void OnPaneChanged(ToolPane pane)
+        {
+            ArrangePanes();
+            var layout = PanelLayout.Instance;
+            layout.Toolbox = _toolboxPane.Mode.ToString();
+            layout.ToolboxClosed = _toolboxPane.Closed;
+            layout.Properties = _propsPane.Mode.ToString();
+            layout.PropertiesClosed = _propsPane.Closed;
+            layout.Save();
+            PanesChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>The toolbar's Show Toolbox / Show Properties: reopens a closed panel, slides out an auto-hidden one.</summary>
+        private void ShowPane(ToolPane pane)
+        {
+            if (pane.Closed)
+            {
+                pane.Set(pane.Mode, false);
+                OnPaneChanged(pane);
+            }
+            if (pane.Mode == PaneMode.AutoHide) SlideOut(pane);
+        }
+
+        private void ArrangePanes()
+        {
+            foreach (var pane in new[] { _toolboxPane, _propsPane })
+            {
+                if (pane.Parent is Panel panel) panel.Children.Remove(pane);
+                else if (pane.Parent is Decorator decorator) decorator.Child = null;
+            }
+            _leftTabs.Children.Clear();
+            _rightTabs.Children.Clear();
+            Place(_toolboxPane, true);
+            Place(_propsPane, false);
+            _leftTabs.Visibility = _leftTabs.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            _rightTabs.Visibility = _rightTabs.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void Place(ToolPane pane, bool left)
+        {
+            if (pane.Closed) return;
+            pane.Height = double.NaN;
+            pane.Effect = null;
+            switch (pane.Mode)
+            {
+                case PaneMode.Dock:
+                    pane.BorderThickness = left ? new Thickness(0, 0, 1, 0) : new Thickness(1, 0, 0, 0);
+                    (left ? _leftDock : _rightDock).Child = pane;
+                    break;
+                case PaneMode.Float:
+                    pane.BorderThickness = new Thickness(1);
+                    pane.Height = 380;
+                    pane.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 16, ShadowDepth = 3, Opacity = 0.3 };
+                    var at = pane.FloatAt ?? new Point(left ? 24 : Math.Max(24, _canvasHost.ActualWidth - 270 - 24), 24);
+                    System.Windows.Controls.Canvas.SetLeft(pane, at.X);
+                    System.Windows.Controls.Canvas.SetTop(pane, at.Y);
+                    _floatLayer.Children.Add(pane);
+                    break;
+                case PaneMode.AutoHide:
+                    (left ? _leftTabs : _rightTabs).Children.Add(AutoHideTab(pane, left));
+                    if (!pane.Slid) break;
+                    pane.BorderThickness = new Thickness(1);
+                    pane.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 16, ShadowDepth = 3, Opacity = 0.3 };
+                    pane.HorizontalAlignment = left ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+                    pane.VerticalAlignment = VerticalAlignment.Stretch;
+                    _canvasHost.Children.Add(pane);
+                    break;
+            }
+        }
+
+        /// <summary>The tab an auto-hidden panel leaves on the editor's edge: hover over it or click it to slide the panel out.</summary>
+        private Border AutoHideTab(ToolPane pane, bool left)
+        {
+            var th = Theme.Current;
+            var tab = new Border
+            {
+                Child = new TextBlock { Text = pane.Title, Margin = new Thickness(3, 10, 3, 10), LayoutTransform = new RotateTransform(90) },
+                Background = Brushes.Transparent,
+                BorderBrush = th.BrushOf(pane.Slid ? th.Accent : th.Border),
+                BorderThickness = left ? new Thickness(0, 0, 4, 0) : new Thickness(4, 0, 0, 0),
+                Margin = new Thickness(0, 0, 0, 2),
+                Cursor = Cursors.Hand,
+                ToolTip = pane.Title,
+            };
+            tab.MouseEnter += (s, e) =>
+            {
+                tab.BorderBrush = th.BrushOf(th.Accent);
+                SlideOut(pane);
+            };
+            tab.MouseLeave += (s, e) =>
+            {
+                if (!pane.Slid) tab.BorderBrush = th.BrushOf(th.Border);
+                RestartHideTimer();
+            };
+            tab.MouseLeftButtonDown += (s, e) => SlideOut(pane);
+            return tab;
+        }
+
+        private void SlideOut(ToolPane pane)
+        {
+            _hideTimer.Stop();
+            if (pane.Slid) return;
+            foreach (var other in new[] { _toolboxPane, _propsPane }) other.Slid = false;
+            pane.Slid = true;
+            ArrangePanes();
+        }
+
+        private void RestartHideTimer()
+        {
+            _hideTimer.Stop();
+            if (_toolboxPane.Slid || _propsPane.Slid) _hideTimer.Start();
+        }
+
+        /// <summary>Slides auto-hidden panels back; with <paramref name="whenLeft"/>, only those the mouse and the focus have left.</summary>
+        private void HideSlidPanes(bool whenLeft)
+        {
+            var changed = false;
+            foreach (var pane in new[] { _toolboxPane, _propsPane })
+            {
+                if (!pane.Slid || pane.IsMouseOver || pane.MenuOpen) continue;
+                if (whenLeft && (pane.IsKeyboardFocusWithin || _draggingTool || _leftTabs.IsMouseOver || _rightTabs.IsMouseOver)) continue;
+                pane.Slid = false;
+                changed = true;
+            }
+            if (changed) ArrangePanes();
+        }
+
         // ---------------------------------------------------------------- chrome
 
         private void BuildChrome()
@@ -467,6 +647,10 @@ namespace FsmEditor.Editor
             BuildToolbox();
             _propsScroll.Background = th.BrushOf(th.Panel);
             _propsScroll.BorderBrush = th.BrushOf(th.Border);
+            _leftTabs.Background = _rightTabs.Background = th.BrushOf(th.Panel);
+            _toolboxPane.BuildHeader();
+            _propsPane.BuildHeader();
+            ArrangePanes();
             _status.BorderBrush = th.BrushOf(th.Border);
             _status.BorderThickness = new Thickness(0, 1, 0, 0);
             _status.Padding = new Thickness(10, 2, 10, 2);
@@ -557,6 +741,9 @@ namespace FsmEditor.Editor
             right.Children.Add(ToolbarButton("export", "Export as SVG", _host.ExportSvg, "SVG"));
             right.Children.Add(Separator(th));
             right.Children.Add(ToolbarButton("xmi", "Open as XMI text", _host.OpenAsText, "XMI"));
+            right.Children.Add(Separator(th));
+            right.Children.Add(ToolbarButton("toolbox", "Show Toolbox", () => ShowPane(_toolboxPane)));
+            right.Children.Add(ToolbarButton("properties", "Show Properties", () => ShowPane(_propsPane)));
             DockPanel.SetDock(left, Dock.Left);
             DockPanel.SetDock(right, Dock.Right);
             bar.Children.Add(left);
@@ -641,7 +828,7 @@ namespace FsmEditor.Editor
             UpdateToolbox();
         }
 
-        private static void EnableDrag(Button b, string toolId)
+        private void EnableDrag(Button b, string toolId)
         {
             Point? down = null;
             b.PreviewMouseLeftButtonDown += (s, e) => down = e.GetPosition(b);
@@ -653,7 +840,16 @@ namespace FsmEditor.Editor
                 if (Math.Abs(p.X - down.Value.X) < SystemParameters.MinimumHorizontalDragDistance &&
                     Math.Abs(p.Y - down.Value.Y) < SystemParameters.MinimumVerticalDragDistance) return;
                 down = null;
-                DragDrop.DoDragDrop(b, new DataObject(DiagramCanvas.ToolDataFormat, toolId), DragDropEffects.Copy);
+                _draggingTool = true;
+                try
+                {
+                    DragDrop.DoDragDrop(b, new DataObject(DiagramCanvas.ToolDataFormat, toolId), DragDropEffects.Copy);
+                }
+                finally
+                {
+                    _draggingTool = false;
+                }
+                RestartHideTimer();
             };
         }
 

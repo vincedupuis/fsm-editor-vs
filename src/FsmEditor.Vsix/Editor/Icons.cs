@@ -50,6 +50,12 @@ namespace FsmEditor.Editor
             ["xmi"] = new[] { S("M8,4 C6,4 6,6 6,8 C6,10 4,12 4,12 C4,12 6,12 6,16 C6,20 6,20 8,20 M16,4 C18,4 18,6 18,8 C18,10 20,12 20,12 C20,12 18,12 18,16 C18,20 18,20 16,20") },
             ["code"] = new[] { S("M8,7 l-5,5 l5,5 M16,7 l5,5 l-5,5 M14,4 l-4,16") },
             ["trash"] = new[] { S("M4,7 h16 M9,7 V4 h6 v3 M6,7 l1,13 h10 l1,-13") },
+            ["toolbox"] = new[] { Rect(4, 4, 7, 7, 1.5), Rect(13, 4, 7, 7, 1.5), Rect(4, 13, 7, 7, 1.5), Circle(16.5, 16.5, 3.5) },
+            ["properties"] = new[] { S("M4,6 h16 M4,12 h16 M4,18 h10"), Circle(8, 6, 1.6, Paint.Fill), Circle(15, 12, 1.6, Paint.Fill) },
+            ["close"] = new[] { S("M7,7 l10,10 M17,7 L7,17") },
+            ["caret"] = new[] { S("M7,10 l5,5 l5,-5") },
+            ["pin"] = new[] { S("M9,3 h6 M10,3 v7 l-3,4 h10 l-3,-4 V3 M12,14 v7") },
+            ["pinOff"] = new[] { S("M21,9 v6 M21,10 h-7 l-4,-3 v10 l4,-3 h7 M10,12 H3") },
         };
 
         /// <summary>The icon <paramref name="name"/> (a tool id or a toolbar action), or null when unknown.</summary>

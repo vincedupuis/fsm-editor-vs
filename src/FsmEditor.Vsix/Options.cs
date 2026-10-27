@@ -25,4 +25,17 @@ namespace FsmEditor
         [DefaultValue(true)]
         public bool SaveBeforeGenerating { get; set; } = true;
     }
+
+    /// <summary>
+    /// How the diagram editors show the toolbox and the properties panel
+    /// (a <see cref="Editor.PaneMode"/> name, and whether the panel is closed).
+    /// Saved with the other settings but not shown in Tools › Options.
+    /// </summary>
+    public class PanelLayout : BaseOptionModel<PanelLayout>
+    {
+        public string Toolbox { get; set; } = "Dock";
+        public bool ToolboxClosed { get; set; }
+        public string Properties { get; set; } = "Dock";
+        public bool PropertiesClosed { get; set; }
+    }
 }
