@@ -80,7 +80,7 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
                 case VertexType.State:
                 {
                     sb.Append($"<rect class=\"shape\" x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" rx=\"10\"/>");
-                    var lines = Labels.ActivityLines(model, v);
+                    var lines = Geometry.ActivityRows(model, v);
                     var regions = Geometry.RegionRects(model, v);
                     var title = v.Name + (v.Submachine.Length > 0 ? " : " + session.MachineLabel(v.Submachine) : "");
                     var centered = regions.Count == 0 && lines.Count == 0;
@@ -213,12 +213,13 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
             var b = pts[pts.Count - 1];
             var (p1, p2) = ArrowHead(pts[pts.Count - 2], b);
             sb.Append($"<path class=\"arrow\" d=\"M{F1(p1.X)},{F1(p1.Y)} L{F1(b.X)},{F1(b.Y)} L{F1(p2.X)},{F1(p2.Y)}\"/>");
-            var label = Labels.TransitionLabel(model, t);
-            if (label.Length > 0)
+            var lines = Labels.TransitionLabelLines(model, t);
+            if (lines.Count > 0)
             {
                 var lp = Geometry.LabelPos(t, pts);
                 var anchor = lp.Anchor == TextAnchor.End ? "end" : lp.Anchor == TextAnchor.Start ? "start" : "middle";
-                sb.Append($"<text class=\"tlabel\" x=\"{F1(lp.X)}\" y=\"{F1(lp.Y)}\" text-anchor=\"{anchor}\">{Esc(label)}</text>");
+                sb.Append($"<text class=\"tlabel\" x=\"{F1(lp.X)}\" y=\"{F1(Geometry.LabelLineY(lp, 0, lines.Count))}\" text-anchor=\"{anchor}\">"
+                    + string.Concat(lines.Select((l, i) => $"<tspan x=\"{F1(lp.X)}\" dy=\"{(i > 0 ? Geometry.LabelLineHeight : 0)}\">{Esc(l)}</tspan>")) + "</text>");
             }
             sb.Append("</g>");
         }

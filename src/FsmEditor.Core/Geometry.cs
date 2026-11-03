@@ -39,6 +39,8 @@ namespace FsmEditor.Core
     {
         public double X, Y;
         public TextAnchor Anchor;
+        /// <summary>The label sits above the line, so a stacked label grows upward.</summary>
+        public bool Up;
     }
 
     /// <summary>
@@ -48,6 +50,11 @@ namespace FsmEditor.Core
     public static class Geometry
     {
         public const double Grid = 10;
+        public const double LabelLineHeight = 13;
+
+        /// <summary>Baseline of line <paramref name="i"/> of a label of <paramref name="count"/> stacked lines.</summary>
+        public static double LabelLineY(LabelPlacement lp, int i, int count) =>
+            lp.Y + (i - (lp.Up ? count - 1 : 0)) * LabelLineHeight;
         public const double NameHeight = 24;
         public const double LineHeight = 14;
 
@@ -55,21 +62,37 @@ namespace FsmEditor.Core
 
         public static double Clamp(double n, double min, double max) => Math.Max(min, Math.Min(max, n));
 
+        /// <summary>
+        /// Measures text for wrapping a state's internal activities. The estimate by default; the editor's
+        /// canvas sets it to the real font metrics. The XMI writer always uses the estimate, so its output
+        /// doesn't depend on the font.
+        /// </summary>
+        public static Func<string, double> TextMeasure = EstimateLabelWidth;
+
+        /// <summary>The internal activities of a state as drawn: each line wrapped to the width of the state.</summary>
+        public static List<string> ActivityRows(FsmModel model, Vertex v, Func<string, double> measure = null)
+        {
+            measure = measure ?? TextMeasure;
+            var rows = new List<string>();
+            foreach (var line in Labels.ActivityLines(model, v)) rows.AddRange(CommentLines(line, v.W - 16, measure));
+            return rows;
+        }
+
         /// <summary>Height of the name compartment plus the internal activities compartment.</summary>
-        public static double HeaderHeight(FsmModel model, Vertex v)
+        public static double HeaderHeight(FsmModel model, Vertex v, Func<string, double> measure = null)
         {
             var h = NameHeight + (v.Stereotype.Length > 0 ? 12 : 0);
-            var n = Labels.ActivityLines(model, v).Count;
+            var n = ActivityRows(model, v, measure).Count;
             if (n > 0) h += n * LineHeight + 6;
             return h;
         }
 
-        public static List<RegionRect> RegionRects(FsmModel model, Vertex v)
+        public static List<RegionRect> RegionRects(FsmModel model, Vertex v, Func<string, double> measure = null)
         {
             var regs = v.Regions;
             var output = new List<RegionRect>();
             if (regs.Count == 0) return output;
-            var top = v.Y + Math.Min(HeaderHeight(model, v), v.H - 20);
+            var top = v.Y + Math.Min(HeaderHeight(model, v, measure), v.H - 20);
             var bh = v.Y + v.H - top;
             var n = regs.Count;
             var horizontal = v.RegionLayout == RegionLayout.Horizontal;
@@ -263,6 +286,7 @@ namespace FsmEditor.Core
                 X = m.X + nx * 6 + off.X,
                 Y = m.Y + ny * 6 + off.Y + (ny < -0.5 ? -2 : 4),
                 Anchor = anchor,
+                Up = ny < -0.5,
             };
         }
 
@@ -340,14 +364,14 @@ namespace FsmEditor.Core
                 var pts = Route(ix, t);
                 if (pts == null) continue;
                 foreach (var p in pts) Add(p.X, p.Y);
-                var label = Labels.TransitionLabel(model, t);
-                if (label.Length > 0)
+                var lines = Labels.TransitionLabelLines(model, t);
+                if (lines.Count > 0)
                 {
                     var lp = LabelPos(t, pts);
-                    var w = labelWidth(label);
+                    var w = lines.Max(labelWidth);
                     var x0 = lp.Anchor == TextAnchor.End ? lp.X - w : lp.Anchor == TextAnchor.Start ? lp.X : lp.X - w / 2;
-                    Add(x0, lp.Y - 12);
-                    Add(x0 + w, lp.Y + 4);
+                    Add(x0, LabelLineY(lp, 0, lines.Count) - 12);
+                    Add(x0 + w, LabelLineY(lp, lines.Count - 1, lines.Count) + 4);
                 }
             }
             return new RectD(x1, y1, x2 - x1, y2 - y1);

@@ -26,6 +26,16 @@ namespace FsmEditor.Core
             return s.Trim();
         }
 
+        /// <summary>The label as stacked lines: events, <c>[guard]</c>, <c>/ effect</c> (protocol: <c>[pre]</c>, event, <c>/ [post]</c>).</summary>
+        public static List<string> TransitionLabelLines(FsmModel model, Transition t)
+        {
+            var trig = string.Join(", ", t.Triggers);
+            var lines = model.Kind == MachineKind.Protocol
+                ? new[] { t.Precondition.Length > 0 ? $"[{t.Precondition}]" : "", trig, t.Postcondition.Length > 0 ? $"/ [{t.Postcondition}]" : "" }
+                : new[] { trig, t.Guard.Length > 0 ? $"[{t.Guard}]" : "", t.Effect.Length > 0 ? $"/ {t.Effect}" : "" };
+            return lines.Where(l => l.Length > 0).ToList();
+        }
+
         /// <summary>May transitions leaving <paramref name="source"/> use the [else] guard?</summary>
         public static bool AllowsElse(Vertex source) =>
             source != null && (source.Type == VertexType.Choice || source.Type == VertexType.Junction);

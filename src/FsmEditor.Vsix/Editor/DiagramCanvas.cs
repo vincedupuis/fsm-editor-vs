@@ -31,6 +31,7 @@ namespace FsmEditor.Editor
         public DiagramCanvas(EditorControl editor)
         {
             _editor = editor;
+            Geo.TextMeasure = LabelWidth;
             Focusable = true;
             FocusVisualStyle = null;
             AllowDrop = true;
@@ -257,7 +258,7 @@ namespace FsmEditor.Editor
                 case VertexType.State:
                 {
                     dc.DrawRoundedRectangle(shapeFill, shapePen, new Rect(x, y, w, h), 10, 10);
-                    var lines = Labels.ActivityLines(S.Model, v);
+                    var lines = Geo.ActivityRows(S.Model, v);
                     var regions = Geo.RegionRects(S.Model, v);
                     var title = v.Name + (v.Submachine.Length > 0 ? " : " + S.MachineLabel(v.Submachine) : "");
                     var centered = regions.Count == 0 && lines.Count == 0;
@@ -423,11 +424,13 @@ namespace FsmEditor.Editor
                 ctx.PolyLineTo(new[] { P(b), P(p2) }, true, true);
             }
             dc.DrawGeometry(null, pen, arrow);
-            var label = Labels.TransitionLabel(S.Model, t);
-            if (label.Length > 0)
+            var lines = Labels.TransitionLabelLines(S.Model, t);
+            if (lines.Count > 0)
             {
                 var lp = Geo.LabelPos(t, pts);
-                var box = DrawText(dc, lp.X, lp.Y, label, 11, th.BrushOf(selected ? th.Accent : th.Foreground), lp.Anchor, halo: th.Background);
+                var box = Rect.Empty;
+                for (var i = 0; i < lines.Count; i++)
+                    box.Union(DrawText(dc, lp.X, Geo.LabelLineY(lp, i, lines.Count), lines[i], 11, th.BrushOf(selected ? th.Accent : th.Foreground), lp.Anchor, halo: th.Background));
                 _labels.Add((box, t.Id));
             }
             if (selected && S.Selection.Count == 1)
@@ -821,8 +824,9 @@ namespace FsmEditor.Editor
                 case DragKind.Resize:
                 {
                     var v = d.Vertex;
-                    var (minW, minH) = S.MinimumSize(v);
+                    var (minW, _) = S.MinimumSize(v);
                     v.W = Math.Max(minW, Alt ? d.W0 + p.X - d.Start.X : Geo.Snap(v.X + d.W0 + p.X - d.Start.X) - v.X);
+                    var (_, minH) = S.MinimumSize(v); // wrapped text depends on the new width
                     v.H = Math.Max(minH, Alt ? d.H0 + p.Y - d.Start.Y : Geo.Snap(v.Y + d.H0 + p.Y - d.Start.Y) - v.Y);
                     S.KeepPointsOnBorder(v);
                     break;

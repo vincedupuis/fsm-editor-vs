@@ -246,7 +246,7 @@ namespace FsmEditor.Core
                 shapes.Add(new XNode("ownedElement", ("xmi:type", "umldi:UMLShape"), ("xmi:id", "di_" + v.Id), ("modelElement", v.Id)).Add(Bounds(v.X, v.Y, v.W, v.H)));
                 if (v.Type == VertexType.State)
                 {
-                    foreach (var rb in Geometry.RegionRects(m, v))
+                    foreach (var rb in Geometry.RegionRects(m, v, Geometry.EstimateLabelWidth))
                     {
                         shapes.Add(new XNode("ownedElement", ("xmi:type", "umldi:UMLShape"), ("xmi:id", "di_" + rb.Id), ("modelElement", rb.Id))
                             .Add(Bounds(rb.Rect.X, rb.Rect.Y, rb.Rect.W, rb.Rect.H)));
