@@ -300,6 +300,95 @@
           "message": "Protocol transitions cannot have effects."
         }
       ]
+    },
+    "cycles": {
+      "issues": [
+        {
+          "id": "d",
+          "severity": "error",
+          "message": "Duplicate id 'd'."
+        },
+        {
+          "id": "X",
+          "severity": "warning",
+          "message": "'X' is entered by default but its region has no initial pseudostate."
+        },
+        {
+          "id": "t51",
+          "severity": "error",
+          "message": "Transitions entering a join cannot have guards or triggers."
+        },
+        {
+          "id": "t10",
+          "severity": "error",
+          "message": "An internal transition must start and end on the same state."
+        },
+        {
+          "id": "c1",
+          "severity": "error",
+          "message": "Choices form a cycle without a state: 'c1' -> 'c2' -> 'c1'."
+        },
+        {
+          "id": "cs",
+          "severity": "error",
+          "message": "Choices form a cycle without a state: 'cs' -> 'cs'."
+        },
+        {
+          "id": "uc",
+          "severity": "error",
+          "message": "Junctions and choices form a cycle without a state: choice -> junction -> choice."
+        },
+        {
+          "id": "j1",
+          "severity": "error",
+          "message": "Junctions form a cycle without a state: 'j1' -> 'j3' -> 'j1'."
+        },
+        {
+          "id": "k1",
+          "severity": "error",
+          "message": "Junctions form a cycle without a state: 'k1' -> 'k1'."
+        },
+        {
+          "id": "k2",
+          "severity": "error",
+          "message": "Junctions form a cycle without a state: 'k2' -> 'k2'."
+        },
+        {
+          "id": "h",
+          "severity": "error",
+          "message": "Choices and history pseudostates form a cycle without a state: deep history -> 'hc' -> deep history."
+        },
+        {
+          "id": "ep",
+          "severity": "error",
+          "message": "Choices and entry points form a cycle without a state: 'ep' -> 'ec' -> 'ep'."
+        },
+        {
+          "id": "xp",
+          "severity": "error",
+          "message": "Junctions and exit points form a cycle without a state: 'xp' -> 'xj' -> 'xp'."
+        },
+        {
+          "id": "f",
+          "severity": "error",
+          "message": "Choices and forks form a cycle without a state: 'f' -> 'fc' -> 'f'."
+        },
+        {
+          "id": "d",
+          "severity": "error",
+          "message": "Choices form a cycle without a state: 'd2' -> 'd2'."
+        },
+        {
+          "id": "X1",
+          "severity": "warning",
+          "message": "State 'X1' can never be entered."
+        },
+        {
+          "id": "P2",
+          "severity": "warning",
+          "message": "State 'P2' can never be entered."
+        }
+      ]
     }
   },
   "grammar": [

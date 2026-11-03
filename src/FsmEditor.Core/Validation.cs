@@ -378,6 +378,7 @@ namespace FsmEditor.Core
                 }
             }
 
+            CheckPseudostateCycles(model, ix, Add);
             CheckText(model, ix, Add);
             CheckReachability(model, ix, Add);
             return issues;
@@ -388,6 +389,76 @@ namespace FsmEditor.Core
         {
             if (v == null) return "?";
             return v.Name.Length > 0 ? $"'{v.Name}'" : v.Type.Label();
+        }
+
+        /// <summary>
+        /// Pseudostates that transitions go through in a cycle: a compound transition taking the cycle would never reach a
+        /// state, and the code generator can't express it. One error per group of pseudostates linked by cycles, on its first
+        /// vertex, naming the shortest cycle through it.
+        /// </summary>
+        private static void CheckPseudostateCycles(FsmModel model, ModelIndex ix, Action<string, Severity, string> add)
+        {
+            // The pseudostates a compound transition goes on from (the machine's own entry and exit points end it).
+            bool Passes(Vertex v) =>
+                v != null &&
+                (v.Type == VertexType.Junction || v.Type == VertexType.Choice || v.Type == VertexType.ShallowHistory ||
+                 v.Type == VertexType.DeepHistory || v.Type == VertexType.Fork ||
+                 ((v.Type == VertexType.EntryPoint || v.Type == VertexType.ExitPoint) && ix.Vertex(v.Parent) != null));
+            List<Vertex> Next(Vertex v) =>
+                ix.Outgoing(v.Id).Where(t => t.Kind != TransitionKind.Internal).Select(t => ix.Vertex(t.Target)).Where(Passes).ToList();
+            List<Vertex> Previous(Vertex v) =>
+                ix.Incoming(v.Id).Where(t => t.Kind != TransitionKind.Internal).Select(t => ix.Vertex(t.Source)).Where(Passes).ToList();
+            // start and every vertex reached from it through step, breadth first, with the vertex each was reached from.
+            (List<Vertex> Order, Dictionary<Vertex, Vertex> From) Walk(Vertex start, Func<Vertex, List<Vertex>> step)
+            {
+                var from = new Dictionary<Vertex, Vertex> { [start] = null };
+                var queue = new List<Vertex> { start };
+                for (var i = 0; i < queue.Count; i++)
+                {
+                    foreach (var w in step(queue[i]))
+                    {
+                        if (!from.ContainsKey(w))
+                        {
+                            from[w] = queue[i];
+                            queue.Add(w);
+                        }
+                    }
+                }
+                return (queue, from);
+            }
+            var done = new HashSet<Vertex>();
+            foreach (var v in model.Vertices)
+            {
+                // A vertex whose id is used again later is not the one transitions refer to.
+                if (!Passes(v) || ix.Vertex(v.Id) != v || done.Contains(v)) continue;
+                var forward = Walk(v, Next);
+                // The shortest cycle through v ends with the first vertex reached that has a transition back to v.
+                var last = forward.Order.FirstOrDefault(u => Next(u).Contains(v));
+                if (last == null) continue;
+                var backward = Walk(v, Previous);
+                foreach (var u in forward.Order) if (backward.From.ContainsKey(u)) done.Add(u);
+                var cycle = new List<Vertex> { v };
+                for (var u = last; u != null && u != v; u = forward.From[u]) cycle.Insert(1, u);
+                cycle.Add(v);
+                add(v.Id, Severity.Error, $"{CycleKinds(cycle)} form a cycle without a state: {string.Join(" -> ", cycle.Select(Name))}.");
+            }
+        }
+
+        /// <summary>The kinds of pseudostates in cycle: <c>Junctions</c>, <c>Junctions and choices</c>, ... (as in the code generator's error).</summary>
+        private static string CycleKinds(List<Vertex> cycle)
+        {
+            var kinds = new (string Kind, VertexType[] Types)[]
+            {
+                ("junctions", new[] { VertexType.Junction }),
+                ("choices", new[] { VertexType.Choice }),
+                ("history pseudostates", new[] { VertexType.ShallowHistory, VertexType.DeepHistory }),
+                ("entry points", new[] { VertexType.EntryPoint }),
+                ("exit points", new[] { VertexType.ExitPoint }),
+                ("forks", new[] { VertexType.Fork }),
+            };
+            var found = kinds.Where(k => cycle.Any(v => k.Types.Contains(v.Type))).Select(k => k.Kind).ToList();
+            var text = found.Count > 1 ? $"{string.Join(", ", found.Take(found.Count - 1))} and {found[found.Count - 1]}" : found[0];
+            return char.ToUpperInvariant(text[0]) + text.Substring(1);
         }
 
         /// <summary>Behaviors and conditions are argument-less function calls; triggers are event names or after(...).</summary>

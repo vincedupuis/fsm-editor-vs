@@ -21,7 +21,7 @@ jobs:
     env:
       VS_MARKETPLACE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check the tag matches the manifest version
         shell: pwsh
@@ -32,7 +32,7 @@ jobs:
             throw "Tag $env:GITHUB_REF_NAME doesn't match the manifest version $version"
           }
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
 
@@ -48,7 +48,7 @@ jobs:
           New-Item -ItemType Directory -Force src\FsmEditor.Vsix\cli | Out-Null
           Copy-Item -Recurse -Force "$env:RUNNER_TEMP\$name\*" src\FsmEditor.Vsix\cli
 
-      - uses: microsoft/setup-msbuild@v2
+      - uses: microsoft/setup-msbuild@v3
 
       - name: Build the VSIX
         run: msbuild src\FsmEditor.Vsix\FsmEditor.Vsix.csproj /restore /p:Configuration=Release /v:minimal

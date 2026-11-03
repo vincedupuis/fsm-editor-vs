@@ -1,0 +1,710 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="m1_model" name="Cycles">
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="m1" name="Cycles">
+      <connectionPoint xmi:type="uml:Pseudostate" xmi:id="mep" name="mep" kind="entryPoint"/>
+      <region xmi:type="uml:Region" xmi:id="r_root">
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="init" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="A" name="A"/>
+        <subvertex xmi:type="uml:State" xmi:id="B" name="B"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="c1" name="c1" kind="choice"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="c2" name="c2" kind="choice"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="cs" name="cs" kind="choice"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="uc" kind="choice"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="uj" kind="junction"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="j1" name="j1" kind="junction"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="j2" name="j2" kind="junction"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="j3" name="j3" kind="junction"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="j4" name="j4" kind="junction"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="k1" name="k1" kind="junction"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="k2" name="k2" kind="junction"/>
+        <subvertex xmi:type="uml:State" xmi:id="S" name="S">
+          <region xmi:type="uml:Region" xmi:id="S_r0">
+            <subvertex xmi:type="uml:State" xmi:id="S1" name="S1"/>
+            <subvertex xmi:type="uml:Pseudostate" xmi:id="h" kind="deepHistory"/>
+            <subvertex xmi:type="uml:Pseudostate" xmi:id="hc" name="hc" kind="choice"/>
+            <transition xmi:type="uml:Transition" xmi:id="t28" kind="external" source="h" target="hc"/>
+            <transition xmi:type="uml:Transition" xmi:id="t29" kind="external" source="hc" target="h">
+              <guard xmi:type="uml:Constraint" xmi:id="t29_guard">
+                <specification xmi:type="uml:OpaqueExpression" xmi:id="t29_guard_spec">
+                  <language>FSM</language>
+                  <body>g()</body>
+                </specification>
+              </guard>
+            </transition>
+            <transition xmi:type="uml:Transition" xmi:id="t30" kind="external" source="hc" target="S1">
+              <guard xmi:type="uml:Constraint" xmi:id="t30_guard">
+                <specification xmi:type="uml:OpaqueExpression" xmi:id="t30_guard_spec">
+                  <language>FSM</language>
+                  <body>else</body>
+                </specification>
+              </guard>
+            </transition>
+          </region>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="E" name="E">
+          <connectionPoint xmi:type="uml:Pseudostate" xmi:id="ep" name="ep" kind="entryPoint"/>
+          <region xmi:type="uml:Region" xmi:id="E_r0">
+            <subvertex xmi:type="uml:State" xmi:id="E1" name="E1"/>
+            <subvertex xmi:type="uml:Pseudostate" xmi:id="ec" name="ec" kind="choice"/>
+            <transition xmi:type="uml:Transition" xmi:id="t34" kind="external" source="ec" target="E1">
+              <guard xmi:type="uml:Constraint" xmi:id="t34_guard">
+                <specification xmi:type="uml:OpaqueExpression" xmi:id="t34_guard_spec">
+                  <language>FSM</language>
+                  <body>else</body>
+                </specification>
+              </guard>
+            </transition>
+          </region>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="X" name="X">
+          <connectionPoint xmi:type="uml:Pseudostate" xmi:id="xp" name="xp" kind="exitPoint"/>
+          <region xmi:type="uml:Region" xmi:id="X_r0">
+            <subvertex xmi:type="uml:State" xmi:id="X1" name="X1"/>
+          </region>
+        </subvertex>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="xj" name="xj" kind="junction"/>
+        <subvertex xmi:type="uml:State" xmi:id="P" name="P">
+          <region xmi:type="uml:Region" xmi:id="P_r0">
+            <subvertex xmi:type="uml:State" xmi:id="P1" name="P1"/>
+          </region>
+          <region xmi:type="uml:Region" xmi:id="P_r1">
+            <subvertex xmi:type="uml:State" xmi:id="P2" name="P2"/>
+          </region>
+        </subvertex>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="f" name="f" kind="fork"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="fc" name="fc" kind="choice"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="mj" name="mj" kind="junction"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="jn" name="jn" kind="join"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="jc" name="jc" kind="choice"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="d" name="d1" kind="junction"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="d" name="d2" kind="choice"/>
+        <transition xmi:type="uml:Transition" xmi:id="t1" kind="external" source="init" target="A"/>
+        <transition xmi:type="uml:Transition" xmi:id="t2" kind="external" source="A" target="c1">
+          <trigger xmi:type="uml:Trigger" xmi:id="t2_trigger1" name="e1" event="ev_e1"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t3" kind="external" source="c1" target="c2">
+          <guard xmi:type="uml:Constraint" xmi:id="t3_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t3_guard_spec">
+              <language>FSM</language>
+              <body>g()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t4" kind="external" source="c1" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t4_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t4_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t5" kind="external" source="c2" target="c1">
+          <guard xmi:type="uml:Constraint" xmi:id="t5_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t5_guard_spec">
+              <language>FSM</language>
+              <body>h()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t6" kind="external" source="c2" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t6_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t6_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t7" kind="external" source="A" target="cs">
+          <trigger xmi:type="uml:Trigger" xmi:id="t7_trigger1" name="e2" event="ev_e2"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t8" kind="external" source="cs" target="cs">
+          <guard xmi:type="uml:Constraint" xmi:id="t8_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t8_guard_spec">
+              <language>FSM</language>
+              <body>g()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t9" kind="external" source="cs" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t9_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t9_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t10" kind="internal" source="cs" target="cs"/>
+        <transition xmi:type="uml:Transition" xmi:id="t11" kind="external" source="A" target="uj">
+          <trigger xmi:type="uml:Trigger" xmi:id="t11_trigger1" name="e3" event="ev_e3"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t12" kind="external" source="uj" target="uc"/>
+        <transition xmi:type="uml:Transition" xmi:id="t13" kind="external" source="uc" target="uj">
+          <guard xmi:type="uml:Constraint" xmi:id="t13_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t13_guard_spec">
+              <language>FSM</language>
+              <body>g()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t14" kind="external" source="uc" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t14_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t14_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t15" kind="external" source="A" target="j1">
+          <trigger xmi:type="uml:Trigger" xmi:id="t15_trigger1" name="e4" event="ev_e4"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t16" kind="external" source="j1" target="j2">
+          <guard xmi:type="uml:Constraint" xmi:id="t16_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t16_guard_spec">
+              <language>FSM</language>
+              <body>a()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t17" kind="external" source="j1" target="j3">
+          <guard xmi:type="uml:Constraint" xmi:id="t17_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t17_guard_spec">
+              <language>FSM</language>
+              <body>b()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t18" kind="external" source="j1" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t18_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t18_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t19" kind="external" source="j2" target="j4"/>
+        <transition xmi:type="uml:Transition" xmi:id="t20" kind="external" source="j4" target="j1"/>
+        <transition xmi:type="uml:Transition" xmi:id="t21" kind="external" source="j3" target="j1"/>
+        <transition xmi:type="uml:Transition" xmi:id="t22" kind="external" source="A" target="k1">
+          <trigger xmi:type="uml:Trigger" xmi:id="t22_trigger1" name="e5" event="ev_e5"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t23" kind="external" source="k1" target="k1">
+          <guard xmi:type="uml:Constraint" xmi:id="t23_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t23_guard_spec">
+              <language>FSM</language>
+              <body>a()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t24" kind="external" source="k1" target="k2">
+          <guard xmi:type="uml:Constraint" xmi:id="t24_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t24_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t25" kind="external" source="k2" target="k2">
+          <guard xmi:type="uml:Constraint" xmi:id="t25_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t25_guard_spec">
+              <language>FSM</language>
+              <body>a()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t26" kind="external" source="k2" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t26_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t26_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t27" kind="external" source="A" target="h">
+          <trigger xmi:type="uml:Trigger" xmi:id="t27_trigger1" name="e6" event="ev_e6"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t31" kind="external" source="A" target="ep">
+          <trigger xmi:type="uml:Trigger" xmi:id="t31_trigger1" name="e7" event="ev_e7"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t32" kind="external" source="ep" target="ec"/>
+        <transition xmi:type="uml:Transition" xmi:id="t33" kind="external" source="ec" target="ep">
+          <guard xmi:type="uml:Constraint" xmi:id="t33_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t33_guard_spec">
+              <language>FSM</language>
+              <body>g()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t35" kind="external" source="A" target="X">
+          <trigger xmi:type="uml:Trigger" xmi:id="t35_trigger1" name="e8" event="ev_e8"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t36" kind="external" source="X1" target="xp">
+          <trigger xmi:type="uml:Trigger" xmi:id="t36_trigger1" name="e9" event="ev_e9"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t37" kind="external" source="xp" target="xj"/>
+        <transition xmi:type="uml:Transition" xmi:id="t38" kind="external" source="xj" target="xp">
+          <guard xmi:type="uml:Constraint" xmi:id="t38_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t38_guard_spec">
+              <language>FSM</language>
+              <body>g()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t39" kind="external" source="xj" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t39_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t39_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t40" kind="external" source="A" target="fc">
+          <trigger xmi:type="uml:Trigger" xmi:id="t40_trigger1" name="e10" event="ev_e10"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t41" kind="external" source="fc" target="f">
+          <guard xmi:type="uml:Constraint" xmi:id="t41_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t41_guard_spec">
+              <language>FSM</language>
+              <body>g()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t42" kind="external" source="fc" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t42_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t42_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t43" kind="external" source="f" target="P1"/>
+        <transition xmi:type="uml:Transition" xmi:id="t44" kind="external" source="f" target="fc"/>
+        <transition xmi:type="uml:Transition" xmi:id="t45" kind="external" source="mep" target="mj"/>
+        <transition xmi:type="uml:Transition" xmi:id="t46" kind="external" source="mj" target="mep">
+          <guard xmi:type="uml:Constraint" xmi:id="t46_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t46_guard_spec">
+              <language>FSM</language>
+              <body>g()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t47" kind="external" source="mj" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t47_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t47_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t48" kind="external" source="P1" target="jn"/>
+        <transition xmi:type="uml:Transition" xmi:id="t49" kind="external" source="P2" target="jn"/>
+        <transition xmi:type="uml:Transition" xmi:id="t50" kind="external" source="jn" target="jc"/>
+        <transition xmi:type="uml:Transition" xmi:id="t51" kind="external" source="jc" target="jn">
+          <guard xmi:type="uml:Constraint" xmi:id="t51_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t51_guard_spec">
+              <language>FSM</language>
+              <body>g()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t52" kind="external" source="jc" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t52_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t52_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t53" kind="external" source="A" target="d">
+          <trigger xmi:type="uml:Trigger" xmi:id="t53_trigger1" name="e11" event="ev_e11"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t54" kind="external" source="d" target="d">
+          <guard xmi:type="uml:Constraint" xmi:id="t54_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t54_guard_spec">
+              <language>FSM</language>
+              <body>g()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t55" kind="external" source="d" target="B">
+          <guard xmi:type="uml:Constraint" xmi:id="t55_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t55_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+      </region>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e1" name="e1" signal="sig_e1"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e1" name="e1"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e2" name="e2" signal="sig_e2"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e2" name="e2"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e3" name="e3" signal="sig_e3"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e3" name="e3"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e4" name="e4" signal="sig_e4"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e4" name="e4"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e5" name="e5" signal="sig_e5"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e5" name="e5"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e6" name="e6" signal="sig_e6"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e6" name="e6"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e7" name="e7" signal="sig_e7"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e7" name="e7"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e8" name="e8" signal="sig_e8"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e8" name="e8"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e9" name="e9" signal="sig_e9"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e9" name="e9"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e10" name="e10" signal="sig_e10"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e10" name="e10"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e11" name="e11" signal="sig_e11"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e11" name="e11"/>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="m1_diagram" name="Cycles" modelElement="m1" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_init" modelElement="init">
+      <bounds xmi:type="dc:Bounds" x="80" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_A" modelElement="A">
+      <bounds xmi:type="dc:Bounds" x="140" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_B" modelElement="B">
+      <bounds xmi:type="dc:Bounds" x="200" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_c1" modelElement="c1">
+      <bounds xmi:type="dc:Bounds" x="260" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_c2" modelElement="c2">
+      <bounds xmi:type="dc:Bounds" x="320" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_cs" modelElement="cs">
+      <bounds xmi:type="dc:Bounds" x="380" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_uc" modelElement="uc">
+      <bounds xmi:type="dc:Bounds" x="440" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_uj" modelElement="uj">
+      <bounds xmi:type="dc:Bounds" x="500" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_j1" modelElement="j1">
+      <bounds xmi:type="dc:Bounds" x="560" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_j2" modelElement="j2">
+      <bounds xmi:type="dc:Bounds" x="620" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_j3" modelElement="j3">
+      <bounds xmi:type="dc:Bounds" x="680" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_j4" modelElement="j4">
+      <bounds xmi:type="dc:Bounds" x="740" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_k1" modelElement="k1">
+      <bounds xmi:type="dc:Bounds" x="800" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_k2" modelElement="k2">
+      <bounds xmi:type="dc:Bounds" x="860" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_S" modelElement="S">
+      <bounds xmi:type="dc:Bounds" x="920" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_S_r0" modelElement="S_r0">
+      <bounds xmi:type="dc:Bounds" x="920" y="50" width="40" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_S1" modelElement="S1">
+      <bounds xmi:type="dc:Bounds" x="980" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_h" modelElement="h">
+      <bounds xmi:type="dc:Bounds" x="1040" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_hc" modelElement="hc">
+      <bounds xmi:type="dc:Bounds" x="1100" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_E" modelElement="E">
+      <bounds xmi:type="dc:Bounds" x="1160" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_E_r0" modelElement="E_r0">
+      <bounds xmi:type="dc:Bounds" x="1160" y="50" width="40" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_E1" modelElement="E1">
+      <bounds xmi:type="dc:Bounds" x="1220" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_ep" modelElement="ep">
+      <bounds xmi:type="dc:Bounds" x="1280" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_ec" modelElement="ec">
+      <bounds xmi:type="dc:Bounds" x="1340" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_X" modelElement="X">
+      <bounds xmi:type="dc:Bounds" x="1400" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_X_r0" modelElement="X_r0">
+      <bounds xmi:type="dc:Bounds" x="1400" y="50" width="40" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_X1" modelElement="X1">
+      <bounds xmi:type="dc:Bounds" x="1460" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_xp" modelElement="xp">
+      <bounds xmi:type="dc:Bounds" x="1520" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_xj" modelElement="xj">
+      <bounds xmi:type="dc:Bounds" x="1580" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_P" modelElement="P">
+      <bounds xmi:type="dc:Bounds" x="1640" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_P_r0" modelElement="P_r0">
+      <bounds xmi:type="dc:Bounds" x="1640" y="50" width="40" height="10"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_P_r1" modelElement="P_r1">
+      <bounds xmi:type="dc:Bounds" x="1640" y="60" width="40" height="10"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_P1" modelElement="P1">
+      <bounds xmi:type="dc:Bounds" x="1700" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_P2" modelElement="P2">
+      <bounds xmi:type="dc:Bounds" x="1760" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_f" modelElement="f">
+      <bounds xmi:type="dc:Bounds" x="1820" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_fc" modelElement="fc">
+      <bounds xmi:type="dc:Bounds" x="1880" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_mep" modelElement="mep">
+      <bounds xmi:type="dc:Bounds" x="1940" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_mj" modelElement="mj">
+      <bounds xmi:type="dc:Bounds" x="2000" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_jn" modelElement="jn">
+      <bounds xmi:type="dc:Bounds" x="2060" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_jc" modelElement="jc">
+      <bounds xmi:type="dc:Bounds" x="2120" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_d" modelElement="d">
+      <bounds xmi:type="dc:Bounds" x="2180" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_d" modelElement="d">
+      <bounds xmi:type="dc:Bounds" x="2240" y="40" width="40" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t1" modelElement="t1" source="di_init" target="di_A">
+      <waypoint xmi:type="dc:Point" x="100" y="55"/>
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t2" modelElement="t2" source="di_A" target="di_c1">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="280" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t3" modelElement="t3" source="di_c1" target="di_c2">
+      <waypoint xmi:type="dc:Point" x="280" y="55"/>
+      <waypoint xmi:type="dc:Point" x="340" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t4" modelElement="t4" source="di_c1" target="di_B">
+      <waypoint xmi:type="dc:Point" x="280" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t5" modelElement="t5" source="di_c2" target="di_c1">
+      <waypoint xmi:type="dc:Point" x="340" y="55"/>
+      <waypoint xmi:type="dc:Point" x="280" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t6" modelElement="t6" source="di_c2" target="di_B">
+      <waypoint xmi:type="dc:Point" x="340" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t7" modelElement="t7" source="di_A" target="di_cs">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="400" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t8" modelElement="t8" source="di_cs" target="di_cs">
+      <waypoint xmi:type="dc:Point" x="400" y="55"/>
+      <waypoint xmi:type="dc:Point" x="400" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t9" modelElement="t9" source="di_cs" target="di_B">
+      <waypoint xmi:type="dc:Point" x="400" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t10" modelElement="t10" source="di_cs" target="di_cs">
+      <waypoint xmi:type="dc:Point" x="400" y="55"/>
+      <waypoint xmi:type="dc:Point" x="400" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t11" modelElement="t11" source="di_A" target="di_uj">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="520" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t12" modelElement="t12" source="di_uj" target="di_uc">
+      <waypoint xmi:type="dc:Point" x="520" y="55"/>
+      <waypoint xmi:type="dc:Point" x="460" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t13" modelElement="t13" source="di_uc" target="di_uj">
+      <waypoint xmi:type="dc:Point" x="460" y="55"/>
+      <waypoint xmi:type="dc:Point" x="520" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t14" modelElement="t14" source="di_uc" target="di_B">
+      <waypoint xmi:type="dc:Point" x="460" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t15" modelElement="t15" source="di_A" target="di_j1">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="580" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t16" modelElement="t16" source="di_j1" target="di_j2">
+      <waypoint xmi:type="dc:Point" x="580" y="55"/>
+      <waypoint xmi:type="dc:Point" x="640" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t17" modelElement="t17" source="di_j1" target="di_j3">
+      <waypoint xmi:type="dc:Point" x="580" y="55"/>
+      <waypoint xmi:type="dc:Point" x="700" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t18" modelElement="t18" source="di_j1" target="di_B">
+      <waypoint xmi:type="dc:Point" x="580" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t19" modelElement="t19" source="di_j2" target="di_j4">
+      <waypoint xmi:type="dc:Point" x="640" y="55"/>
+      <waypoint xmi:type="dc:Point" x="760" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t20" modelElement="t20" source="di_j4" target="di_j1">
+      <waypoint xmi:type="dc:Point" x="760" y="55"/>
+      <waypoint xmi:type="dc:Point" x="580" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t21" modelElement="t21" source="di_j3" target="di_j1">
+      <waypoint xmi:type="dc:Point" x="700" y="55"/>
+      <waypoint xmi:type="dc:Point" x="580" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t22" modelElement="t22" source="di_A" target="di_k1">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="820" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t23" modelElement="t23" source="di_k1" target="di_k1">
+      <waypoint xmi:type="dc:Point" x="820" y="55"/>
+      <waypoint xmi:type="dc:Point" x="820" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t24" modelElement="t24" source="di_k1" target="di_k2">
+      <waypoint xmi:type="dc:Point" x="820" y="55"/>
+      <waypoint xmi:type="dc:Point" x="880" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t25" modelElement="t25" source="di_k2" target="di_k2">
+      <waypoint xmi:type="dc:Point" x="880" y="55"/>
+      <waypoint xmi:type="dc:Point" x="880" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t26" modelElement="t26" source="di_k2" target="di_B">
+      <waypoint xmi:type="dc:Point" x="880" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t27" modelElement="t27" source="di_A" target="di_h">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1060" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t28" modelElement="t28" source="di_h" target="di_hc">
+      <waypoint xmi:type="dc:Point" x="1060" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1120" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t29" modelElement="t29" source="di_hc" target="di_h">
+      <waypoint xmi:type="dc:Point" x="1120" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1060" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t30" modelElement="t30" source="di_hc" target="di_S1">
+      <waypoint xmi:type="dc:Point" x="1120" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1000" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t31" modelElement="t31" source="di_A" target="di_ep">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1300" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t32" modelElement="t32" source="di_ep" target="di_ec">
+      <waypoint xmi:type="dc:Point" x="1300" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1360" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t33" modelElement="t33" source="di_ec" target="di_ep">
+      <waypoint xmi:type="dc:Point" x="1360" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1300" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t34" modelElement="t34" source="di_ec" target="di_E1">
+      <waypoint xmi:type="dc:Point" x="1360" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1240" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t35" modelElement="t35" source="di_A" target="di_X">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1420" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t36" modelElement="t36" source="di_X1" target="di_xp">
+      <waypoint xmi:type="dc:Point" x="1480" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1540" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t37" modelElement="t37" source="di_xp" target="di_xj">
+      <waypoint xmi:type="dc:Point" x="1540" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1600" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t38" modelElement="t38" source="di_xj" target="di_xp">
+      <waypoint xmi:type="dc:Point" x="1600" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1540" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t39" modelElement="t39" source="di_xj" target="di_B">
+      <waypoint xmi:type="dc:Point" x="1600" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t40" modelElement="t40" source="di_A" target="di_fc">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1900" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t41" modelElement="t41" source="di_fc" target="di_f">
+      <waypoint xmi:type="dc:Point" x="1900" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1840" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t42" modelElement="t42" source="di_fc" target="di_B">
+      <waypoint xmi:type="dc:Point" x="1900" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t43" modelElement="t43" source="di_f" target="di_P1">
+      <waypoint xmi:type="dc:Point" x="1840" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1720" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t44" modelElement="t44" source="di_f" target="di_fc">
+      <waypoint xmi:type="dc:Point" x="1840" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1900" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t45" modelElement="t45" source="di_mep" target="di_mj">
+      <waypoint xmi:type="dc:Point" x="1960" y="55"/>
+      <waypoint xmi:type="dc:Point" x="2020" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t46" modelElement="t46" source="di_mj" target="di_mep">
+      <waypoint xmi:type="dc:Point" x="2020" y="55"/>
+      <waypoint xmi:type="dc:Point" x="1960" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t47" modelElement="t47" source="di_mj" target="di_B">
+      <waypoint xmi:type="dc:Point" x="2020" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t48" modelElement="t48" source="di_P1" target="di_jn">
+      <waypoint xmi:type="dc:Point" x="1720" y="55"/>
+      <waypoint xmi:type="dc:Point" x="2080" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t49" modelElement="t49" source="di_P2" target="di_jn">
+      <waypoint xmi:type="dc:Point" x="1780" y="55"/>
+      <waypoint xmi:type="dc:Point" x="2080" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t50" modelElement="t50" source="di_jn" target="di_jc">
+      <waypoint xmi:type="dc:Point" x="2080" y="55"/>
+      <waypoint xmi:type="dc:Point" x="2140" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t51" modelElement="t51" source="di_jc" target="di_jn">
+      <waypoint xmi:type="dc:Point" x="2140" y="55"/>
+      <waypoint xmi:type="dc:Point" x="2080" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t52" modelElement="t52" source="di_jc" target="di_B">
+      <waypoint xmi:type="dc:Point" x="2140" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t53" modelElement="t53" source="di_A" target="di_d">
+      <waypoint xmi:type="dc:Point" x="160" y="55"/>
+      <waypoint xmi:type="dc:Point" x="2260" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t54" modelElement="t54" source="di_d" target="di_d">
+      <waypoint xmi:type="dc:Point" x="2260" y="55"/>
+      <waypoint xmi:type="dc:Point" x="2260" y="55"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t55" modelElement="t55" source="di_d" target="di_B">
+      <waypoint xmi:type="dc:Point" x="2260" y="55"/>
+      <waypoint xmi:type="dc:Point" x="220" y="55"/>
+    </ownedElement>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>

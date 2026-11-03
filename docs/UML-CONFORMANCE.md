@@ -135,6 +135,7 @@ Beyond the [text syntax](#text-syntax), the validator checks the following. ✕ 
 - ✕ Join: at least two incoming and exactly one outgoing transition, with no guards or triggers on the incoming ones. ⚠ The sources should be in different orthogonal regions.
 - ✕ Choice and junction: at least one incoming and one outgoing transition. ⚠ With several branches, each needs a guard. ℹ An `[else]` branch is suggested.
 - ✕ Transitions leaving a pseudostate have no triggers.
+- ✕ Junctions, choices, forks, history pseudostates and the entry and exit points of states don't form a cycle of transitions without a state: a compound transition going around it would never end *(tool)*.
 
 **Entry points, exit points and connection point references**
 - ✕ Entry and exit points are on the border of a state or at the top level of the machine, never on a submachine state. ⚠ They should only be on composite states.
