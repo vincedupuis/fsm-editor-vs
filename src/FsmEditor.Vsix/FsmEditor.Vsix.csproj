@@ -104,6 +104,21 @@
     <Error Text="cli\fsm.exe is missing: run scripts\fetch-cli.ps1 before a Release build, so the published VSIX bundles the code generator." />
   </Target>
 
+  <!--
+    fsm-generator (github.com/vincedupuis/fsm-generator), which runs the Jinja templates, with
+    its templates: the windows-x64 archive of its GitHub Release unpacked into generator/
+    (the release workflow does it, pinned by FSM_GENERATOR_VERSION).
+  -->
+  <ItemGroup>
+    <Content Include="generator\**\*" IncludeInVSIX="true" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="WarnMissingGenerator" BeforeTargets="Build" Condition="!Exists('generator\fsm-generator.exe') And '$(Configuration)' != 'Release'">
+    <Warning Text="generator\fsm-generator.exe is missing: unpack fsm-generator-&lt;version&gt;-windows-x64.zip from github.com/vincedupuis/fsm-generator/releases into generator\ so the VSIX bundles it. Without it, Jinja templates use the 'fsm-generator executable' option or an fsm-generator on the PATH." />
+  </Target>
+  <Target Name="RequireGeneratorForRelease" BeforeTargets="Build" Condition="!Exists('generator\fsm-generator.exe') And '$(Configuration)' == 'Release' And '$(IsWindows)' == 'true'">
+    <Error Text="generator\fsm-generator.exe is missing: unpack fsm-generator-&lt;version&gt;-windows-x64.zip from github.com/vincedupuis/fsm-generator/releases into generator\ before a Release build, so the published VSIX bundles it." />
+  </Target>
+
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <!--

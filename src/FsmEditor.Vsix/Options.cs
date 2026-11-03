@@ -20,6 +20,12 @@ namespace FsmEditor
         public string CliPath { get; set; } = "";
 
         [Category("Code generation")]
+        [DisplayName("fsm-generator executable")]
+        [Description("Path of fsm-generator (fsm-generator.exe), the code generator that runs Jinja templates (.jinja). Leave empty to use the one bundled with the extension, or else one found on the PATH.")]
+        [DefaultValue("")]
+        public string GeneratorPath { get; set; } = "";
+
+        [Category("Code generation")]
         [DisplayName("Save .fsm documents before generating")]
         [Description("The generator reads the files on disk: save open state machines with unsaved changes first.")]
         [DefaultValue(true)]

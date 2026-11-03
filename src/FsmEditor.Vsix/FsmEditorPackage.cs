@@ -183,12 +183,18 @@ namespace FsmEditor
             }
         }
 
-        /// <summary>Templates offered for a machine: the generator's own, then the *.hbs files of the solution.</summary>
-        private static List<TemplateChoice> TemplateChoices(string cli, string root)
+        /// <summary>
+        /// Templates offered for a machine: the generators' own, then the template files of the solution
+        /// (*.hbs when fsm was found, *.jinja when fsm-generator was).
+        /// </summary>
+        private static List<TemplateChoice> TemplateChoices(string cli, string generator, string root)
         {
             var choices = FsmCli.BundledTemplates(cli)
-                .Select(f => new TemplateChoice { Path = f, Name = Path.GetFileNameWithoutExtension(f), Description = "bundled template" })
+                .Select(f => new TemplateChoice { Path = f, Name = Path.GetFileNameWithoutExtension(f), Description = "bundled Handlebars template" })
+                .Concat(FsmCli.BundledTemplates(generator, "*.jinja")
+                    .Select(f => new TemplateChoice { Path = f, Name = Path.GetFileNameWithoutExtension(f), Description = "bundled Jinja template (fsm-generator)" }))
                 .ToList();
+            var patterns = new[] { cli != null ? "*.hbs" : null, generator != null ? "*.jinja" : null }.Where(p => p != null).ToList();
             var found = new List<string>();
             var pending = new Stack<string>();
             pending.Push(root);
@@ -197,7 +203,7 @@ namespace FsmEditor
                 var dir = pending.Pop();
                 try
                 {
-                    found.AddRange(Directory.EnumerateFiles(dir, "*.hbs").Take(50 - found.Count));
+                    found.AddRange(patterns.SelectMany(p => Directory.EnumerateFiles(dir, p)).Take(50 - found.Count));
                     foreach (var sub in Directory.EnumerateDirectories(dir))
                     {
                         var name = Path.GetFileName(sub);
@@ -218,7 +224,7 @@ namespace FsmEditor
             _output ?? (_output = await VS.Windows.CreateOutputWindowPaneAsync("FSM Code Generation"));
 
         /// <summary>
-        /// Generates code for <paramref name="source"/> with the <c>fsm</c> CLI.
+        /// Generates code for <paramref name="source"/> with the <c>fsm</c> CLI, or fsm-generator for a Jinja template.
         /// <paramref name="args"/> (from the Command Window: <c>-t &lt;template&gt; -o &lt;folder&gt;</c>) skip the dialog.
         /// </summary>
         internal async Task GenerateCodeAsync(string source, string args)
@@ -231,13 +237,18 @@ namespace FsmEditor
             }
             source = FsmDocuments.SafeFullPath(source);
             var options = await General.GetLiveInstanceAsync();
-            var cli = FsmCli.Locate(options.CliPath);
-            if (cli == null)
+            var fsm = FsmCli.Locate(options.CliPath);
+            var generator = FsmCli.LocateGenerator(options.GeneratorPath);
+            string NotFound(bool jinja) => jinja
+                ? string.IsNullOrWhiteSpace(options.GeneratorPath)
+                    ? "fsm-generator, which runs Jinja templates, was not found. Set its path in Tools > Options > FSM Editor, or put fsm-generator.exe on the PATH."
+                    : $"The fsm-generator '{options.GeneratorPath}' configured in Tools > Options > FSM Editor does not exist."
+                : string.IsNullOrWhiteSpace(options.CliPath)
+                    ? "The fsm code generator was not found. Set its path in Tools > Options > FSM Editor, or put fsm.exe on the PATH."
+                    : $"The fsm code generator '{options.CliPath}' configured in Tools > Options > FSM Editor does not exist.";
+            if (fsm == null && generator == null)
             {
-                await VS.MessageBox.ShowErrorAsync("Generate Code",
-                    string.IsNullOrWhiteSpace(options.CliPath)
-                        ? "The fsm code generator was not found. Set its path in Tools > Options > FSM Editor, or put fsm.exe on the PATH."
-                        : $"The fsm code generator '{options.CliPath}' configured in Tools > Options > FSM Editor does not exist.");
+                await VS.MessageBox.ShowErrorAsync("Generate Code", NotFound(false));
                 return;
             }
             var root = FsmWorkspace.Instance.RootFor(source);
@@ -251,21 +262,32 @@ namespace FsmEditor
             string template, output;
             if (argTemplate != null && argOut != null)
             {
-                // A bare name such as "ts" is a template of the generator, like `fsm -t ts`.
-                template = argTemplate.IndexOfAny(new[] { '/', '\\', '.' }) < 0
-                    ? FsmCli.BundledTemplates(cli).FirstOrDefault(f => Path.GetFileNameWithoutExtension(f) == argTemplate) ?? ResolveArg(argTemplate)
-                    : ResolveArg(argTemplate);
+                // A bare name is a bundled template: "ts" one of fsm, like `fsm -t ts`, and "ts.jinja"
+                // one of fsm-generator, unless the solution folder has that file.
+                string bundled = null;
+                if (argTemplate.IndexOfAny(new[] { '/', '\\', '.' }) < 0)
+                    bundled = FsmCli.BundledTemplates(fsm).FirstOrDefault(f => Path.GetFileNameWithoutExtension(f) == argTemplate);
+                else if (argTemplate.IndexOfAny(new[] { '/', '\\' }) < 0 && FsmCli.IsJinja(argTemplate) && !File.Exists(ResolveArg(argTemplate)))
+                    bundled = FsmCli.BundledTemplates(generator, "*.jinja").FirstOrDefault(f => string.Equals(Path.GetFileName(f), argTemplate, StringComparison.OrdinalIgnoreCase));
+                template = bundled ?? ResolveArg(argTemplate);
                 output = ResolveArg(argOut);
             }
             else
             {
-                var chosen = GenerateCodeDialog.Show(Path.GetFileNameWithoutExtension(source), TemplateChoices(cli, root), lastTemplate,
+                var chosen = GenerateCodeDialog.Show(Path.GetFileNameWithoutExtension(source), TemplateChoices(fsm, generator, root), lastTemplate,
                     lastOut.Length > 0 ? lastOut : Path.GetDirectoryName(source));
                 if (chosen == null) return;
                 (template, output) = chosen.Value;
             }
             settings.SetString(SettingsCollection, "Template", template);
             settings.SetString(SettingsCollection, outKey, output);
+            var jinja = FsmCli.IsJinja(template);
+            var cli = jinja ? generator : fsm;
+            if (cli == null)
+            {
+                await VS.MessageBox.ShowErrorAsync("Generate Code", NotFound(jinja));
+                return;
+            }
 
             if (options.SaveBeforeGenerating) FsmDocuments.SaveOpenMachines();
             var pane = await OutputAsync();
@@ -308,7 +330,7 @@ namespace FsmEditor
             if (result.Issues.Count > 0) CodeGeneration.Show();
             var reason = result.ExitCode == 2 ? "The generator was called with bad arguments."
                 : result.Issues.Any(i => i.Severity == Severity.Error) ? "The state machine has errors (see the Error List)."
-                : result.Errors.LastOrDefault() ?? $"fsm exited with code {result.ExitCode}.";
+                : result.Errors.LastOrDefault() ?? $"{Path.GetFileNameWithoutExtension(cli)} exited with code {result.ExitCode}.";
             await VS.MessageBox.ShowErrorAsync("Code generation failed", reason + " Details are in the FSM Code Generation output.");
         }
     }

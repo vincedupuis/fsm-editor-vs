@@ -35,7 +35,7 @@ namespace FsmEditor.CodeGen
             browseTemplate.Margin = new Thickness(0, 6, 0, 0);
             browseTemplate.Click += (s, e) =>
             {
-                var file = Dialogs.PickFile("Template", "Handlebars template (*.hbs)|*.hbs", Path.GetDirectoryName(lastTemplate ?? defaultOut));
+                var file = Dialogs.PickFile("Template", "Template (*.hbs, *.jinja)|*.hbs;*.jinja|Handlebars template (*.hbs)|*.hbs|Jinja template (*.jinja)|*.jinja", Path.GetDirectoryName(lastTemplate ?? defaultOut));
                 if (file == null) return;
                 var choice = new TemplateChoice { Path = file, Name = Path.GetFileNameWithoutExtension(file), Description = file };
                 list.Items.Add(choice);
@@ -60,7 +60,7 @@ namespace FsmEditor.CodeGen
             var ok = Dialogs.Button("Generate", isDefault: true);
             var cancel = Dialogs.Button("Cancel", isCancel: true);
             var panel = new StackPanel { Margin = new Thickness(16) };
-            panel.Children.Add(Dialogs.Label("Template (bundled templates, *.hbs files of the solution, or Browse):"));
+            panel.Children.Add(Dialogs.Label("Template (bundled templates, *.hbs and *.jinja files of the solution, or Browse):"));
             panel.Children.Add(list);
             panel.Children.Add(browseTemplate);
             panel.Children.Add(Dialogs.Label("Output folder (generated files are overwritten):"));

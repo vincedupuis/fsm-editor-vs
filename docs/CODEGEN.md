@@ -2,6 +2,8 @@
 
 FSM Editor for Visual Studio generates source code with the **same `fsm` command-line generator** as FSM Editor for VS Code. The extension doesn't reimplement code generation: it runs `fsm.exe`, which it bundles, and shows the results in Visual Studio. The same templates therefore produce the same code from Visual Studio, VS Code, a terminal or a CI build.
 
+Jinja templates (`.jinja`) are run by [fsm-generator](https://github.com/vincedupuis/fsm-generator) instead, the same generator in Rust with [MiniJinja](https://github.com/mitsuhiko/minijinja) templates, which the extension bundles too. It takes the same options and reports problems the same way, and its bundled `ts.jinja` and `sml.jinja` generate the same files as `ts.hbs` and `sml.hbs`. The template's extension decides which program runs.
+
 - [From Visual Studio](#from-visual-studio)
 - [From the Command Window or a key binding](#from-the-command-window-or-a-key-binding)
 - [From the command line and builds](#from-the-command-line-and-builds)
@@ -12,7 +14,7 @@ FSM Editor for Visual Studio generates source code with the **same `fsm` command
 
 Run **Generate Code...** from the diagram toolbar (**Code**), the context menu of a `.fsm` file in Solution Explorer, the context menu of the document tab, or **Tools › FSM Editor**. A dialog asks for:
 
-1. **The template**: the templates bundled with the generator (`ts`, `sml`), any `*.hbs` file of the solution, or **Browse...**.
+1. **The template**: the templates bundled with the generators (`ts` and `sml`, as *bundled Handlebars template* and *bundled Jinja template*), any `*.hbs` or `*.jinja` file of the solution, or **Browse...**.
 2. **The output folder.** Generated files are overwritten every time.
 
 The last template, and the last output folder of each machine, are remembered.
@@ -28,10 +30,11 @@ Results:
 
 ## From the Command Window or a key binding
 
-`FSM.GenerateCode` takes the generator's own options, to skip the dialog. It uses the active or selected `.fsm` file. Paths are absolute or relative to the solution folder, and a bare template name is a bundled template:
+`FSM.GenerateCode` takes the generator's own options, to skip the dialog. It uses the active or selected `.fsm` file. Paths are absolute or relative to the solution folder, and a bare template name is a bundled template: `ts` a Handlebars one, `ts.jinja` a Jinja one (unless the solution folder has a `ts.jinja`):
 
 ```
 FSM.GenerateCode -t ts -o src\generated
+FSM.GenerateCode -t ts.jinja -o src\generated
 FSM.GenerateCode --template templates\cpp.hbs --out "src\generated code"
 ```
 
@@ -66,6 +69,8 @@ In this order:
 3. An `fsm.exe` or `fsm.cmd` on the `PATH` (for example from `npm link` in a clone of FSM Editor for VS Code).
 
 Set the option to use a newer generator than the bundled one, or your own build.
+
+fsm-generator, for Jinja templates, is found the same way: Tools › Options › FSM Editor › *fsm-generator executable*, then the bundled `generator\fsm-generator.exe` (templates in `generator\templates`), then an `fsm-generator.exe` on the `PATH`. Its archives for Windows, macOS and Linux are on [its GitHub Releases](https://github.com/vincedupuis/fsm-generator/releases).
 
 ## Templates and the code model
 

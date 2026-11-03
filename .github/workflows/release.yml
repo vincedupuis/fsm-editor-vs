@@ -12,6 +12,8 @@ on:
 env:
   # Release of FSM Editor for VS Code whose `fsm` code generator the VSIX bundles.
   FSM_CLI_VERSION: 0.4.5
+  # Release of fsm-generator (github.com/vincedupuis/fsm-generator), which runs the Jinja templates, the VSIX bundles.
+  FSM_GENERATOR_VERSION: 0.1.0
 
 jobs:
   release:
@@ -47,6 +49,15 @@ jobs:
           Expand-Archive "$env:RUNNER_TEMP\fsm.zip" -DestinationPath $env:RUNNER_TEMP
           New-Item -ItemType Directory -Force src\FsmEditor.Vsix\cli | Out-Null
           Copy-Item -Recurse -Force "$env:RUNNER_TEMP\$name\*" src\FsmEditor.Vsix\cli
+
+      - name: Fetch fsm-generator
+        shell: pwsh
+        run: |
+          $name = "fsm-generator-$env:FSM_GENERATOR_VERSION-windows-x64"
+          Invoke-WebRequest "https://github.com/vincedupuis/fsm-generator/releases/download/v$env:FSM_GENERATOR_VERSION/$name.zip" -OutFile "$env:RUNNER_TEMP\generator.zip"
+          Expand-Archive "$env:RUNNER_TEMP\generator.zip" -DestinationPath $env:RUNNER_TEMP
+          New-Item -ItemType Directory -Force src\FsmEditor.Vsix\generator | Out-Null
+          Copy-Item -Recurse -Force "$env:RUNNER_TEMP\$name\*" src\FsmEditor.Vsix\generator
 
       - uses: microsoft/setup-msbuild@v3
 

@@ -3,11 +3,11 @@
   <Metadata>
     <Identity Id="FsmEditor.VisualStudio.43c53194-4f12-42ec-8fcc-0bbca916caaf" Version="0.4.4" Language="en-US" Publisher="Vincent Dupuis" />
     <DisplayName>FSM Editor and Codegen for Visual Studio</DisplayName>
-    <Description xml:space="preserve">Visual editor and code generator for UML 2.5.1 state machines: draw composite, orthogonal and submachine states, then generate source code from Handlebars templates (TypeScript and C++ bundled). Standard XMI files with UML DI layout, validation in the Error List and SVG export.</Description>
+    <Description xml:space="preserve">Visual editor and code generator for UML 2.5.1 state machines: draw composite, orthogonal and submachine states, then generate code from Handlebars or Jinja templates (TypeScript and C++ bundled). Standard XMI with UML DI layout, validation in the Error List and SVG export.</Description>
     <MoreInfo>https://github.com/vincedupuis/fsm-editor-vs</MoreInfo>
     <License>Resources\LICENSE.txt</License>
     <Icon>Resources\icon.png</Icon>
-    <Tags>uml;state machine;fsm;statechart;diagram;xmi;umldi;code generation;code generator;handlebars</Tags>
+    <Tags>uml;state machine;fsm;statechart;diagram;xmi;umldi;code generation;code generator;handlebars;jinja</Tags>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 19.0)">

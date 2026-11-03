@@ -10,7 +10,7 @@ This is the Visual Studio edition of [FSM Editor for VS Code](https://github.com
 
 ## Code generation
 
-*Generate Code...* turns a machine into source code with a [Handlebars](https://handlebarsjs.com/) template, running the `fsm` command-line generator of FSM Editor, which the extension bundles. One template can write several files per machine. Two templates are bundled, TypeScript (`ts`) and C++17 for [Boost.SML](https://github.com/boost-ext/sml) (`sml`), and any `*.hbs` template of your solution can be used. The same generator runs from a terminal or a build:
+*Generate Code...* turns a machine into source code with a [Handlebars](https://handlebarsjs.com/) template, running the `fsm` command-line generator of FSM Editor, or with a [Jinja](https://jinja.palletsprojects.com/) template, running [fsm-generator](https://github.com/vincedupuis/fsm-generator), the same generator in Rust. The extension bundles both. One template can write several files per machine. Two templates are bundled in both languages, TypeScript (`ts`) and C++17 for [Boost.SML](https://github.com/boost-ext/sml) (`sml`), and any `*.hbs` or `*.jinja` template of your solution can be used. The same generator runs from a terminal or a build:
 
 ```sh
 fsm "models/**/*.fsm" --template ts --out src/generated
@@ -85,6 +85,6 @@ On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging ste
   - `CodeGen/`: running the `fsm` generator and its dialog
   - `Commands/`, `VSCommandTable.vsct`: menu commands
 - `test/FsmEditor.Core.Tests/`: tests, including parity tests against reference results of the VS Code extension (`fixtures/`)
-- `scripts/fetch-cli.*`: copies the code generator into the VSIX
+- `scripts/fetch-cli.*`: copies the code generator into the VSIX; fsm-generator goes in `src/FsmEditor.Vsix/generator/`, unpacked from its GitHub Release
 - `vs-publish.json`: the Marketplace listing; `images/`: the README's screenshots
 - `docs/`: UML conformance and code generation

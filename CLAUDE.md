@@ -1,6 +1,6 @@
 # FSM Editor for Visual Studio
 
-Visual Studio 2022+ extension (VSIX): a visual editor for UML 2.5.1 state machines. `*.fsm` files are XMI 2.5.1 documents holding the UML model plus a UML DI diagram with the layout. It is the Visual Studio edition of FSM Editor for VS Code (`../fsm-editor-vscode`): same concepts, file format, rules and messages, reimplemented in C# (no JavaScript is reused). Code generation runs that project's `fsm` CLI.
+Visual Studio 2022+ extension (VSIX): a visual editor for UML 2.5.1 state machines. `*.fsm` files are XMI 2.5.1 documents holding the UML model plus a UML DI diagram with the layout. It is the Visual Studio edition of FSM Editor for VS Code (`../fsm-editor-vscode`): same concepts, file format, rules and messages, reimplemented in C# (no JavaScript is reused). Code generation runs that project's `fsm` CLI, or fsm-generator for Jinja templates.
 
 ## Commands
 
@@ -22,7 +22,7 @@ F5 in Visual Studio (startup project FsmEditor.Vsix) starts the experimental ins
   - `FsmEditorFactory` creates `FsmEditorPane` over VS's own text buffer (`IVsTextLines`) as document data, so save, dirty state, undo/redo and a side-by-side XMI text view all share one document. Diagram edits are written by `FsmEditorPane.Write` as one minimal text edit in an undo transaction; buffer changes are debounced, parsed and handed to `EditorControl.Update` (`null` model when the text is the editor's own echo). Validation runs off the UI thread against the machines found by `FsmWorkspace` (solution folder, open buffers preferred), then goes to the diagram and the Error List (`Diagnostics`).
   - `Editor/`: WPF built in code (no XAML). `DiagramCanvas` renders in `OnRender` and hit-tests geometrically; `PropertiesPanel` rebuilds itself per selection; `Theme` maps VS theme colors.
   - Edit commands (Undo/Redo/Cut/Copy/Paste/Delete/Select All) arrive as VS commands in `FsmEditorPane`'s `IOleCommandTarget`; a focused text box gets them instead of the diagram.
-  - `CodeGen/FsmCli.cs` runs `fsm <file> --template <hbs> --out <dir>`, parses `wrote …` lines and `file:line: severity: message` problems. `FsmEditorPackage.GenerateCodeAsync` is the whole flow.
+  - `CodeGen/FsmCli.cs` runs `fsm <file> --template <hbs> --out <dir>`, or `fsm-generator` (`../fsm-generator`, same arguments and output) for a `.jinja` template, and parses `wrote …` lines and `file:line: severity: message` problems. The release workflow bundles fsm-generator in `src/FsmEditor.Vsix/generator/` (pinned by `FSM_GENERATOR_VERSION`). `FsmEditorPackage.GenerateCodeAsync` is the whole flow.
 
 ## Project rules
 

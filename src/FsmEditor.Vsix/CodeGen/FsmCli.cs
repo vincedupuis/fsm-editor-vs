@@ -32,29 +32,43 @@ namespace FsmEditor.CodeGen
 
     /// <summary>
     /// Runs the <c>fsm</c> command-line code generator of FSM Editor (the same
-    /// program as in VS Code and CI): <c>fsm &lt;file&gt; --template &lt;hbs&gt; --out &lt;folder&gt;</c>.
-    /// The extension bundles it in cli/, with its templates in cli/templates.
+    /// program as in VS Code and CI): <c>fsm &lt;file&gt; --template &lt;hbs&gt; --out &lt;folder&gt;</c>,
+    /// or, for Jinja templates, fsm-generator (the same generator in Rust), which takes the same
+    /// arguments and prints the same lines. The extension bundles them in cli/ and generator/,
+    /// each with its templates in a templates/ folder next to it.
     /// </summary>
     internal static class FsmCli
     {
         private static readonly Regex IssueLine = new Regex(@"^(.+?):(\d+): (error|warning|info): (.*)$");
 
-        /// <summary>The bundled executable, next to the extension's assembly.</summary>
-        public static string BundledPath =>
-            Path.Combine(Path.GetDirectoryName(typeof(FsmCli).Assembly.Location) ?? "", "cli", "fsm.exe");
+        private static string ExtensionDir => Path.GetDirectoryName(typeof(FsmCli).Assembly.Location) ?? "";
 
-        /// <summary>The executable to run: the configured one, the bundled one, or one on the PATH. Null when none is found.</summary>
-        public static string Locate(string configured)
+        /// <summary>The bundled executable, next to the extension's assembly.</summary>
+        public static string BundledPath => Path.Combine(ExtensionDir, "cli", "fsm.exe");
+
+        /// <summary>The bundled fsm-generator, which runs the Jinja templates.</summary>
+        public static string BundledGeneratorPath => Path.Combine(ExtensionDir, "generator", "fsm-generator.exe");
+
+        /// <summary>Whether a template is a Jinja one, run by fsm-generator rather than fsm.</summary>
+        public static bool IsJinja(string template) => template.EndsWith(".jinja", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>The fsm executable to run: the configured one, the bundled one, or one on the PATH. Null when none is found.</summary>
+        public static string Locate(string configured) => Locate(configured, BundledPath, "fsm.exe", "fsm.cmd");
+
+        /// <summary>The fsm-generator executable to run, found like <see cref="Locate(string)"/>.</summary>
+        public static string LocateGenerator(string configured) => Locate(configured, BundledGeneratorPath, "fsm-generator.exe");
+
+        private static string Locate(string configured, string bundled, params string[] names)
         {
             if (!string.IsNullOrWhiteSpace(configured))
             {
                 var p = Environment.ExpandEnvironmentVariables(configured.Trim().Trim('"'));
                 return File.Exists(p) ? p : null;
             }
-            if (File.Exists(BundledPath)) return BundledPath;
+            if (File.Exists(bundled)) return bundled;
             foreach (var dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
             {
-                foreach (var name in new[] { "fsm.exe", "fsm.cmd" })
+                foreach (var name in names)
                 {
                     try
                     {
@@ -70,11 +84,15 @@ namespace FsmEditor.CodeGen
             return null;
         }
 
-        /// <summary>Templates shipped with the executable (templates/*.hbs next to it), where <c>-t &lt;name&gt;</c> finds them.</summary>
-        public static List<string> BundledTemplates(string cli)
+        /// <summary>
+        /// Templates shipped with an executable (templates/*.hbs next to fsm, templates/*.jinja next to
+        /// fsm-generator), where <c>-t &lt;name&gt;</c> finds them. Empty when <paramref name="cli"/> is null.
+        /// </summary>
+        public static List<string> BundledTemplates(string cli, string pattern = "*.hbs")
         {
+            if (cli == null) return new List<string>();
             var dir = Path.Combine(Path.GetDirectoryName(cli) ?? "", "templates");
-            return Directory.Exists(dir) ? Directory.GetFiles(dir, "*.hbs").OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList() : new List<string>();
+            return Directory.Exists(dir) ? Directory.GetFiles(dir, pattern).OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList() : new List<string>();
         }
 
         /// <summary>Quotes one argument for the Windows command line.</summary>
