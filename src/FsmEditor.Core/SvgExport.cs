@@ -30,6 +30,9 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
 .line,.arrow{fill:none;stroke:#333;stroke-width:1.3;stroke-linejoin:round}
 .tlabel{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}";
 
+        /// <summary>Fill of a state (<c>.shape</c> in the style sheet).</summary>
+        private const string StateFill = "#fdfdfd";
+
         public static string Export(DiagramSession session)
         {
             session.Reindex();
@@ -48,7 +51,8 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
             sb.Append($"<style>{Css}</style>\n");
             sb.Append($"<rect x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" fill=\"#fff\"/>\n");
             var sorted = Geometry.DrawingOrder(ix);
-            foreach (var v in sorted) VertexShape(sb, session, v);
+            var fills = 0;
+            foreach (var v in sorted) VertexShape(sb, session, v, ref fills);
             foreach (var v in sorted.Where(v => v.Type == VertexType.Comment)) Anchors(sb, ix, v);
             foreach (var t in model.Transitions) TransitionShape(sb, ix, model, t);
             sb.Append("\n</svg>\n");
@@ -74,7 +78,8 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
         private static string Cross(double cx, double cy, double k, string style) =>
             $"<path class=\"stroke\" d=\"M{F(cx - k)},{F(cy - k)} L{F(cx + k)},{F(cy + k)} M{F(cx + k)},{F(cy - k)} L{F(cx - k)},{F(cy + k)}\"{style}/>";
 
-        private static void VertexShape(StringBuilder sb, DiagramSession session, Vertex v)
+        /// <summary>Draws a vertex; <paramref name="fills"/> numbers the fill gradients of composite states.</summary>
+        private static void VertexShape(StringBuilder sb, DiagramSession session, Vertex v, ref int fills)
         {
             var model = session.Model;
             double x = v.X, y = v.Y, w = v.W, h = v.H;
@@ -91,9 +96,25 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
             {
                 case VertexType.State:
                 {
-                    sb.Append($"<rect class=\"shape\" x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" rx=\"10\"{shapeSt}/>");
                     var lines = Geometry.ActivityRowItems(model, v);
                     var regions = Geometry.RegionRects(model, v);
+                    var st = shapeSt;
+                    if (regions.Count > 0)
+                    {
+                        // Composite state: its color tints the header, its background color the regions.
+                        var bg = ElementColors.Background(v.ItemColors);
+                        var head = c != null ? ElementColors.Tint(c) : StateFill;
+                        var body = bg != null ? ElementColors.Tint(bg) : StateFill;
+                        if (head != body)
+                        {
+                            var id = "fsm-fill-" + ++fills;
+                            var at = F(Num.Round((regions[0].Rect.Y - y) / h * 10000) / 10000);
+                            sb.Append($"<defs><linearGradient id=\"{id}\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">"
+                                + $"<stop offset=\"{at}\" style=\"stop-color:{head}\"/><stop offset=\"{at}\" style=\"stop-color:{body}\"/></linearGradient></defs>");
+                            st = Style($"fill:url(#{id})", c != null ? "stroke:" + c : null);
+                        }
+                    }
+                    sb.Append($"<rect class=\"shape\" x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" rx=\"10\"{st}/>");
                     var title = v.Name + (v.Submachine.Length > 0 ? " : " + session.MachineLabel(v.Submachine) : "");
                     var centered = regions.Count == 0 && lines.Count == 0;
                     var ty = y + 16;

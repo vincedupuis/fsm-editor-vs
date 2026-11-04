@@ -62,15 +62,19 @@ namespace FsmEditor.Core
     }
 
     /// <summary>
-    /// Diagram colors (<c>#rrggbb</c>): an element's own <c>Color</c>, and per item of
-    /// its text in <c>ItemColors</c>, keyed by <see cref="ItemKeys"/>.
+    /// Diagram colors (<c>#rrggbb</c>): an element's own <c>Color</c>, and per item
+    /// in <c>ItemColors</c>, keyed by <see cref="ItemKeys"/>.
     /// </summary>
     public static class ElementColors
     {
-        /// <summary>Items of a state or transition that can have their own color, in file order.</summary>
+        /// <summary>
+        /// Items of a state or transition that can have their own color, in file order:
+        /// <c>background</c> is the fill of a composite state's regions (its own color tints
+        /// only the header then), the others are items of the text.
+        /// </summary>
         public static readonly string[] ItemKeys =
         {
-            "entry", "exit", "doActivity", "deferrable", "invariant",
+            "background", "entry", "exit", "doActivity", "deferrable", "invariant",
             "triggers", "guard", "effect", "precondition", "postcondition",
         };
 
@@ -90,6 +94,10 @@ namespace FsmEditor.Core
 
         /// <summary>The element's own color, or null.</summary>
         public static string Of(string own) => IsColor(own) ? own : null;
+
+        /// <summary>The background color of a composite state's regions, or null (it doesn't fall back to the state's own color).</summary>
+        public static string Background(IDictionary<string, string> items) =>
+            items.TryGetValue("background", out var c) && IsColor(c) ? c : null;
 
         /// <summary>Red, green and blue of a <c>#rrggbb</c> color.</summary>
         public static (int R, int G, int B) Rgb(string c) =>

@@ -139,6 +139,29 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
+        public void SplitsTheFillOfACompositeState()
+        {
+            var s = Example("MediaPlayer.fsm");
+            var v = s.Model.Vertices.First(x => x.Type == VertexType.State && x.Regions.Count > 0);
+            Assert.DoesNotContain("linearGradient", SvgExport.Export(s));
+            // The title color tints the header only.
+            s.SetColor(v, null, "#0090ff");
+            var svg = SvgExport.Export(s);
+            Assert.Contains("style=\"stop-color:#d5ecfd\"/><stop offset=", svg);
+            Assert.Contains("style=\"stop-color:#fdfdfd\"/></linearGradient>", svg);
+            Assert.Contains("fill:url(#fsm-fill-1);stroke:#0090ff", svg);
+            // The background color tints the regions.
+            s.SetColor(v, "background", "#30a46c");
+            Assert.Contains("style=\"stop-color:#dcefe6\"/></linearGradient>", SvgExport.Export(s));
+            var back = Xmi.FromXmi(Xmi.ToXmi(s.Model)).Vertices.First(x => x.Id == v.Id);
+            Assert.Equal("#0090ff", back.Color);
+            Assert.Equal("#30a46c", back.ItemColors["background"]);
+            // One color for both is a plain fill.
+            s.SetColor(v, "background", "#0090ff");
+            Assert.DoesNotContain("linearGradient", SvgExport.Export(s));
+        }
+
+        [Fact]
         public void SetsAndClearsColors()
         {
             var s = Example("MediaPlayer.fsm");

@@ -386,12 +386,12 @@ namespace FsmEditor.Editor
             return new ControlTemplate(typeof(Button)) { VisualTree = border };
         }
 
-        /// <summary>The "Color" row of an element.</summary>
-        private DockPanel ColorField(string value, Action<string> onChange, string what)
+        /// <summary>The "Color" row of an element, or another color row named <paramref name="name"/>.</summary>
+        private DockPanel ColorField(string value, Action<string> onChange, string what, string name = "Color")
         {
             var row = new DockPanel { Margin = new Thickness(0, 0, 0, 8), LastChildFill = true };
-            var label = new TextBlock { Text = "Color", FontSize = 11, Foreground = T.BrushOf(T.Muted), VerticalAlignment = VerticalAlignment.Center, MinWidth = 40 };
-            var button = ColorButton(value, onChange, $"Color of {what}");
+            var label = new TextBlock { Text = name, FontSize = 11, Foreground = T.BrushOf(T.Muted), VerticalAlignment = VerticalAlignment.Center, MinWidth = name == "Color" ? 40 : 96 };
+            var button = ColorButton(value, onChange, $"{name} of {what}");
             button.Margin = new Thickness(0, 0, 6, 0);
             DockPanel.SetDock(label, Dock.Left);
             DockPanel.SetDock(button, Dock.Left);
@@ -535,7 +535,17 @@ namespace FsmEditor.Editor
                     Commit();
                 }));
             }
-            Add(ColorField(v.Color, c => SetColor(v, null, c), v.Type == VertexType.Comment ? "the comment" : Or(v.Name, "the element")));
+            var what = v.Type == VertexType.Comment ? "the comment" : Or(v.Name, "the element");
+            if (v.Type == VertexType.State && v.Regions.Count > 0)
+            {
+                // A composite state has a color for its header and one for its regions.
+                Add(ColorField(v.Color, c => SetColor(v, null, c), what, "Title color"));
+                Add(ColorField(v.ItemColors.TryGetValue("background", out var bg) ? bg : "", c => SetColor(v, "background", c), what, "Background color"));
+            }
+            else
+            {
+                Add(ColorField(v.Color, c => SetColor(v, null, c), what));
+            }
 
             if (v.Type == VertexType.State) StateProps(v);
 

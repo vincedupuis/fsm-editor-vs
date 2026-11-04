@@ -259,9 +259,28 @@ namespace FsmEditor.Editor
             {
                 case VertexType.State:
                 {
-                    dc.DrawRoundedRectangle(shapeFill, shapePen, new Rect(x, y, w, h), 10, 10);
                     var lines = Geo.ActivityRowItems(S.Model, v);
                     var regions = Geo.RegionRects(S.Model, v);
+                    var box = new Rect(x, y, w, h);
+                    if (regions.Count > 0)
+                    {
+                        // Composite state: its color tints the header, its background color the regions.
+                        var head = own is Color hc ? th.Tint(hc, th.StateFill) : th.StateFill;
+                        var body = Theme.ColorOf(ElementColors.Background(v.ItemColors)) is Color bc ? th.Tint(bc, th.StateFill) : th.StateFill;
+                        dc.DrawRoundedRectangle(th.BrushOf(head), null, box, 10, 10);
+                        if (body != head)
+                        {
+                            var top = regions[0].Rect.Y;
+                            dc.PushClip(new RectangleGeometry(new Rect(x, top, w, Math.Max(0, y + h - top))));
+                            dc.DrawRoundedRectangle(th.BrushOf(body), null, box, 10, 10);
+                            dc.Pop();
+                        }
+                        dc.DrawRoundedRectangle(null, shapePen, box, 10, 10);
+                    }
+                    else
+                    {
+                        dc.DrawRoundedRectangle(shapeFill, shapePen, box, 10, 10);
+                    }
                     var title = v.Name + (v.Submachine.Length > 0 ? " : " + S.MachineLabel(v.Submachine) : "");
                     var centered = regions.Count == 0 && lines.Count == 0;
                     var stereo = v.Stereotype.Length > 0;

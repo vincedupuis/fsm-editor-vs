@@ -121,7 +121,7 @@
     <xmi:Extension extender="FSM Editor">
       <style element="note" color="#0090ff"/>
       <style element="init" color="#30a46c"/>
-      <style element="a" color="#E5484D" entry="#0090ff" exit="#8e4ec6" doActivity="#30a46c" deferrable="#a18072" invariant="#d6409f"/>
+      <style element="a" color="#E5484D" entry="#0090ff" exit="#8e4ec6" doActivity="#30a46c" deferrable="#a18072" invariant="#d6409f" background="#12A594"/>
       <style element="b" bogus="#000000" exit="red" entry="#F76B15"/>
       <style element="ch" color="#8e4ec6"/>
       <style effect="#3e63dd" guard="#f76b15" triggers="#e5484d" color="#12a594" element="t2"/>

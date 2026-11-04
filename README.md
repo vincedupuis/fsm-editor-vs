@@ -41,7 +41,7 @@ See **[docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blo
 - **Labels**: double-click a name or transition label to edit it in place. The transition syntax is `event, after(2s) [isReady() && !isBusy()] / doIt(); log()`.
 - **Routing**: double-click a transition to add a bend point, double-click a bend point to remove it, and drag labels to move them.
 - **Regions**: use the Add Region tool (R) or the properties panel.
-- **Colors**: in the properties panel, *Color* colors the selected element, and the swatch beside an entry, exit, do, deferrable events, invariant, trigger, guard or effect field colors just that text. *Default* removes the color.
+- **Colors**: in the properties panel, *Color* colors the selected element, and the swatch beside an entry, exit, do, deferrable events, invariant, trigger, guard or effect field colors just that text. A composite state has a *Title color* (its outline, text and header) and a *Background color* (its regions) instead. *Default* removes the color.
 - **View**: right-drag, middle-drag or Space+drag pans, the mouse wheel zooms (Shift+wheel pans sideways), F fits the diagram.
 - **Panels**: the toolbox and the properties panel work like tool windows. The pushpin auto-hides a panel to a tab on the editor's edge (hover over it or click it to slide the panel out), ▾ Window Position also floats it over the diagram, and ✕ closes it. The two buttons at the right of the toolbar show them again. The layout applies to every diagram.
 - **Editing**: Delete removes the selection. Ctrl+C/X/V copies, cuts and pastes, including between diagrams and with VS Code. Ctrl+D duplicates. Arrow keys nudge (Shift for 10px). Undo and redo (Ctrl+Z, Ctrl+Y) are Visual Studio's own, shared with the XMI text.
