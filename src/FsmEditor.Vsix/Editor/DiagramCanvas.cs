@@ -460,7 +460,7 @@ namespace FsmEditor.Editor
                 var v = sel[0];
                 if (Resizable.Contains(v.Type))
                 {
-                    dc.DrawRoundedRectangle(th.BrushOf(accent), th.PenOf(th.Background, 1), ResizeHandle(v), 1.5, 1.5);
+                    foreach (var corner in Corners) dc.DrawRoundedRectangle(th.BrushOf(accent), th.PenOf(th.Background, 1), ResizeHandle(v, corner), 1.5, 1.5);
                 }
                 if (v.Type != VertexType.Final && v.Type != VertexType.Terminate)
                 {
@@ -486,7 +486,10 @@ namespace FsmEditor.Editor
             }
         }
 
-        private static Rect ResizeHandle(Vertex v) => new Rect(v.X + v.W - 1, v.Y + v.H - 1, 9, 9);
+        private static readonly string[] Corners = { "nw", "ne", "sw", "se" };
+
+        private static Rect ResizeHandle(Vertex v, string corner) =>
+            new Rect(corner.Contains('w') ? v.X - 8 : v.X + v.W - 1, corner.Contains('n') ? v.Y - 8 : v.Y + v.H - 1, 9, 9);
 
         private static Point ConnectHandle(Vertex v) => new Point(v.X + v.W + 18, v.Y + v.H / 2);
 
@@ -516,9 +519,15 @@ namespace FsmEditor.Editor
                     {
                         return new Hit { Kind = HitKind.Handle, Handle = "connect" };
                     }
-                    var rh = ResizeHandle(only);
-                    rh.Inflate(tolerance, tolerance);
-                    if (Resizable.Contains(only.Type) && rh.Contains(P(p))) return new Hit { Kind = HitKind.Handle, Handle = "resize" };
+                    if (Resizable.Contains(only.Type))
+                    {
+                        foreach (var corner in Corners)
+                        {
+                            var rh = ResizeHandle(only, corner);
+                            rh.Inflate(tolerance, tolerance);
+                            if (rh.Contains(P(p))) return new Hit { Kind = HitKind.Handle, Handle = "resize-" + corner };
+                        }
+                    }
                 }
                 var selected = ix.Transition(S.Selection.First());
                 if (selected != null)
@@ -611,7 +620,8 @@ namespace FsmEditor.Editor
             public string DropRegion;
             public string DropState;
             public Vertex Vertex;
-            public double W0, H0;
+            public double X0, Y0, W0, H0;
+            public string Corner;
             public Vertex Source;
             public PointD? Cur;
             public string Hover;
@@ -694,7 +704,7 @@ namespace FsmEditor.Editor
                 {
                     var v = S.Index.Vertex(S.Selection.First());
                     if (v == null) break;
-                    if (hit.Handle == "resize") _drag = new DragState { Kind = DragKind.Resize, Vertex = v, Start = p, W0 = v.W, H0 = v.H };
+                    if (hit.Handle.StartsWith("resize-")) _drag = new DragState { Kind = DragKind.Resize, Corner = hit.Handle.Substring(7), Vertex = v, Start = p, X0 = v.X, Y0 = v.Y, W0 = v.W, H0 = v.H };
                     else StartConnect(v, p);
                     break;
                 }
@@ -824,10 +834,28 @@ namespace FsmEditor.Editor
                 case DragKind.Resize:
                 {
                     var v = d.Vertex;
+                    var west = d.Corner.Contains('w');
+                    var north = d.Corner.Contains('n');
+                    var dx = p.X - d.Start.X;
+                    var dy = p.Y - d.Start.Y;
                     var (minW, _) = S.MinimumSize(v);
-                    v.W = Math.Max(minW, Alt ? d.W0 + p.X - d.Start.X : Geo.Snap(v.X + d.W0 + p.X - d.Start.X) - v.X);
+                    if (west)
+                    {
+                        // The right edge stays put.
+                        var right = d.X0 + d.W0;
+                        v.X = Math.Min(right - minW, Alt ? d.X0 + dx : Geo.Snap(d.X0 + dx));
+                        v.W = right - v.X;
+                    }
+                    else v.W = Math.Max(minW, Alt ? d.W0 + dx : Geo.Snap(v.X + d.W0 + dx) - v.X);
                     var (_, minH) = S.MinimumSize(v); // wrapped text depends on the new width
-                    v.H = Math.Max(minH, Alt ? d.H0 + p.Y - d.Start.Y : Geo.Snap(v.Y + d.H0 + p.Y - d.Start.Y) - v.Y);
+                    if (north)
+                    {
+                        // The bottom edge stays put.
+                        var bottom = d.Y0 + d.H0;
+                        v.Y = Math.Min(bottom - minH, Alt ? d.Y0 + dy : Geo.Snap(d.Y0 + dy));
+                        v.H = bottom - v.Y;
+                    }
+                    else v.H = Math.Max(minH, Alt ? d.H0 + dy : Geo.Snap(v.Y + d.H0 + dy) - v.Y);
                     S.KeepPointsOnBorder(v);
                     break;
                 }
@@ -879,7 +907,7 @@ namespace FsmEditor.Editor
             var hit = HitTest(p);
             switch (hit.Kind)
             {
-                case HitKind.Handle: Cursor = hit.Handle == "resize" ? Cursors.SizeNWSE : Cursors.Cross; break;
+                case HitKind.Handle: Cursor = hit.Handle == "resize-nw" || hit.Handle == "resize-se" ? Cursors.SizeNWSE : hit.Handle.StartsWith("resize-") ? Cursors.SizeNESW : Cursors.Cross; break;
                 case HitKind.Waypoint:
                 case HitKind.Label: Cursor = Cursors.SizeAll; break;
                 default: Cursor = null; break;
