@@ -61,11 +61,18 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
         private static string Esc(string s) =>
             s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&#39;");
 
-        private static string Text(double x, double y, string cls, string text, string anchor = "middle") =>
-            $"<text class=\"{cls}\" x=\"{F1(x)}\" y=\"{F1(y)}\" text-anchor=\"{anchor}\">{Esc(text)}</text>";
+        private static string Text(double x, double y, string cls, string text, string anchor = "middle", string color = null) =>
+            $"<text class=\"{cls}\" x=\"{F1(x)}\" y=\"{F1(y)}\" text-anchor=\"{anchor}\"{Style(color != null ? "fill:" + color : null)}>{Esc(text)}</text>";
 
-        private static string Cross(double cx, double cy, double k) =>
-            $"<path class=\"stroke\" d=\"M{F(cx - k)},{F(cy - k)} L{F(cx + k)},{F(cy + k)} M{F(cx + k)},{F(cy - k)} L{F(cx - k)},{F(cy + k)}\" style=\"stroke-width:1.3\"/>";
+        /// <summary>A style attribute with the given declarations (nulls skipped), or nothing.</summary>
+        private static string Style(params string[] decls)
+        {
+            var d = string.Join(";", decls.Where(x => !string.IsNullOrEmpty(x)));
+            return d.Length > 0 ? $" style=\"{d}\"" : "";
+        }
+
+        private static string Cross(double cx, double cy, double k, string style) =>
+            $"<path class=\"stroke\" d=\"M{F(cx - k)},{F(cy - k)} L{F(cx + k)},{F(cy + k)} M{F(cx + k)},{F(cy - k)} L{F(cx - k)},{F(cy + k)}\"{style}/>";
 
         private static void VertexShape(StringBuilder sb, DiagramSession session, Vertex v)
         {
@@ -75,12 +82,17 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
             var cy = y + h / 2;
             var r = Math.Min(w, h) / 2;
             sb.Append($"<g class=\"vertex v-{v.Type.Key()}\">");
+            var c = ElementColors.Of(v.Color);
+            var shapeSt = c == null ? "" : Style("fill:" + ElementColors.Tint(c), "stroke:" + c);
+            var fillSt = c == null ? "" : Style("fill:" + c);
+            string StrokeSt(string width) => Style(c != null ? "stroke:" + c : null, width != null ? "stroke-width:" + width : null);
+            var sepSt = c == null ? "" : Style("stroke:" + c);
             switch (v.Type)
             {
                 case VertexType.State:
                 {
-                    sb.Append($"<rect class=\"shape\" x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" rx=\"10\"/>");
-                    var lines = Geometry.ActivityRows(model, v);
+                    sb.Append($"<rect class=\"shape\" x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" rx=\"10\"{shapeSt}/>");
+                    var lines = Geometry.ActivityRowItems(model, v);
                     var regions = Geometry.RegionRects(model, v);
                     var title = v.Name + (v.Submachine.Length > 0 ? " : " + session.MachineLabel(v.Submachine) : "");
                     var centered = regions.Count == 0 && lines.Count == 0;
@@ -88,95 +100,96 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
                     var stereo = v.Stereotype.Length > 0;
                     if (stereo)
                     {
-                        sb.Append(Text(cx, y + (centered ? h / 2 - 4 : 13), "stereo", $"«{v.Stereotype}»"));
+                        sb.Append(Text(cx, y + (centered ? h / 2 - 4 : 13), "stereo", $"«{v.Stereotype}»", "middle", c));
                         ty += 12;
                     }
                     if (centered)
                     {
-                        sb.Append(Text(cx, y + h / 2 + (stereo ? 10 : 4), "name", title));
+                        sb.Append(Text(cx, y + h / 2 + (stereo ? 10 : 4), "name", title, "middle", c));
                     }
                     else
                     {
-                        sb.Append(Text(cx, ty, "name", title));
+                        sb.Append(Text(cx, ty, "name", title, "middle", c));
                         var ly = y + Geometry.NameHeight + (stereo ? 12 : 0);
                         if (lines.Count > 0)
                         {
-                            sb.Append($"<line class=\"sep\" x1=\"{F(x)}\" y1=\"{F(ly)}\" x2=\"{F(x + w)}\" y2=\"{F(ly)}\"/>");
+                            sb.Append($"<line class=\"sep\" x1=\"{F(x)}\" y1=\"{F(ly)}\" x2=\"{F(x + w)}\" y2=\"{F(ly)}\"{sepSt}/>");
                             foreach (var l in lines)
                             {
                                 ly += Geometry.LineHeight;
-                                sb.Append(Text(x + 8, ly, "activity", l, "start"));
+                                sb.Append(Text(x + 8, ly, "activity", l.Text, "start", l.Color));
                             }
                         }
                     }
                     if (regions.Count > 0)
                     {
                         var top = regions[0].Rect.Y;
-                        sb.Append($"<line class=\"sep\" x1=\"{F(x)}\" y1=\"{F1(top)}\" x2=\"{F(x + w)}\" y2=\"{F1(top)}\"/>");
+                        sb.Append($"<line class=\"sep\" x1=\"{F(x)}\" y1=\"{F1(top)}\" x2=\"{F(x + w)}\" y2=\"{F1(top)}\"{sepSt}/>");
                         for (int i = 0; i < regions.Count; i++)
                         {
                             var rr = regions[i].Rect;
                             if (i > 0)
                             {
                                 sb.Append(v.RegionLayout == RegionLayout.Horizontal
-                                    ? $"<line class=\"sep dashed\" x1=\"{F1(rr.X)}\" y1=\"{F1(rr.Y)}\" x2=\"{F1(rr.X)}\" y2=\"{F1(rr.Y + rr.H)}\"/>"
-                                    : $"<line class=\"sep dashed\" x1=\"{F1(rr.X)}\" y1=\"{F1(rr.Y)}\" x2=\"{F1(rr.X + rr.W)}\" y2=\"{F1(rr.Y)}\"/>");
+                                    ? $"<line class=\"sep dashed\" x1=\"{F1(rr.X)}\" y1=\"{F1(rr.Y)}\" x2=\"{F1(rr.X)}\" y2=\"{F1(rr.Y + rr.H)}\"{sepSt}/>"
+                                    : $"<line class=\"sep dashed\" x1=\"{F1(rr.X)}\" y1=\"{F1(rr.Y)}\" x2=\"{F1(rr.X + rr.W)}\" y2=\"{F1(rr.Y)}\"{sepSt}/>");
                             }
-                            if (regions[i].Name.Length > 0) sb.Append(Text(rr.X + 6, rr.Y + 12, "region-name", regions[i].Name, "start"));
+                            if (regions[i].Name.Length > 0) sb.Append(Text(rr.X + 6, rr.Y + 12, "region-name", regions[i].Name, "start", c));
                         }
                     }
                     if (v.Submachine.Length > 0)
                     {
                         var gx = x + w - 26;
                         var gy = y + h - 14;
-                        sb.Append($"<rect class=\"stroke\" x=\"{F(gx)}\" y=\"{F(gy)}\" width=\"8\" height=\"6\" rx=\"2\" style=\"stroke-width:1.2\"/>");
-                        sb.Append($"<rect class=\"stroke\" x=\"{F(gx + 13)}\" y=\"{F(gy)}\" width=\"8\" height=\"6\" rx=\"2\" style=\"stroke-width:1.2\"/>");
-                        sb.Append($"<line class=\"stroke\" x1=\"{F(gx + 8)}\" y1=\"{F(gy + 3)}\" x2=\"{F(gx + 13)}\" y2=\"{F(gy + 3)}\" style=\"stroke-width:1.2\"/>");
+                        var glyphSt = StrokeSt("1.2");
+                        sb.Append($"<rect class=\"stroke\" x=\"{F(gx)}\" y=\"{F(gy)}\" width=\"8\" height=\"6\" rx=\"2\"{glyphSt}/>");
+                        sb.Append($"<rect class=\"stroke\" x=\"{F(gx + 13)}\" y=\"{F(gy)}\" width=\"8\" height=\"6\" rx=\"2\"{glyphSt}/>");
+                        sb.Append($"<line class=\"stroke\" x1=\"{F(gx + 8)}\" y1=\"{F(gy + 3)}\" x2=\"{F(gx + 13)}\" y2=\"{F(gy + 3)}\"{glyphSt}/>");
                     }
-                    if (v.Invariant.Length > 0) sb.Append(Text(x + 4, y + h + 14, "invariant", $"{{{v.Invariant}}}", "start"));
+                    if (v.Invariant.Length > 0) sb.Append(Text(x + 4, y + h + 14, "invariant", $"{{{v.Invariant}}}", "start", ElementColors.Item(v.Color, v.ItemColors, "invariant")));
                     break;
                 }
                 case VertexType.Final:
-                    sb.Append($"<circle class=\"shape\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"/><circle class=\"fill\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(Math.Max(2, r - 5))}\"/>");
+                    sb.Append($"<circle class=\"shape\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"{shapeSt}/><circle class=\"fill\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(Math.Max(2, r - 5))}\"{fillSt}/>");
                     break;
                 case VertexType.Initial:
                 case VertexType.Junction:
-                    sb.Append($"<circle class=\"fill\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"/>");
+                    sb.Append($"<circle class=\"fill\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"{fillSt}/>");
                     break;
                 case VertexType.ShallowHistory:
                 case VertexType.DeepHistory:
-                    sb.Append($"<circle class=\"shape\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"/>");
-                    sb.Append(Text(cx, cy + 4, "glyph", v.Type == VertexType.DeepHistory ? "H*" : "H"));
+                    sb.Append($"<circle class=\"shape\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"{shapeSt}/>");
+                    sb.Append(Text(cx, cy + 4, "glyph", v.Type == VertexType.DeepHistory ? "H*" : "H", "middle", c));
                     break;
                 case VertexType.Choice:
-                    sb.Append($"<path class=\"shape\" d=\"M{F(cx)},{F(y)} L{F(x + w)},{F(cy)} L{F(cx)},{F(y + h)} L{F(x)},{F(cy)} Z\"/>");
+                    sb.Append($"<path class=\"shape\" d=\"M{F(cx)},{F(y)} L{F(x + w)},{F(cy)} L{F(cx)},{F(y + h)} L{F(x)},{F(cy)} Z\"{shapeSt}/>");
                     break;
                 case VertexType.Fork:
                 case VertexType.Join:
-                    sb.Append($"<rect class=\"fill\" x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" rx=\"1\"/>");
+                    sb.Append($"<rect class=\"fill\" x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" rx=\"1\"{fillSt}/>");
                     break;
                 case VertexType.ConnectionPointRef:
                 case VertexType.EntryPoint:
-                    sb.Append($"<circle class=\"shape\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"/>");
-                    if (v.Type == VertexType.ConnectionPointRef && v.PointKind == PointKind.Exit) sb.Append(Cross(cx, cy, r * 0.62));
+                    sb.Append($"<circle class=\"shape\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"{shapeSt}/>");
+                    if (v.Type == VertexType.ConnectionPointRef && v.PointKind == PointKind.Exit) sb.Append(Cross(cx, cy, r * 0.62, StrokeSt("1.3")));
                     break;
                 case VertexType.ExitPoint:
-                    sb.Append($"<circle class=\"shape\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"/>");
-                    sb.Append(Cross(cx, cy, r * 0.62));
+                    sb.Append($"<circle class=\"shape\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\"{shapeSt}/>");
+                    sb.Append(Cross(cx, cy, r * 0.62, StrokeSt("1.3")));
                     break;
                 case VertexType.Terminate:
                     sb.Append($"<rect class=\"hit\" x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\"/>");
-                    sb.Append($"<path class=\"stroke\" d=\"M{F(x)},{F(y)} L{F(x + w)},{F(y + h)} M{F(x + w)},{F(y)} L{F(x)},{F(y + h)}\" style=\"stroke-width:2\"/>");
+                    sb.Append($"<path class=\"stroke\" d=\"M{F(x)},{F(y)} L{F(x + w)},{F(y + h)} M{F(x + w)},{F(y)} L{F(x)},{F(y + h)}\"{StrokeSt("2")}/>");
                     break;
                 case VertexType.Comment:
                 {
                     const double f = 12;
-                    sb.Append($"<path class=\"shape\" d=\"M{F(x)},{F(y)} H{F(x + w - f)} L{F(x + w)},{F(y + f)} V{F(y + h)} H{F(x)} Z\"/>");
-                    sb.Append($"<path class=\"stroke\" d=\"M{F(x + w - f)},{F(y)} V{F(y + f)} H{F(x + w)}\" style=\"stroke-width:1\"/>");
+                    sb.Append($"<path class=\"shape\" d=\"M{F(x)},{F(y)} H{F(x + w - f)} L{F(x + w)},{F(y + f)} V{F(y + h)} H{F(x)} Z\"{shapeSt}/>");
+                    sb.Append($"<path class=\"stroke\" d=\"M{F(x + w - f)},{F(y)} V{F(y + f)} H{F(x + w)}\"{StrokeSt("1")}/>");
                     var lines = Geometry.CommentLines(v.Text, w - 16);
                     for (int i = 0; i < lines.Count; i++)
                     {
-                        if (16 + i * 14 < h) sb.Append(Text(x + 8, y + 17 + i * 14, "", lines[i], "start"));
+                        if (16 + i * 14 < h) sb.Append(Text(x + 8, y + 17 + i * 14, "", lines[i], "start", c));
                     }
                     break;
                 }
@@ -185,7 +198,7 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
             if (caption.Length > 0 && v.Type != VertexType.State && v.Type != VertexType.Comment)
             {
                 var below = v.Type == VertexType.Fork || v.Type == VertexType.Join ? y + h + 13 : y + h + 12;
-                sb.Append(Text(cx, below, "activity", caption));
+                sb.Append(Text(cx, below, "activity", caption, "middle", c));
             }
             sb.Append("</g>");
         }
@@ -209,17 +222,23 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
             if (pts == null) return;
             var d = "M" + string.Join(" L", pts.Select(p => $"{F1(p.X)},{F1(p.Y)}"));
             sb.Append("<g class=\"transition\">");
-            sb.Append($"<path class=\"line\" d=\"{d}\"/>");
+            var c = ElementColors.Of(t.Color);
+            var lineSt = c == null ? "" : Style("stroke:" + c);
+            sb.Append($"<path class=\"line\" d=\"{d}\"{lineSt}/>");
             var b = pts[pts.Count - 1];
             var (p1, p2) = ArrowHead(pts[pts.Count - 2], b);
-            sb.Append($"<path class=\"arrow\" d=\"M{F1(p1.X)},{F1(p1.Y)} L{F1(b.X)},{F1(b.Y)} L{F1(p2.X)},{F1(p2.Y)}\"/>");
-            var lines = Labels.TransitionLabelLines(model, t);
+            sb.Append($"<path class=\"arrow\" d=\"M{F1(p1.X)},{F1(p1.Y)} L{F1(b.X)},{F1(b.Y)} L{F1(p2.X)},{F1(p2.Y)}\"{lineSt}/>");
+            var lines = Labels.TransitionLabelItems(model, t);
             if (lines.Count > 0)
             {
                 var lp = Geometry.LabelPos(t, pts);
                 var anchor = lp.Anchor == TextAnchor.End ? "end" : lp.Anchor == TextAnchor.Start ? "start" : "middle";
                 sb.Append($"<text class=\"tlabel\" x=\"{F1(lp.X)}\" y=\"{F1(Geometry.LabelLineY(lp, 0, lines.Count))}\" text-anchor=\"{anchor}\">"
-                    + string.Concat(lines.Select((l, i) => $"<tspan x=\"{F1(lp.X)}\" dy=\"{(i > 0 ? Geometry.LabelLineHeight : 0)}\">{Esc(l)}</tspan>")) + "</text>");
+                    + string.Concat(lines.Select((l, i) =>
+                    {
+                        var lc = ElementColors.Item(t.Color, t.ItemColors, l.Key);
+                        return $"<tspan x=\"{F1(lp.X)}\" dy=\"{(i > 0 ? Geometry.LabelLineHeight : 0)}\"{Style(lc != null ? "fill:" + lc : null)}>{Esc(l.Text)}</tspan>";
+                    })) + "</text>");
             }
             sb.Append("</g>");
         }

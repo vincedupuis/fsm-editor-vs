@@ -444,6 +444,21 @@ namespace FsmEditor.Core
             Commit();
         }
 
+        /// <summary>Sets the color of a vertex or transition (<paramref name="key"/> null) or of one of its items; null or empty clears it.</summary>
+        public void SetColor(Vertex v, string key, string color) => SetColor(c => v.Color = c, v.ItemColors, key, color);
+
+        /// <inheritdoc cref="SetColor(Vertex, string, string)"/>
+        public void SetColor(Transition t, string key, string color) => SetColor(c => t.Color = c, t.ItemColors, key, color);
+
+        private void SetColor(Action<string> setOwn, Dictionary<string, string> items, string key, string color)
+        {
+            var c = ElementColors.IsColor(color) ? color : "";
+            if (key == null) setOwn(c);
+            else if (c.Length > 0) items[key] = c;
+            else items.Remove(key);
+            Commit();
+        }
+
         public bool SetSubmachine(Vertex v, string href)
         {
             if (href.Length > 0 && v.Regions.Count > 0)

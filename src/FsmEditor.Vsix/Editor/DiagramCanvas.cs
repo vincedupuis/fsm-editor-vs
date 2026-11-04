@@ -224,10 +224,11 @@ namespace FsmEditor.Editor
             var issue = IssueOf(v.Id);
             var dropTarget = _drag != null && _drag.DropState == v.Id;
 
-            // Outline of the element's own shape: selection, then warnings and errors, win in that order.
-            var stroke = th.Line;
+            // Outline of the element's own shape: its color, then selection, warnings and errors, win in that order.
+            var own = Theme.ColorOf(v.Color);
+            var stroke = own ?? th.Line;
             double shapeWidth = 1.4;
-            var fill = th.Line;
+            var fill = own ?? th.Line;
             if (selected)
             {
                 stroke = th.Accent;
@@ -244,21 +245,22 @@ namespace FsmEditor.Editor
             var shapePen = dropTarget ? th.PenOf(th.Accent, 2.5, 1, new[] { 6.0, 3.0 }) : th.PenOf(stroke, shapeWidth);
             Pen StrokePen(double w) => th.PenOf(stroke, w);
             var fillBrush = th.BrushOf(fill);
-            var shapeFill = th.BrushOf(v.Type == VertexType.Comment ? th.NoteFill : th.StateFill);
-            var textBrush = th.BrushOf(th.Foreground);
-            var dimText = th.BrushOf(th.Foreground, 0.8);
+            var shapeFill = th.BrushOf(own is Color oc ? th.Tint(oc, th.StateFill) : v.Type == VertexType.Comment ? th.NoteFill : th.StateFill);
+            var textBrush = th.BrushOf(own ?? th.Foreground);
+            var dimText = th.BrushOf(own ?? th.Foreground, 0.8);
+            Brush ItemBrush(string color) => color != null && Theme.ColorOf(color) is Color ic ? th.BrushOf(ic) : textBrush;
 
             double x = v.X, y = v.Y, w = v.W, h = v.H;
             var cx = x + w / 2;
             var cy = y + h / 2;
             var r = Math.Min(w, h) / 2;
-            var sepPen = th.PenOf(th.Line, 1, 0.8);
+            var sepPen = th.PenOf(own ?? th.Line, 1, 0.8);
             switch (v.Type)
             {
                 case VertexType.State:
                 {
                     dc.DrawRoundedRectangle(shapeFill, shapePen, new Rect(x, y, w, h), 10, 10);
-                    var lines = Geo.ActivityRows(S.Model, v);
+                    var lines = Geo.ActivityRowItems(S.Model, v);
                     var regions = Geo.RegionRects(S.Model, v);
                     var title = v.Name + (v.Submachine.Length > 0 ? " : " + S.MachineLabel(v.Submachine) : "");
                     var centered = regions.Count == 0 && lines.Count == 0;
@@ -283,7 +285,7 @@ namespace FsmEditor.Editor
                             foreach (var l in lines)
                             {
                                 ly += Geo.LineHeight;
-                                DrawText(dc, x + 8, ly, l, 11, textBrush, TextAnchor.Start);
+                                DrawText(dc, x + 8, ly, l.Text, 11, ItemBrush(l.Color), TextAnchor.Start);
                             }
                         }
                     }
@@ -291,7 +293,7 @@ namespace FsmEditor.Editor
                     {
                         var top = regions[0].Rect.Y;
                         dc.DrawLine(sepPen, new Point(x, top), new Point(x + w, top));
-                        var dashed = th.PenOf(th.Line, 1, 0.8, new[] { 7.0, 4.0 });
+                        var dashed = th.PenOf(own ?? th.Line, 1, 0.8, new[] { 7.0, 4.0 });
                         for (int i = 0; i < regions.Count; i++)
                         {
                             var rr = regions[i].Rect;
@@ -316,7 +318,7 @@ namespace FsmEditor.Editor
                         dc.DrawRoundedRectangle(null, glyph, new Rect(gx + 13, gy, 8, 6), 2, 2);
                         dc.DrawLine(glyph, new Point(gx + 8, gy + 3), new Point(gx + 13, gy + 3));
                     }
-                    if (v.Invariant.Length > 0) DrawText(dc, x + 4, y + h + 14, $"{{{v.Invariant}}}", 11, textBrush, TextAnchor.Start, style: FontStyles.Italic);
+                    if (v.Invariant.Length > 0) DrawText(dc, x + 4, y + h + 14, $"{{{v.Invariant}}}", 11, ItemBrush(ElementColors.Item(v.Color, v.ItemColors, "invariant")), TextAnchor.Start, style: FontStyles.Italic);
                     break;
                 }
                 case VertexType.Final:
@@ -406,7 +408,7 @@ namespace FsmEditor.Editor
             var th = T;
             var selected = S.Selection.Contains(t.Id);
             var issue = IssueOf(t.Id);
-            var color = issue == IssueLevel.Error ? th.Error : issue == IssueLevel.Warning ? th.Warning : selected ? th.Accent : th.Line;
+            var color = issue == IssueLevel.Error ? th.Error : issue == IssueLevel.Warning ? th.Warning : selected ? th.Accent : Theme.ColorOf(t.Color) ?? th.Line;
             var pen = th.PenOf(color, selected ? 2 : 1.3);
             var line = new StreamGeometry();
             using (var ctx = line.Open())
@@ -424,13 +426,16 @@ namespace FsmEditor.Editor
                 ctx.PolyLineTo(new[] { P(b), P(p2) }, true, true);
             }
             dc.DrawGeometry(null, pen, arrow);
-            var lines = Labels.TransitionLabelLines(S.Model, t);
+            var lines = Labels.TransitionLabelItems(S.Model, t);
             if (lines.Count > 0)
             {
                 var lp = Geo.LabelPos(t, pts);
                 var box = Rect.Empty;
                 for (var i = 0; i < lines.Count; i++)
-                    box.Union(DrawText(dc, lp.X, Geo.LabelLineY(lp, i, lines.Count), lines[i], 11, th.BrushOf(selected ? th.Accent : th.Foreground), lp.Anchor, halo: th.Background));
+                {
+                    var text = Theme.ColorOf(ElementColors.Item(t.Color, t.ItemColors, lines[i].Key)) ?? (selected ? th.Accent : th.Foreground);
+                    box.Union(DrawText(dc, lp.X, Geo.LabelLineY(lp, i, lines.Count), lines[i].Text, 11, th.BrushOf(text), lp.Anchor, halo: th.Background));
+                }
                 _labels.Add((box, t.Id));
             }
             if (selected && S.Selection.Count == 1)

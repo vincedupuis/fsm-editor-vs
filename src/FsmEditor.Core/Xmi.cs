@@ -20,7 +20,10 @@ namespace FsmEditor.Core
     ///   its source and target with the bend points in between, plus an optional
     ///   UMLLabel whose center is the middle of those waypoints moved by the
     ///   label offset;
-    /// - the region layout of an orthogonal state follows from its region shapes.
+    /// - the region layout of an orthogonal state follows from its region shapes;
+    /// - colors are kept in one xmi:Extension at the end of the diagram, with a
+    ///   &lt;style element="id" color="#rrggbb" entry="#rrggbb" …/&gt; per colored
+    ///   vertex or transition (UML DI has no color).
     ///
     /// <c>ToXmi(FromXmi(x))</c> round-trips without loss (coordinates are rounded to 0.1 px),
     /// and the output is identical to the one of FSM Editor for VS Code.
@@ -32,6 +35,7 @@ namespace FsmEditor.Core
         public const string NsUmlDi = "http://www.omg.org/spec/UML/20161101/UMLDI";
         public const string NsDc = "http://www.omg.org/spec/DD/20100524/DC";
         public const string NsDi = "http://www.omg.org/spec/DD/20100524/DI";
+        private const string Extender = "FSM Editor";
 
         private const string ProfileName = "FsmStereotypes";
         private const string ProfileNs = "https://github.com/vincedupuis/fsm-editor/profiles/FsmStereotypes";
@@ -284,8 +288,22 @@ namespace FsmEditor.Core
                     edges.Add(new XNode("ownedElement", ("xmi:type", "umldi:UMLEdge"), ("xmi:id", $"di_{c.Id}_anchor{i + 1}"), ("modelElement", c.Id), ("source", "di_" + c.Id), ("target", "di_" + a)));
                 }
             }
+            var styles = new List<XNode>();
+            void AddStyle(string id, string color, Dictionary<string, string> items)
+            {
+                var style = new XNode("style", ("element", id));
+                if (ElementColors.IsColor(color)) style.Attrs.Add(("color", color));
+                foreach (var k in ElementColors.ItemKeys)
+                {
+                    if (items.TryGetValue(k, out var c) && ElementColors.IsColor(c)) style.Attrs.Add((k, c));
+                }
+                if (style.Attrs.Count > 1) styles.Add(style);
+            }
+            foreach (var v in m.Vertices) AddStyle(v.Id, v.Color, v.ItemColors);
+            foreach (var t in m.Transitions) AddStyle(t.Id, t.Color, t.ItemColors);
             var diagram = new XNode("umldi:UMLStateMachineDiagram", ("xmi:id", smId + "_diagram"), ("name", m.Name), ("modelElement", smId), ("isFrame", "false"))
                 .Add(shapes, edges);
+            if (styles.Count > 0) diagram.Add(new XNode("xmi:Extension", ("extender", Extender)).Add(styles));
 
             var root = new XNode("xmi:XMI",
                 ("xmi:version", "20131001"),
@@ -528,6 +546,33 @@ namespace FsmEditor.Core
             foreach (var d in root.Children)
             {
                 if (d.Ns != NsUmlDi) continue;
+                foreach (var ext in Kids(d, "xmi:Extension"))
+                {
+                    if (ext.Attr("extender") != Extender) continue;
+                    foreach (var st in Kids(ext, "style"))
+                    {
+                        var id = st.Attr("element") ?? "";
+                        string Read(string name) => (st.Attr(name) ?? "").ToLowerInvariant();
+                        void Apply(Action<string> setColor, Dictionary<string, string> items)
+                        {
+                            var color = Read("color");
+                            if (ElementColors.IsColor(color)) setColor(color);
+                            var read = new Dictionary<string, string>();
+                            foreach (var k in ElementColors.ItemKeys)
+                            {
+                                var c = Read(k);
+                                if (ElementColors.IsColor(c)) read[k] = c;
+                            }
+                            if (read.Count > 0)
+                            {
+                                items.Clear();
+                                foreach (var kv in read) items[kv.Key] = kv.Value;
+                            }
+                        }
+                        if (byId.TryGetValue(id, out var sv)) Apply(c => sv.Color = c, sv.ItemColors);
+                        else if (transitions.TryGetValue(id, out var st2)) Apply(c => st2.Color = c, st2.ItemColors);
+                    }
+                }
                 foreach (var el in Walk(d))
                 {
                     var type = TypeOf(el);

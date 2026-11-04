@@ -97,6 +97,17 @@ namespace FsmEditor.Editor
             (byte)Math.Round(a.G + (b.G - a.G) * k),
             (byte)Math.Round(a.B + (b.B - a.B) * k));
 
+        /// <summary>A diagram color of the model (<c>#rrggbb</c>), or null when there is none.</summary>
+        public static Color? ColorOf(string hex)
+        {
+            if (FsmEditor.Core.ElementColors.Of(hex) == null) return null;
+            var (r, g, b) = FsmEditor.Core.ElementColors.Rgb(hex);
+            return Rgb((byte)r, (byte)g, (byte)b);
+        }
+
+        /// <summary>Fill of a colored shape: a light tint of its color over the shape background.</summary>
+        public Color Tint(Color c, Color background) => Mix(background, c, FsmEditor.Core.ElementColors.TintAmount);
+
         private static double Luminance(Color c) => (0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B) / 255;
 
         /// <summary>Applies the themed Visual Studio style of a control, when the shell provides one.</summary>

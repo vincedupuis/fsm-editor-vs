@@ -389,6 +389,9 @@
           "message": "State 'P2' can never be entered."
         }
       ]
+    },
+    "colors": {
+      "issues": []
     }
   },
   "grammar": [

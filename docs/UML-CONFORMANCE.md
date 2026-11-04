@@ -79,7 +79,8 @@ The layout is a `umldi:UMLStateMachineDiagram`:
 - every vertex, region and comment has a `umldi:UMLShape` with `dc:Bounds`;
 - every drawn transition has a `umldi:UMLEdge` whose waypoints run from the center of its source, through its bend points, to the center of its target;
 - a moved transition label is a `umldi:UMLLabel` on its edge;
-- comment links are `umldi:UMLEdge`s from the comment to the annotated element.
+- comment links are `umldi:UMLEdge`s from the comment to the annotated element;
+- colors, which UML DI cannot express, are kept in an `xmi:Extension` (extender `FSM Editor`) at the end of the diagram, with one `<style>` per colored element: `element` is the element's `xmi:id`, `color` its own color, and `entry`, `exit`, `doActivity`, `deferrable`, `invariant`, `triggers`, `guard`, `effect`, `precondition` or `postcondition` the color of that item. Colors are `#rrggbb`; other tools ignore the extension.
 
 Coordinates are rounded to 0.1 px when saved.
 
@@ -111,6 +112,7 @@ Coordinates are rounded to 0.1 px when saved.
 ### Notation and tooling
 
 - The diagram frame with the machine's name in its header isn't drawn. The name, with `{protocol}` for protocol state machines, appears in the editor toolbar and as the SVG export's title.
+- Colors are a notation option: an element's color draws its outline, filled marks and text and tints its fill, and an item's color (an internal activity, the invariant, or a line of a transition label) overrides it for that text. An internal transition in its state's compartment takes a single color. Selection and problem highlights replace the outline color while they're shown.
 - Composite states always show their contents. The "hidden decomposition" icon for collapsed composite states isn't supported. Submachine states show the submachine icon.
 - The editor doesn't execute or simulate machines, and the validator flags only simple conflicts (several unguarded completion transitions). Run-to-completion semantics, transition priority and conflict resolution are implemented by the [generated code](#code-generation).
 

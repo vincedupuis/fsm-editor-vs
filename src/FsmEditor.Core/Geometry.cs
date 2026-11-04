@@ -70,11 +70,18 @@ namespace FsmEditor.Core
         public static Func<string, double> TextMeasure = EstimateLabelWidth;
 
         /// <summary>The internal activities of a state as drawn: each line wrapped to the width of the state.</summary>
-        public static List<string> ActivityRows(FsmModel model, Vertex v, Func<string, double> measure = null)
+        public static List<string> ActivityRows(FsmModel model, Vertex v, Func<string, double> measure = null) =>
+            ActivityRowItems(model, v, measure).Select(r => r.Text).ToList();
+
+        /// <summary><see cref="ActivityRows"/> with the color of each row (null: the default).</summary>
+        public static List<(string Text, string Color)> ActivityRowItems(FsmModel model, Vertex v, Func<string, double> measure = null)
         {
             measure = measure ?? TextMeasure;
-            var rows = new List<string>();
-            foreach (var line in Labels.ActivityLines(model, v)) rows.AddRange(CommentLines(line, v.W - 16, measure));
+            var rows = new List<(string, string)>();
+            foreach (var (line, color) in Labels.ActivityItems(model, v))
+            {
+                foreach (var row in CommentLines(line, v.W - 16, measure)) rows.Add((row, color));
+            }
             return rows;
         }
 

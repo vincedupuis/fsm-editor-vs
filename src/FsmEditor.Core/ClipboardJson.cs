@@ -34,6 +34,7 @@ namespace FsmEditor.Core
             if (v.Deferrable.Count > 0) o.Raw("deferrable", StringArray(v.Deferrable));
             if (v.Type == VertexType.ConnectionPointRef) o.Str("ref", v.Ref).Str("pointKind", v.PointKind == PointKind.Exit ? "exit" : "entry");
             if (v.Type == VertexType.Comment) o.Str("text", v.Text).Raw("anchors", StringArray(v.Anchors));
+            WriteColors(o, v.Color, v.ItemColors);
             return o.ToString();
         }
 
@@ -48,7 +49,38 @@ namespace FsmEditor.Core
                 o.Raw("points", "[" + string.Join(",", t.Points.Select(p => new JsonObjectWriter().Num("x", p.X).Num("y", p.Y).ToString())) + "]");
             }
             if (t.LabelOffset is PointD off) o.Raw("labelOffset", new JsonObjectWriter().Num("x", off.X).Num("y", off.Y).ToString());
+            WriteColors(o, t.Color, t.ItemColors);
             return o.ToString();
+        }
+
+        private static void WriteColors(JsonObjectWriter o, string color, Dictionary<string, string> items)
+        {
+            if (ElementColors.IsColor(color)) o.Str("color", color);
+            var w = new JsonObjectWriter();
+            var any = false;
+            foreach (var k in ElementColors.ItemKeys)
+            {
+                if (!items.TryGetValue(k, out var c) || !ElementColors.IsColor(c)) continue;
+                w.Str(k, c);
+                any = true;
+            }
+            if (any) o.Raw("itemColors", w.ToString());
+        }
+
+        private static string ReadColor(Dictionary<string, object> o, string key) => ElementColors.IsColor(Str(o, key)) ? Str(o, key) : "";
+
+        private static Dictionary<string, string> ReadItemColors(Dictionary<string, object> o)
+        {
+            var items = new Dictionary<string, string>();
+            if (o.TryGetValue("itemColors", out var v) && v is Dictionary<string, object> d)
+            {
+                foreach (var k in ElementColors.ItemKeys)
+                {
+                    var c = ReadColor(d, k);
+                    if (c.Length > 0) items[k] = c;
+                }
+            }
+            return items;
         }
 
         private static string StringArray(IEnumerable<string> items) => "[" + string.Join(",", items.Select(Quote)) + "]";
@@ -133,6 +165,8 @@ namespace FsmEditor.Core
                     PointKind = Str(item, "pointKind") == "exit" ? PointKind.Exit : PointKind.Entry,
                     Text = Str(item, "text"),
                     Anchors = List(item, "anchors").OfType<string>().ToList(),
+                    Color = ReadColor(item, "color"),
+                    ItemColors = ReadItemColors(item),
                 });
             }
             foreach (var item in List(obj, "transitions").OfType<Dictionary<string, object>>())
@@ -150,6 +184,8 @@ namespace FsmEditor.Core
                     Precondition = Str(item, "precondition"),
                     Postcondition = Str(item, "postcondition"),
                     Points = List(item, "points").OfType<Dictionary<string, object>>().Select(p => new PointD(Dbl(p, "x"), Dbl(p, "y"))).ToList(),
+                    Color = ReadColor(item, "color"),
+                    ItemColors = ReadItemColors(item),
                 };
                 if (item.TryGetValue("labelOffset", out var lo) && lo is Dictionary<string, object> off) t.LabelOffset = new PointD(Dbl(off, "x"), Dbl(off, "y"));
                 data.Transitions.Add(t);

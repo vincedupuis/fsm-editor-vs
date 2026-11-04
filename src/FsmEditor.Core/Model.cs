@@ -61,6 +61,52 @@ namespace FsmEditor.Core
         public override string ToString() => $"{X},{Y}";
     }
 
+    /// <summary>
+    /// Diagram colors (<c>#rrggbb</c>): an element's own <c>Color</c>, and per item of
+    /// its text in <c>ItemColors</c>, keyed by <see cref="ItemKeys"/>.
+    /// </summary>
+    public static class ElementColors
+    {
+        /// <summary>Items of a state or transition that can have their own color, in file order.</summary>
+        public static readonly string[] ItemKeys =
+        {
+            "entry", "exit", "doActivity", "deferrable", "invariant",
+            "triggers", "guard", "effect", "precondition", "postcondition",
+        };
+
+        /// <summary>Colors offered by the properties panel, readable on light and dark backgrounds.</summary>
+        public static readonly string[] Palette =
+        {
+            "#e5484d", "#f76b15", "#d4a20b", "#30a46c", "#12a594", "#0090ff",
+            "#3e63dd", "#8e4ec6", "#d6409f", "#a18072", "#8b8d98", "#5b5bd6",
+        };
+
+        public static bool IsColor(string s) =>
+            s != null && s.Length == 7 && s[0] == '#' && s.Skip(1).All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
+
+        /// <summary>The color of one item: its own, else the element's, else null.</summary>
+        public static string Item(string own, IDictionary<string, string> items, string key) =>
+            items.TryGetValue(key, out var c) && IsColor(c) ? c : IsColor(own) ? own : null;
+
+        /// <summary>The element's own color, or null.</summary>
+        public static string Of(string own) => IsColor(own) ? own : null;
+
+        /// <summary>Red, green and blue of a <c>#rrggbb</c> color.</summary>
+        public static (int R, int G, int B) Rgb(string c) =>
+            (Convert.ToInt32(c.Substring(1, 2), 16), Convert.ToInt32(c.Substring(3, 2), 16), Convert.ToInt32(c.Substring(5, 2), 16));
+
+        /// <summary>Share of a shape's color in the tint of its fill.</summary>
+        public const double TintAmount = 0.16;
+
+        /// <summary>Fill of a colored shape in the SVG export: a light tint of its color over the shape background (#fdfdfd).</summary>
+        public static string Tint(string c)
+        {
+            var (r, g, b) = Rgb(c);
+            string Mix(int v) => ((int)Num.Round(v * TintAmount + 0xfd * 0.84)).ToString("x2");
+            return "#" + Mix(r) + Mix(g) + Mix(b);
+        }
+    }
+
     public sealed class Region
     {
         public string Id { get; set; } = "";
@@ -100,6 +146,11 @@ namespace FsmEditor.Core
         public string Text { get; set; } = "";
         public List<string> Anchors { get; set; } = new List<string>();
 
+        /// <summary>Diagram color, <c>#rrggbb</c>, or empty for the default (see <see cref="ElementColors"/>).</summary>
+        public string Color { get; set; } = "";
+        /// <summary>Colors of items of the state's text, keyed by <see cref="ElementColors.ItemKeys"/>.</summary>
+        public Dictionary<string, string> ItemColors { get; set; } = new Dictionary<string, string>();
+
         public double CenterX => X + W / 2;
         public double CenterY => Y + H / 2;
         public PointD Center => new PointD(X + W / 2, Y + H / 2);
@@ -110,6 +161,7 @@ namespace FsmEditor.Core
             v.Regions = Regions.Select(r => r.Clone()).ToList();
             v.Deferrable = new List<string>(Deferrable);
             v.Anchors = new List<string>(Anchors);
+            v.ItemColors = new Dictionary<string, string>(ItemColors);
             return v;
         }
     }
@@ -130,12 +182,17 @@ namespace FsmEditor.Core
         public List<PointD> Points { get; set; } = new List<PointD>();
         /// <summary>Offset of the label from its default place, or null when it was never moved.</summary>
         public PointD? LabelOffset { get; set; }
+        /// <summary>Diagram color, <c>#rrggbb</c>, or empty for the default (see <see cref="ElementColors"/>).</summary>
+        public string Color { get; set; } = "";
+        /// <summary>Colors of the label's items, keyed by <see cref="ElementColors.ItemKeys"/>.</summary>
+        public Dictionary<string, string> ItemColors { get; set; } = new Dictionary<string, string>();
 
         public Transition Clone()
         {
             var t = (Transition)MemberwiseClone();
             t.Triggers = new List<string>(Triggers);
             t.Points = new List<PointD>(Points);
+            t.ItemColors = new Dictionary<string, string>(ItemColors);
             return t;
         }
     }

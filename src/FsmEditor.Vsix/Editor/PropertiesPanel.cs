@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using FsmEditor.Core;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
@@ -272,6 +275,166 @@ namespace FsmEditor.Editor
 
         private static string Or(string a, string b) => string.IsNullOrEmpty(a) ? b : a;
 
+        // ---------------------------------------------------------------- colors
+
+        /// <summary>A swatch showing <paramref name="value"/> (empty: the default color) that opens a palette; <paramref name="onChange"/> gets a color or null.</summary>
+        private Button ColorButton(string value, Action<string> onChange, string title)
+        {
+            var color = Theme.ColorOf(value);
+            var swatch = new Border
+            {
+                Width = 14,
+                Height = 14,
+                CornerRadius = new CornerRadius(2),
+                BorderThickness = new Thickness(1),
+                BorderBrush = T.BrushOf(T.Border),
+                Background = color is Color c ? T.BrushOf(c) : Brushes.Transparent,
+            };
+            if (color == null) swatch.Child = new Line { X1 = 0, Y1 = 12, X2 = 12, Y2 = 0, Stroke = T.BrushOf(T.Muted), StrokeThickness = 1 };
+            var b = new Button
+            {
+                Content = swatch,
+                ToolTip = title + (color != null ? $": {value}" : ": default"),
+                Padding = new Thickness(1),
+                Margin = new Thickness(4, 0, 0, 0),
+                MinWidth = 0,
+                MinHeight = 0,
+                VerticalAlignment = VerticalAlignment.Center,
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand,
+            };
+            AutomationProperties.SetName(b, title);
+            b.Click += (s, e) => OpenPalette(b, ElementColors.Of(value), title, onChange);
+            return b;
+        }
+
+        private void OpenPalette(Button anchor, string value, string title, Action<string> onChange)
+        {
+            var popup = new Popup { PlacementTarget = anchor, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
+            void Pick(string c)
+            {
+                popup.IsOpen = false;
+                if (c != value) onChange(c);
+            }
+            var content = new StackPanel { Margin = new Thickness(8) };
+            content.Children.Add(new TextBlock { Text = title, FontSize = 11, Foreground = T.BrushOf(T.Muted), Margin = new Thickness(0, 0, 0, 6), MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis });
+            var grid = new UniformGrid { Columns = 6 };
+            foreach (var hex in ElementColors.Palette)
+            {
+                var c = Theme.ColorOf(hex).Value;
+                var cell = new Button
+                {
+                    Width = 20,
+                    Height = 20,
+                    Margin = new Thickness(2),
+                    Padding = new Thickness(0),
+                    MinWidth = 0,
+                    MinHeight = 0,
+                    Background = T.BrushOf(c),
+                    BorderBrush = hex == value ? T.BrushOf(T.Foreground) : T.BrushOf(T.Border),
+                    BorderThickness = new Thickness(hex == value ? 2 : 1),
+                    ToolTip = hex,
+                    Cursor = Cursors.Hand,
+                    Template = SwatchTemplate(),
+                };
+                AutomationProperties.SetName(cell, hex);
+                cell.Click += (s, e) => Pick(hex);
+                grid.Children.Add(cell);
+            }
+            content.Children.Add(grid);
+            var row = new DockPanel { Margin = new Thickness(0, 8, 0, 0), LastChildFill = false };
+            var custom = PButton("Custom…", () =>
+            {
+                popup.IsOpen = false;
+                using (var dialog = new System.Windows.Forms.ColorDialog { FullOpen = true, AnyColor = true })
+                {
+                    if (Theme.ColorOf(value) is Color cur) dialog.Color = System.Drawing.Color.FromArgb(cur.R, cur.G, cur.B);
+                    if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+                    var picked = $"#{dialog.Color.R:x2}{dialog.Color.G:x2}{dialog.Color.B:x2}";
+                    if (picked != value) onChange(picked);
+                }
+            }, "Choose any color", true);
+            var reset = PButton("Default", () => Pick(null), "Remove the color", true);
+            reset.IsEnabled = value != null;
+            DockPanel.SetDock(custom, Dock.Left);
+            DockPanel.SetDock(reset, Dock.Right);
+            row.Children.Add(custom);
+            row.Children.Add(reset);
+            content.Children.Add(row);
+            popup.Child = new Border
+            {
+                Background = T.BrushOf(T.Widget),
+                BorderBrush = T.BrushOf(T.Border),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Child = content,
+            };
+            TextElement.SetForeground(popup.Child, T.BrushOf(T.Foreground));
+            popup.IsOpen = true;
+            if (grid.Children.Count > 0) ((UIElement)grid.Children[0]).Focus();
+        }
+
+        /// <summary>A plain colored square for palette cells (the themed button style would hide the color).</summary>
+        private static ControlTemplate SwatchTemplate()
+        {
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+            border.SetBinding(Border.BackgroundProperty, new System.Windows.Data.Binding("Background") { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
+            border.SetBinding(Border.BorderBrushProperty, new System.Windows.Data.Binding("BorderBrush") { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
+            border.SetBinding(Border.BorderThicknessProperty, new System.Windows.Data.Binding("BorderThickness") { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
+            return new ControlTemplate(typeof(Button)) { VisualTree = border };
+        }
+
+        /// <summary>The "Color" row of an element.</summary>
+        private DockPanel ColorField(string value, Action<string> onChange, string what)
+        {
+            var row = new DockPanel { Margin = new Thickness(0, 0, 0, 8), LastChildFill = true };
+            var label = new TextBlock { Text = "Color", FontSize = 11, Foreground = T.BrushOf(T.Muted), VerticalAlignment = VerticalAlignment.Center, MinWidth = 40 };
+            var button = ColorButton(value, onChange, $"Color of {what}");
+            button.Margin = new Thickness(0, 0, 6, 0);
+            DockPanel.SetDock(label, Dock.Left);
+            DockPanel.SetDock(button, Dock.Left);
+            row.Children.Add(label);
+            row.Children.Add(button);
+            row.Children.Add(new TextBlock { Text = ElementColors.Of(value) ?? "Default", FontSize = 11, Foreground = T.BrushOf(T.Muted), VerticalAlignment = VerticalAlignment.Center });
+            return row;
+        }
+
+        /// <summary>Puts a color swatch at the right of a field's label.</summary>
+        private StackPanel WithColor(StackPanel field, string value, Action<string> onChange, string what)
+        {
+            if (!(field.Children[0] is TextBlock label)) return field;
+            field.Children.RemoveAt(0);
+            var head = new DockPanel { Margin = label.Margin, LastChildFill = true };
+            label.Margin = new Thickness(0);
+            label.VerticalAlignment = VerticalAlignment.Center;
+            var button = ColorButton(value, onChange, $"Color of {what}");
+            DockPanel.SetDock(button, Dock.Right);
+            head.Children.Add(button);
+            head.Children.Add(label);
+            field.Children.Insert(0, head);
+            return field;
+        }
+
+        private StackPanel WithColor(StackPanel field, Vertex v, string key, string what) =>
+            WithColor(field, v.ItemColors.TryGetValue(key, out var c) ? c : "", value => SetColor(v, key, value), what);
+
+        private StackPanel WithColor(StackPanel field, Transition t, string key, string what) =>
+            key == null ? field : WithColor(field, t.ItemColors.TryGetValue(key, out var c) ? c : "", value => SetColor(t, key, value), what);
+
+        private void SetColor(Vertex v, string key, string color)
+        {
+            S.SetColor(v, key, color);
+            Render();
+        }
+
+        private void SetColor(Transition t, string key, string color)
+        {
+            S.SetColor(t, key, color);
+            Render();
+        }
+
         // ---------------------------------------------------------------- machine
 
         private void MachineProps()
@@ -372,6 +535,7 @@ namespace FsmEditor.Editor
                     Commit();
                 }));
             }
+            Add(ColorField(v.Color, c => SetColor(v, null, c), v.Type == VertexType.Comment ? "the comment" : Or(v.Name, "the element")));
 
             if (v.Type == VertexType.State) StateProps(v);
 
@@ -397,15 +561,15 @@ namespace FsmEditor.Editor
             };
             Add(TextField("Stereotype", v.Stereotype, Set(x => v.Stereotype = x), Expressions.CheckName, "e.g. Critical"),
                 H4("Behaviors"),
-                TextField("entry /", v.Entry, Set(x => v.Entry = x), Expressions.CheckActions, "e.g. start(); log()"),
-                TextField("exit /", v.Exit, Set(x => v.Exit = x), Expressions.CheckActions, "e.g. stop()"),
-                TextField("do /", v.DoActivity, Set(x => v.DoActivity = x), Expressions.CheckActions, "e.g. poll()"),
-                ListField("Deferrable events", v.Deferrable, list =>
+                WithColor(TextField("entry /", v.Entry, Set(x => v.Entry = x), Expressions.CheckActions, "e.g. start(); log()"), v, "entry", "entry"),
+                WithColor(TextField("exit /", v.Exit, Set(x => v.Exit = x), Expressions.CheckActions, "e.g. stop()"), v, "exit", "exit"),
+                WithColor(TextField("do /", v.DoActivity, Set(x => v.DoActivity = x), Expressions.CheckActions, "e.g. poll()"), v, "doActivity", "do"),
+                WithColor(ListField("Deferrable events", v.Deferrable, list =>
                 {
                     v.Deferrable = list;
                     Commit();
-                }, Expressions.CheckEvent, "evA, evB"),
-                TextField("State invariant", v.Invariant, Set(x => v.Invariant = x), Expressions.CheckCondition, "e.g. isRunning() && !isFaulty()"));
+                }, Expressions.CheckEvent, "evA, evB"), v, "deferrable", "the deferrable events"),
+                WithColor(TextField("State invariant", v.Invariant, Set(x => v.Invariant = x), Expressions.CheckCondition, "e.g. isRunning() && !isFaulty()"), v, "invariant", "the state invariant"));
 
             Add(H4("Submachine"));
             var current = v.Submachine;
@@ -490,7 +654,8 @@ namespace FsmEditor.Editor
                 {
                     if (e.Key == Key.Enter) Apply();
                 };
-                Add(Row(tb, PButton("✕", () =>
+                var internalTransition = t;
+                Add(Row(tb, ColorButton(t.Color, c => SetColor(internalTransition, null, c), $"Color of {Or(Labels.TransitionLabel(S.Model, t), "the internal transition")}"), PButton("✕", () =>
                 {
                     S.RemoveTransition(t);
                     Render();
@@ -609,37 +774,41 @@ namespace FsmEditor.Editor
                     S.SetKind(t, value == "internal" ? TransitionKind.Internal : value == "local" ? TransitionKind.Local : TransitionKind.External);
                     Render();
                 }),
-                ListField("Triggers", t.Triggers, list =>
+                ColorField(t.Color, c => SetColor(t, null, c), "the transition"));
+            // Internal transitions drawn in their state's compartment take a single color.
+            var inCompartment = t.Kind == TransitionKind.Internal && t.Source == t.Target && s != null && s.Type == VertexType.State;
+            string Item(string key) => inCompartment ? null : key;
+            Add(WithColor(ListField("Triggers", t.Triggers, list =>
                 {
                     t.Triggers = list;
                     Commit();
-                }, Expressions.CheckTrigger, "event, after(500ms), after(2s)"));
+                }, Expressions.CheckTrigger, "event, after(500ms), after(2s)"), t, Item("triggers"), "the triggers"));
             if (S.Model.Kind == MachineKind.Protocol)
             {
-                Add(TextField("Precondition", t.Precondition, value =>
+                Add(WithColor(TextField("Precondition", t.Precondition, value =>
                     {
                         t.Precondition = value;
                         Commit();
-                    }, Expressions.CheckCondition, "e.g. isOpen()"),
-                    TextField("Postcondition", t.Postcondition, value =>
+                    }, Expressions.CheckCondition, "e.g. isOpen()"), t, Item("precondition"), "the precondition"),
+                    WithColor(TextField("Postcondition", t.Postcondition, value =>
                     {
                         t.Postcondition = value;
                         Commit();
-                    }, Expressions.CheckCondition, "e.g. isClosed()"));
+                    }, Expressions.CheckCondition, "e.g. isClosed()"), t, Item("postcondition"), "the postcondition"));
             }
             else
             {
                 var allowElse = Labels.AllowsElse(s);
-                Add(TextField("Guard", t.Guard, value =>
+                Add(WithColor(TextField("Guard", t.Guard, value =>
                     {
                         t.Guard = value;
                         Commit();
-                    }, text => Expressions.CheckGuard(text, allowElse), allowElse ? "e.g. hasDisc() && !isJammed(), or else" : "e.g. hasDisc() && !isJammed()"),
-                    TextField("Effect", t.Effect, value =>
+                    }, text => Expressions.CheckGuard(text, allowElse), allowElse ? "e.g. hasDisc() && !isJammed(), or else" : "e.g. hasDisc() && !isJammed()"), t, Item("guard"), "the guard"),
+                    WithColor(TextField("Effect", t.Effect, value =>
                     {
                         t.Effect = value;
                         Commit();
-                    }, Expressions.CheckActions, "e.g. notify(); log()"));
+                    }, Expressions.CheckActions, "e.g. notify(); log()"), t, Item("effect"), "the effect"));
             }
             Add(H4("Routing"));
             var routing = new WrapPanel();

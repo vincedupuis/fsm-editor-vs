@@ -27,13 +27,17 @@ namespace FsmEditor.Core
         }
 
         /// <summary>The label as stacked lines: events, <c>[guard]</c>, <c>/ effect</c> (protocol: <c>[pre]</c>, event, <c>/ [post]</c>).</summary>
-        public static List<string> TransitionLabelLines(FsmModel model, Transition t)
+        public static List<string> TransitionLabelLines(FsmModel model, Transition t) =>
+            TransitionLabelItems(model, t).Select(l => l.Text).ToList();
+
+        /// <summary><see cref="TransitionLabelLines"/> with the item key (<see cref="ElementColors.ItemKeys"/>) each line shows.</summary>
+        public static List<(string Key, string Text)> TransitionLabelItems(FsmModel model, Transition t)
         {
             var trig = string.Join(", ", t.Triggers);
             var lines = model.Kind == MachineKind.Protocol
-                ? new[] { t.Precondition.Length > 0 ? $"[{t.Precondition}]" : "", trig, t.Postcondition.Length > 0 ? $"/ [{t.Postcondition}]" : "" }
-                : new[] { trig, t.Guard.Length > 0 ? $"[{t.Guard}]" : "", t.Effect.Length > 0 ? $"/ {t.Effect}" : "" };
-            return lines.Where(l => l.Length > 0).ToList();
+                ? new[] { ("precondition", t.Precondition.Length > 0 ? $"[{t.Precondition}]" : ""), ("triggers", trig), ("postcondition", t.Postcondition.Length > 0 ? $"/ [{t.Postcondition}]" : "") }
+                : new[] { ("triggers", trig), ("guard", t.Guard.Length > 0 ? $"[{t.Guard}]" : ""), ("effect", t.Effect.Length > 0 ? $"/ {t.Effect}" : "") };
+            return lines.Where(l => l.Item2.Length > 0).ToList();
         }
 
         /// <summary>May transitions leaving <paramref name="source"/> use the [else] guard?</summary>
@@ -96,17 +100,21 @@ namespace FsmEditor.Core
             model.Transitions.Where(t => t.Kind == TransitionKind.Internal && t.Source == v.Id && t.Target == v.Id);
 
         /// <summary>Lines of the internal activities compartment of a state.</summary>
-        public static List<string> ActivityLines(FsmModel model, Vertex v)
+        public static List<string> ActivityLines(FsmModel model, Vertex v) => ActivityItems(model, v).Select(l => l.Text).ToList();
+
+        /// <summary><see cref="ActivityLines"/> with the color each line is drawn in (null: the default).</summary>
+        public static List<(string Text, string Color)> ActivityItems(FsmModel model, Vertex v)
         {
-            var output = new List<string>();
-            if (v.Entry.Length > 0) output.Add($"entry / {v.Entry}");
-            if (v.Exit.Length > 0) output.Add($"exit / {v.Exit}");
-            if (v.DoActivity.Length > 0) output.Add($"do / {v.DoActivity}");
-            foreach (var d in v.Deferrable) output.Add($"{d} / defer");
+            var output = new List<(string, string)>();
+            void Add(string text, string key) => output.Add((text, ElementColors.Item(v.Color, v.ItemColors, key)));
+            if (v.Entry.Length > 0) Add($"entry / {v.Entry}", "entry");
+            if (v.Exit.Length > 0) Add($"exit / {v.Exit}", "exit");
+            if (v.DoActivity.Length > 0) Add($"do / {v.DoActivity}", "doActivity");
+            foreach (var d in v.Deferrable) Add($"{d} / defer", "deferrable");
             foreach (var t in InternalTransitions(model, v))
             {
                 var label = TransitionLabel(model, t);
-                output.Add(label.Length > 0 ? label : "(internal)");
+                output.Add((label.Length > 0 ? label : "(internal)", ElementColors.Of(t.Color) ?? ElementColors.Of(v.Color)));
             }
             return output;
         }

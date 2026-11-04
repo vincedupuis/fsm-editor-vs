@@ -8,7 +8,9 @@ validates state machines exactly the same way:
   and the results of every grammar check for a list of texts;
 - `<case>.fsm`: edge-case models (invalid text, broken structure, protocol
   machine with stereotypes, context and documentation, cycles of pseudostates)
-  written by `toXmi`;
+  written by `toXmi`, except `colors.fsm`, whose colors were then edited by hand
+  (uppercase and invalid values, unknown items, a missing element, a foreign
+  extension) to check that reading them is lenient;
 - `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`.
 
 They were generated with a small script bundling `src/xmi.ts`,
