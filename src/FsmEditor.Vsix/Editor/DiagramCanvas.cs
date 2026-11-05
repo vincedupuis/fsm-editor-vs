@@ -1041,11 +1041,9 @@ namespace FsmEditor.Editor
             InvalidateVisual();
         }
 
-        // A trackpad pans by about 100 pixels per wheel notch (120).
-        private const double TrackpadPixels = 100.0 / 120;
+        // A horizontal scroll pans by about 100 pixels per wheel notch (120).
+        private const double HorizontalPixels = 100.0 / 120;
         private const int WmMouseHWheel = 0x020E;
-        private int _wheelBurstEnd;
-        private bool _wheelTrackpad;
         private readonly HwndSourceHook _hook;
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -1053,18 +1051,8 @@ namespace FsmEditor.Editor
             base.OnMouseWheel(e);
             e.Handled = true;
             var pos = e.GetPosition(this);
-            // The mouse wheel zooms around the pointer and Shift+wheel pans sideways; a trackpad pans
-            // vertically here, horizontally through WM_MOUSEHWHEEL (WndProc), and pinches as Ctrl+wheel
-            // to zoom. A precision touchpad sends deltas that aren't multiples of a notch (120), which
-            // a mouse wheel doesn't: one such event makes its burst of events (no gap over 250 ms) a
-            // trackpad scroll.
-            if (unchecked(e.Timestamp - _wheelBurstEnd) > 0) _wheelTrackpad = false;
-            _wheelBurstEnd = unchecked(e.Timestamp + 250);
-            if (e.Delta % 120 != 0) _wheelTrackpad = true;
-            var mods = Keyboard.Modifiers;
-            if ((mods & ModifierKeys.Control) != 0) ZoomAt(Math.Exp(e.Delta * 0.0018), pos.X, pos.Y);
-            else if ((mods & ModifierKeys.Shift) != 0) SetView(ViewX + e.Delta * 0.5, ViewY, Zoom);
-            else if (_wheelTrackpad) SetView(ViewX, ViewY + e.Delta * TrackpadPixels, Zoom);
+            // The wheel zooms around the pointer; Shift+wheel pans sideways.
+            if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) SetView(ViewX + e.Delta * 0.5, ViewY, Zoom);
             else ZoomAt(Math.Exp(e.Delta * 0.0018), pos.X, pos.Y);
         }
 
@@ -1083,7 +1071,7 @@ namespace FsmEditor.Editor
             var p = PointFromScreen(new Point(unchecked((short)(lp & 0xFFFF)), unchecked((short)((lp >> 16) & 0xFFFF))));
             if (p.X < 0 || p.Y < 0 || p.X > ActualWidth || p.Y > ActualHeight) return IntPtr.Zero;
             var delta = unchecked((short)((wParam.ToInt64() >> 16) & 0xFFFF));
-            SetView(ViewX - delta * TrackpadPixels, ViewY, Zoom);
+            SetView(ViewX - delta * HorizontalPixels, ViewY, Zoom);
             handled = true;
             return IntPtr.Zero;
         }
