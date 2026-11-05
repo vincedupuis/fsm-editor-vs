@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using FsmEditor.Core;
 using Geo = FsmEditor.Core.Geometry;
@@ -36,6 +37,8 @@ namespace FsmEditor.Editor
             FocusVisualStyle = null;
             AllowDrop = true;
             ClipToBounds = true;
+            _hook = WndProc;
+            PresentationSource.AddSourceChangedHandler(this, OnSourceChanged);
         }
 
         private DiagramSession S => _editor.Session;
@@ -1038,14 +1041,51 @@ namespace FsmEditor.Editor
             InvalidateVisual();
         }
 
+        // A trackpad pans by about 100 pixels per wheel notch (120).
+        private const double TrackpadPixels = 100.0 / 120;
+        private const int WmMouseHWheel = 0x020E;
+        private int _wheelBurstEnd;
+        private bool _wheelTrackpad;
+        private readonly HwndSourceHook _hook;
+
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             base.OnMouseWheel(e);
             e.Handled = true;
             var pos = e.GetPosition(this);
-            // The wheel zooms around the pointer; Shift+wheel pans sideways.
-            if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) SetView(ViewX + e.Delta * 0.5, ViewY, Zoom);
+            // The mouse wheel zooms around the pointer and Shift+wheel pans sideways; a trackpad pans
+            // vertically here, horizontally through WM_MOUSEHWHEEL (WndProc), and pinches as Ctrl+wheel
+            // to zoom. A precision touchpad sends deltas that aren't multiples of a notch (120), which
+            // a mouse wheel doesn't: one such event makes its burst of events (no gap over 250 ms) a
+            // trackpad scroll.
+            if (unchecked(e.Timestamp - _wheelBurstEnd) > 0) _wheelTrackpad = false;
+            _wheelBurstEnd = unchecked(e.Timestamp + 250);
+            if (e.Delta % 120 != 0) _wheelTrackpad = true;
+            var mods = Keyboard.Modifiers;
+            if ((mods & ModifierKeys.Control) != 0) ZoomAt(Math.Exp(e.Delta * 0.0018), pos.X, pos.Y);
+            else if ((mods & ModifierKeys.Shift) != 0) SetView(ViewX + e.Delta * 0.5, ViewY, Zoom);
+            else if (_wheelTrackpad) SetView(ViewX, ViewY + e.Delta * TrackpadPixels, Zoom);
             else ZoomAt(Math.Exp(e.Delta * 0.0018), pos.X, pos.Y);
+        }
+
+        // WPF has no horizontal wheel event: WM_MOUSEHWHEEL (trackpad, tilt wheel) goes to the
+        // window, so the canvas hooks the window it is shown in.
+        private void OnSourceChanged(object sender, SourceChangedEventArgs e)
+        {
+            (e.OldSource as HwndSource)?.RemoveHook(_hook);
+            (e.NewSource as HwndSource)?.AddHook(_hook);
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg != WmMouseHWheel || S == null || !IsVisible) return IntPtr.Zero;
+            var lp = lParam.ToInt64();
+            var p = PointFromScreen(new Point(unchecked((short)(lp & 0xFFFF)), unchecked((short)((lp >> 16) & 0xFFFF))));
+            if (p.X < 0 || p.Y < 0 || p.X > ActualWidth || p.Y > ActualHeight) return IntPtr.Zero;
+            var delta = unchecked((short)((wParam.ToInt64() >> 16) & 0xFFFF));
+            SetView(ViewX - delta * TrackpadPixels, ViewY, Zoom);
+            handled = true;
+            return IntPtr.Zero;
         }
 
         protected override void OnContextMenuOpening(System.Windows.Controls.ContextMenuEventArgs e) => e.Handled = true;

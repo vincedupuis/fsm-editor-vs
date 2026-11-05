@@ -471,7 +471,7 @@ namespace FsmEditor.Editor
                 ("Drag", "the ⊕ handle of a selected element to draw a transition."),
                 ("Double-click", "a transition to add a bend point, a bend point to remove it."),
                 ("Drop", "an element into a region to nest it."),
-                ("Right-drag", "Space+drag or middle-drag pans; the wheel zooms; F fits."),
+                ("Right-drag", "Space+drag, middle-drag or two fingers pan; the wheel or a pinch zooms; F fits."),
                 ("Shift+click", "a tool keeps it active."),
                 ("Label syntax", m.Kind == MachineKind.Protocol ? "[isReady()] event / [isDone()]" : "event, after(2s) [isReady() && !isBusy()] / doIt(); log()"),
                 ("Behaviors", "are calls without arguments, e.g. start(); there are no variables."),
