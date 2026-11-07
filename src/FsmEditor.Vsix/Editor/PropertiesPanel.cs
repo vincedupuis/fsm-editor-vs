@@ -549,12 +549,6 @@ namespace FsmEditor.Editor
 
             if (v.Type == VertexType.State) StateProps(v);
 
-            var owner = ix.OwnerState(v);
-            Add(H4("Location"));
-            var where = owner != null
-                ? $"{(ix.IsBorderVertex(v) ? "On the border of" : "Inside")} {Or(owner.Name, owner.Type.Title())}"
-                : v.Type.IsPointType() ? "Connection point of the state machine" : "Top level";
-            Add(Muted($"{where} · {Math.Round(v.X)}, {Math.Round(v.Y)} · {Math.Round(v.W)}×{Math.Round(v.H)}"));
             var issues = IssuesFor(v.Id);
             if (issues != null) Add(issues);
         }
