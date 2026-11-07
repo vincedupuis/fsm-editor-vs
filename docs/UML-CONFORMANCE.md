@@ -77,7 +77,7 @@ A `.fsm` file is an XMI 2.5.1 document with the UML 2.5.1 model and a UML DI dia
 The layout is a `umldi:UMLStateMachineDiagram`:
 
 - every vertex, region and comment has a `umldi:UMLShape` with `dc:Bounds`;
-- every drawn transition has a `umldi:UMLEdge` whose waypoints run from the center of its source, through its bend points, to the center of its target;
+- every drawn transition has a `umldi:UMLEdge` whose waypoints run from the center of its source, through its bend points, to the center of its target. An external or local self-transition of a state is drawn as a loop with three right angles over one of the state's corners, and its only bend point is the loop's far corner (none for the default loop over the top-right corner); a file with more bend points on such a transition gets the default loop;
 - a moved transition label is a `umldi:UMLLabel` on its edge;
 - comment links are `umldi:UMLEdge`s from the comment to the annotated element;
 - colors, which UML DI cannot express, are kept in an `xmi:Extension` (extender `FSM Editor`) at the end of the diagram, with one `<style>` per colored element: `element` is the element's `xmi:id`, `color` its own color, `background` the fill of a composite state's regions, and `entry`, `exit`, `doActivity`, `deferrable`, `invariant`, `triggers`, `guard`, `effect`, `precondition` or `postcondition` the color of that item. Colors are `#rrggbb`; other tools ignore the extension.

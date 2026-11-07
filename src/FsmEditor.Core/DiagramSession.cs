@@ -364,6 +364,7 @@ namespace FsmEditor.Core
         /// <summary>Adds a bend point at <paramref name="p"/>, on the segment nearest to it.</summary>
         public void AddWaypoint(Transition t, PointD p)
         {
+            if (Geometry.IsLoop(Index, t)) return; // a self-transition loop has no bend points
             var pts = Geometry.Route(Index, t);
             if (pts == null) return;
             if (t.Points.Count == 0) t.Points = pts.Skip(1).Take(pts.Count - 2).Select(q => new PointD(Num.Round(q.X), Num.Round(q.Y))).ToList();
@@ -382,6 +383,15 @@ namespace FsmEditor.Core
             t.Points.Insert(best, new PointD(Geometry.Snap(p.X), Geometry.Snap(p.Y)));
             Selection = new HashSet<string> { t.Id };
             Commit();
+        }
+
+        /// <summary>Moves the far corner of a state's self-transition loop to <paramref name="p"/>, kept outside the state.</summary>
+        public void MoveLoopCorner(Transition t, PointD p)
+        {
+            var s = Index.Vertex(t.Source);
+            if (s == null || !Geometry.IsLoop(Index, t)) return;
+            t.Points = new List<PointD> { p };
+            t.Points = new List<PointD> { Geometry.LoopCorner(t, s).Corner };
         }
 
         public void RemoveWaypoint(Transition t, int index)

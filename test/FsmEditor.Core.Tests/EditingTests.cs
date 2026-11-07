@@ -419,5 +419,28 @@ namespace FsmEditor.Core.Tests
             Assert.Equal(a.Y, b.Y);
             Assert.False(s.Align(a.Id, horizontally: false));
         }
+
+        [Fact]
+        public void SelfTransitionLoopsGoOverTheCornerOfTheirFarCorner()
+        {
+            var s = NewSession();
+            var a = AddState(s, "a", s.RootRegion, 100, 100);
+            var t = new Transition { Id = "t1", Source = a.Id, Target = a.Id };
+            s.Model.Transitions.Add(t);
+            s.Reindex();
+            string Route() => string.Join(" ", Geometry.Route(s.Index, t).Select(p => $"{Num.Format(Math.Round(p.X * 10) / 10)},{Num.Format(Math.Round(p.Y * 10) / 10)}"));
+            Assert.Equal("200.8,100 200.8,70 270,70 270,118 240,118", Route());
+            s.MoveLoopCorner(t, new PointD(300, 250));
+            Assert.Equal("240,142 300,142 300,250 200.8,250 200.8,160", Route());
+            s.MoveLoopCorner(t, new PointD(20, 250));
+            Assert.Equal("139.2,160 139.2,250 20,250 20,142 100,142", Route());
+            s.MoveLoopCorner(t, new PointD(20, 20));
+            Assert.Equal("100,118 20,118 20,20 139.2,20 139.2,100", Route());
+            // Inside the state, the far corner is pushed out.
+            s.MoveLoopCorner(t, new PointD(180, 120));
+            Assert.Equal(new PointD(250, 90), Assert.Single(t.Points));
+            s.AddWaypoint(t, new PointD(250, 100));
+            Assert.Single(t.Points);
+        }
     }
 }

@@ -392,6 +392,25 @@
     },
     "colors": {
       "issues": []
+    },
+    "loops": {
+      "issues": [
+        {
+          "id": "t_inside",
+          "severity": "error",
+          "message": "A local transition must go from a composite state to a vertex it contains."
+        },
+        {
+          "id": "t_freeLocal",
+          "severity": "error",
+          "message": "A local transition must go from a composite state to a vertex it contains."
+        },
+        {
+          "id": "c",
+          "severity": "error",
+          "message": "Choices form a cycle without a state: choice -> choice."
+        }
+      ]
     }
   },
   "grammar": [

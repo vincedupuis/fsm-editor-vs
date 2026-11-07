@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="sm_model" name="Loops">
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="sm" name="Loops">
+      <region xmi:type="uml:Region" xmi:id="r_root">
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="init" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="a" name="A"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="c" kind="choice"/>
+        <transition xmi:type="uml:Transition" xmi:id="t_init" kind="external" source="init" target="a"/>
+        <transition xmi:type="uml:Transition" xmi:id="t_default" kind="external" source="a" target="a">
+          <trigger xmi:type="uml:Trigger" xmi:id="t_default_trigger1" name="e1" event="ev_e1"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_corner" kind="external" source="a" target="a">
+          <trigger xmi:type="uml:Trigger" xmi:id="t_corner_trigger1" name="e2" event="ev_e2"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_inside" kind="local" source="a" target="a">
+          <trigger xmi:type="uml:Trigger" xmi:id="t_inside_trigger1" name="e3" event="ev_e3"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_free" kind="external" source="a" target="a">
+          <trigger xmi:type="uml:Trigger" xmi:id="t_free_trigger1" name="e4" event="ev_e4"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_freeLocal" kind="local" source="a" target="a">
+          <trigger xmi:type="uml:Trigger" xmi:id="t_freeLocal_trigger1" name="e5" event="ev_e5"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_internal" kind="internal" source="a" target="a">
+          <trigger xmi:type="uml:Trigger" xmi:id="t_internal_trigger1" name="e6" event="ev_e6"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_go" kind="external" source="a" target="c">
+          <trigger xmi:type="uml:Trigger" xmi:id="t_go_trigger1" name="go" event="ev_go"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_choice" kind="external" source="c" target="c">
+          <guard xmi:type="uml:Constraint" xmi:id="t_choice_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t_choice_guard_spec">
+              <language>FSM</language>
+              <body>again()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_back" kind="external" source="c" target="a">
+          <guard xmi:type="uml:Constraint" xmi:id="t_back_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t_back_guard_spec">
+              <language>FSM</language>
+              <body>else</body>
+            </specification>
+          </guard>
+        </transition>
+      </region>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e1" name="e1" signal="sig_e1"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e1" name="e1"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e2" name="e2" signal="sig_e2"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e2" name="e2"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e3" name="e3" signal="sig_e3"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e3" name="e3"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e4" name="e4" signal="sig_e4"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e4" name="e4"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e5" name="e5" signal="sig_e5"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e5" name="e5"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e6" name="e6" signal="sig_e6"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e6" name="e6"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_go" name="go" signal="sig_go"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_go" name="go"/>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="Loops" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_init" modelElement="init">
+      <bounds xmi:type="dc:Bounds" x="40" y="120" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_a" modelElement="a">
+      <bounds xmi:type="dc:Bounds" x="120" y="100" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_c" modelElement="c">
+      <bounds xmi:type="dc:Bounds" x="400" y="116" width="28" height="28"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_init" modelElement="t_init" source="di_init" target="di_a">
+      <waypoint xmi:type="dc:Point" x="50" y="130"/>
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_default" modelElement="t_default" source="di_a" target="di_a">
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_corner" modelElement="t_corner" source="di_a" target="di_a">
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+      <waypoint xmi:type="dc:Point" x="60" y="240"/>
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+      <ownedElement xmi:type="umldi:UMLLabel" xmi:id="di_t_corner_label" modelElement="t_corner">
+        <bounds xmi:type="dc:Bounds" x="14" y="238" width="100" height="16"/>
+      </ownedElement>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_inside" modelElement="t_inside" source="di_a" target="di_a">
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+      <waypoint xmi:type="dc:Point" x="250" y="150"/>
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_free" modelElement="t_free" source="di_a" target="di_a">
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+      <waypoint xmi:type="dc:Point" x="300" y="60"/>
+      <waypoint xmi:type="dc:Point" x="300" y="200"/>
+      <waypoint xmi:type="dc:Point" x="200" y="200"/>
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+      <ownedElement xmi:type="umldi:UMLLabel" xmi:id="di_t_free_label" modelElement="t_free">
+        <bounds xmi:type="dc:Bounds" x="260" y="44" width="100" height="16"/>
+      </ownedElement>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_freeLocal" modelElement="t_freeLocal" source="di_a" target="di_a">
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+      <waypoint xmi:type="dc:Point" x="100" y="60"/>
+      <waypoint xmi:type="dc:Point" x="60" y="60"/>
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_go" modelElement="t_go" source="di_a" target="di_c">
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+      <waypoint xmi:type="dc:Point" x="414" y="130"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_choice" modelElement="t_choice" source="di_c" target="di_c">
+      <waypoint xmi:type="dc:Point" x="414" y="130"/>
+      <waypoint xmi:type="dc:Point" x="460" y="80"/>
+      <waypoint xmi:type="dc:Point" x="460" y="40"/>
+      <waypoint xmi:type="dc:Point" x="414" y="130"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_back" modelElement="t_back" source="di_c" target="di_a">
+      <waypoint xmi:type="dc:Point" x="414" y="130"/>
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+    </ownedElement>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>

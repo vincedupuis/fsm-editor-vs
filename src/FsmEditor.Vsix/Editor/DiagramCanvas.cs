@@ -465,9 +465,13 @@ namespace FsmEditor.Editor
             if (selected && S.Selection.Count == 1)
             {
                 var wpPen = th.PenOf(th.Accent, 1.5);
-                foreach (var p in t.Points) dc.DrawEllipse(th.BrushOf(th.Background), wpPen, P(p), 4.5, 4.5);
+                foreach (var p in WaypointHandles(t)) dc.DrawEllipse(th.BrushOf(th.Background), wpPen, P(p), 4.5, 4.5);
             }
         }
+
+        /// <summary>The bend points to drag: the far corner of a state's self-transition loop, or the transition's bend points.</summary>
+        private IReadOnlyList<PointD> WaypointHandles(Transition t) =>
+            Geo.IsLoop(S.Index, t) ? new[] { Geo.LoopCorner(t, S.Index.Vertex(t.Source)).Corner } : (IReadOnlyList<PointD>)t.Points;
 
         private static Point P(PointD p) => new Point(p.X, p.Y);
 
@@ -561,9 +565,10 @@ namespace FsmEditor.Editor
                 var selected = ix.Transition(S.Selection.First());
                 if (selected != null)
                 {
-                    for (int i = 0; i < selected.Points.Count; i++)
+                    var handles = WaypointHandles(selected);
+                    for (int i = 0; i < handles.Count; i++)
                     {
-                        if (Geo.Dist(p, selected.Points[i]) <= 4.5 + tolerance) return new Hit { Kind = HitKind.Waypoint, Id = selected.Id, Index = i };
+                        if (Geo.Dist(p, handles[i]) <= 4.5 + tolerance) return new Hit { Kind = HitKind.Waypoint, Id = selected.Id, Index = i };
                     }
                 }
             }
@@ -898,8 +903,12 @@ namespace FsmEditor.Editor
                     if (d.Hover != null && S.Index.Vertex(d.Hover) == null) d.Hover = null;
                     break;
                 case DragKind.Waypoint:
-                    d.Transition.Points[d.Index] = Alt ? p : new PointD(Geo.Snap(p.X), Geo.Snap(p.Y));
+                {
+                    var q = Alt ? p : new PointD(Geo.Snap(p.X), Geo.Snap(p.Y));
+                    if (Geo.IsLoop(S.Index, d.Transition)) S.MoveLoopCorner(d.Transition, q);
+                    else d.Transition.Points[d.Index] = q;
                     break;
+                }
                 case DragKind.Label:
                     d.Moved = true;
                     d.Transition.LabelOffset = new PointD(Num.Round(d.Offset0.X + p.X - d.Start.X), Num.Round(d.Offset0.Y + p.Y - d.Start.Y));

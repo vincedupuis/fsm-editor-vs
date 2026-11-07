@@ -208,16 +208,58 @@ namespace FsmEditor.Core
             }
         }
 
+        /// <summary>An external or local self-transition of a state: a loop with three right angles over one of its corners.</summary>
+        public static bool IsLoop(ModelIndex ix, Transition t)
+        {
+            if (t.Source != t.Target || t.Kind == TransitionKind.Internal) return false;
+            var s = ix.Vertex(t.Source);
+            return s != null && s.Type == VertexType.State;
+        }
+
+        /// <summary>Smallest distance between a state and the far corner of its self-transition loop.</summary>
+        public const double LoopMinGap = 10;
+
+        /// <summary>
+        /// Far corner of a state's self-transition loop: its only bend point, or by default over the
+        /// top-right corner. The quadrant around the state's center that holds it picks the state's
+        /// corner, and it stays outside the state.
+        /// </summary>
+        public static (PointD Corner, bool Right, bool Below) LoopCorner(Transition t, Vertex s)
+        {
+            var gap = Math.Max(18, Math.Min(30, s.W / 3));
+            var p = t.Points.Count == 1 ? t.Points[0] : new PointD(s.X + s.W + gap, s.Y - gap);
+            var right = p.X >= s.X + s.W / 2;
+            var below = p.Y > s.Y + s.H / 2;
+            var corner = new PointD(
+                right ? Math.Max(p.X, s.X + s.W + LoopMinGap) : Math.Min(p.X, s.X - LoopMinGap),
+                below ? Math.Max(p.Y, s.Y + s.H + LoopMinGap) : Math.Min(p.Y, s.Y - LoopMinGap));
+            return (corner, right, below);
+        }
+
+        /// <summary>Points of a state's self-transition loop, clockwise around the state's corner.</summary>
+        public static List<PointD> LoopRoute(Transition t, Vertex s)
+        {
+            var (c, right, below) = LoopCorner(t, s);
+            var hx = right ? s.X + s.W * 0.72 : s.X + s.W * 0.28;
+            var hy = below ? s.Y + s.H : s.Y;
+            var vx = right ? s.X + s.W : s.X;
+            var vy = below ? s.Y + s.H - Math.Min(s.H * 0.3, 22) : s.Y + Math.Min(s.H * 0.3, 22);
+            return right == below
+                ? new List<PointD> { new PointD(vx, vy), new PointD(c.X, vy), c, new PointD(hx, c.Y), new PointD(hx, hy) }
+                : new List<PointD> { new PointD(hx, hy), new PointD(hx, c.Y), c, new PointD(c.X, vy), new PointD(vx, vy) };
+        }
+
         /// <summary>The polyline a transition is drawn along, or null when an end is missing.</summary>
         public static List<PointD> Route(ModelIndex ix, Transition t)
         {
             var s = ix.Vertex(t.Source);
             var g = ix.Vertex(t.Target);
             if (s == null || g == null) return null;
+            if (IsLoop(ix, t)) return LoopRoute(t, s);
             var pts = t.Points;
             if (s == g && pts.Count == 0)
             {
-                // Self transition: a loop over the top-right corner.
+                // Other self transitions: a loop over the top-right corner.
                 var gap = Math.Max(18, Math.Min(30, s.W / 3));
                 var a = new PointD(s.X + s.W * 0.72, s.Y - gap);
                 var b = new PointD(s.X + s.W + gap, s.Y - gap);

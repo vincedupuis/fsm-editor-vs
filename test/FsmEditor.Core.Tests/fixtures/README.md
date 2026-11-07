@@ -10,7 +10,9 @@ validates state machines exactly the same way:
   machine with stereotypes, context and documentation, cycles of pseudostates)
   written by `toXmi`, except `colors.fsm`, whose colors were then edited by hand
   (uppercase and invalid values, unknown items, a missing element, a foreign
-  extension) to check that reading them is lenient;
+  extension) to check that reading them is lenient, and `loops.fsm`, given extra
+  waypoints on self-transitions (as older versions wrote them) to check that
+  reading resets a state's loop and keeps a pseudostate's bend points;
 - `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`.
 
 They were generated with a small script bundling `src/xmi.ts`,

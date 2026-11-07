@@ -265,6 +265,11 @@ namespace FsmEditor.Core
                 v.Ref = v.Ref ?? "";
                 v.Text = v.Text ?? "";
             }
+            var types = new Dictionary<string, VertexType>();
+            foreach (var v in Vertices)
+            {
+                if (v.Id != null) types[v.Id] = v.Type;
+            }
             foreach (var t in Transitions)
             {
                 t.Triggers = t.Triggers ?? new List<string>();
@@ -273,6 +278,14 @@ namespace FsmEditor.Core
                 t.Effect = t.Effect ?? "";
                 t.Precondition = t.Precondition ?? "";
                 t.Postcondition = t.Postcondition ?? "";
+                // A state's self-transition is a loop whose only bend point is its far corner:
+                // older free bend points go back to the default loop.
+                if (t.Source == t.Target && t.Kind != TransitionKind.Internal && t.Source != null
+                    && types.TryGetValue(t.Source, out var type) && type == VertexType.State && t.Points.Count > 1)
+                {
+                    t.Points.Clear();
+                    t.LabelOffset = null;
+                }
             }
             return this;
         }
