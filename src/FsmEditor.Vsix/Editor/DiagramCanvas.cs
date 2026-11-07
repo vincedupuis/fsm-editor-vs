@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -657,6 +659,8 @@ namespace FsmEditor.Editor
             public PointD Offset0;
             public bool Additive;
             public HashSet<string> Base;
+            /// <summary>A right-button pan, which opens the context menu when the pointer doesn't move.</summary>
+            public bool RightButton;
         }
 
         private static bool Additive => (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0;
@@ -675,7 +679,7 @@ namespace FsmEditor.Editor
 
             if (e.ChangedButton == MouseButton.Middle || e.ChangedButton == MouseButton.Right || _space)
             {
-                _drag = new DragState { Kind = DragKind.Pan, ScreenStart = screen, ViewX0 = ViewX, ViewY0 = ViewY };
+                _drag = new DragState { Kind = DragKind.Pan, ScreenStart = screen, ViewX0 = ViewX, ViewY0 = ViewY, Start = p, RightButton = e.ChangedButton == MouseButton.Right && !_space };
                 Cursor = Cursors.ScrollAll;
                 CaptureMouse();
                 return;
@@ -824,6 +828,8 @@ namespace FsmEditor.Editor
             switch (d.Kind)
             {
                 case DragKind.Pan:
+                    if (!d.Moved && (screen - d.ScreenStart).Length < 3) return;
+                    d.Moved = true;
                     SetView(d.ViewX0 + screen.X - d.ScreenStart.X, d.ViewY0 + screen.Y - d.ScreenStart.Y, Zoom);
                     return;
                 case DragKind.Move:
@@ -952,6 +958,7 @@ namespace FsmEditor.Editor
             switch (d.Kind)
             {
                 case DragKind.Pan:
+                    if (d.RightButton && !d.Moved) ShowContextMenu(d.Start);
                     InvalidateVisual();
                     break;
                 case DragKind.Move:
@@ -1074,6 +1081,57 @@ namespace FsmEditor.Editor
             SetView(ViewX - delta * HorizontalPixels, ViewY, Zoom);
             handled = true;
             return IntPtr.Zero;
+        }
+
+        /// <summary>The menu of a right-click on a state: it selects the state unless it is already selected.</summary>
+        private void ShowContextMenu(PointD p)
+        {
+            S.Reindex();
+            var hit = HitTest(p);
+            var state = hit.Kind == HitKind.Vertex ? S.Index.Vertex(hit.Id) : null;
+            if (state == null || state.Type != VertexType.State || Tool != null) return;
+            if (!S.Selection.Contains(state.Id))
+            {
+                S.Selection = new HashSet<string> { state.Id };
+                _editor.RenderProps();
+                _editor.RenderStatus();
+            }
+            var canAlign = S.SelectionRoots().Count(v => v.Type == VertexType.State) >= 2;
+            var th = Theme.Current;
+            var items = new StackPanel { Margin = new Thickness(2) };
+            var popup = new Popup
+            {
+                PlacementTarget = this,
+                Placement = PlacementMode.MousePoint,
+                StaysOpen = false,
+                AllowsTransparency = true,
+                Child = new Border
+                {
+                    Child = items,
+                    Background = th.BrushOf(th.Panel),
+                    BorderBrush = th.BrushOf(th.Border),
+                    BorderThickness = new Thickness(1),
+                    MinWidth = 160,
+                },
+            };
+            void Item(string label, bool horizontally)
+            {
+                var b = EditorControl.FlatButton(new TextBlock { Text = label, Margin = new Thickness(4, 0, 12, 0) }, null);
+                b.HorizontalContentAlignment = HorizontalAlignment.Left;
+                b.Padding = new Thickness(4);
+                b.IsEnabled = canAlign;
+                if (!canAlign) b.Opacity = 0.45;
+                b.Click += (s, e) =>
+                {
+                    popup.IsOpen = false;
+                    if (S.Align(state.Id, horizontally)) _editor.RenderProps();
+                    InvalidateVisual();
+                };
+                items.Children.Add(b);
+            }
+            Item("Align Horizontally", true);
+            Item("Align Vertically", false);
+            popup.IsOpen = true;
         }
 
         protected override void OnContextMenuOpening(System.Windows.Controls.ContextMenuEventArgs e) => e.Handled = true;

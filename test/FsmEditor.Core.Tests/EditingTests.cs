@@ -284,5 +284,140 @@ namespace FsmEditor.Core.Tests
             Assert.Equal(0.3, Num.R1(0.25));
             Assert.Equal(-2, Num.Round(-2.5));
         }
+        private static Vertex AddState(DiagramSession s, string id, string parent, double x, double y, double w = 140, double h = 60, int regions = 0, RegionLayout layout = RegionLayout.Vertical)
+        {
+            var v = new Vertex { Id = id, Type = VertexType.State, Name = id, Parent = parent, X = x, Y = y, W = w, H = h, RegionLayout = layout };
+            for (int i = 0; i < regions; i++) v.Regions.Add(new Region { Id = id + "_r" + i });
+            s.Model.Vertices.Add(v);
+            s.Reindex();
+            return v;
+        }
+
+        [Fact]
+        public void AlignsTheSelectedStatesOnTheClickedOne()
+        {
+            var s = NewSession();
+            var a = AddState(s, "a", s.RootRegion, 1000, 1000);
+            var b = AddState(s, "b", s.RootRegion, 1300, 1120, 100, 40);
+            var c = AddState(s, "c", s.RootRegion, 1600, 900);
+            var init = s.Index.Vertex("v_init");
+            var initAt = (init.X, init.Y);
+            s.Selection = new HashSet<string> { a.Id, b.Id, c.Id, init.Id };
+            var commits = 0;
+            s.Committed += (o, e) => commits++;
+            Assert.True(s.Align(b.Id, horizontally: true));
+            Assert.Equal(1, commits);
+            Assert.Equal((1000.0, 1110.0), (a.X, a.Y));
+            Assert.Equal((1300.0, 1120.0), (b.X, b.Y));
+            Assert.Equal((1600.0, 1110.0), (c.X, c.Y));
+            Assert.True(s.Align(a.Id, horizontally: false));
+            Assert.Equal((1000.0, 1110.0), (a.X, a.Y));
+            Assert.Equal((1020.0, 1120.0), (b.X, b.Y));
+            Assert.Equal((1000.0, 1110.0), (c.X, c.Y));
+            // Pseudostates are left alone, and a single state has nothing to align with.
+            Assert.Equal(initAt, (init.X, init.Y));
+            s.Selection = new HashSet<string> { a.Id, init.Id };
+            Assert.False(s.Align(a.Id, horizontally: true));
+        }
+
+        [Fact]
+        public void AligningMovesAStateWithItsContents()
+        {
+            var s = NewSession();
+            var comp = AddState(s, "comp", s.RootRegion, 1000, 1000, 280, 190, regions: 1);
+            var inner = AddState(s, "inner", "comp_r0", 1040, 1080);
+            var other = AddState(s, "other", "comp_r0", 1100, 1100);
+            var t = new Transition { Id = "t1", Source = inner.Id, Target = other.Id, Points = new List<PointD> { new PointD(1200, 1060) } };
+            s.Model.Transitions.Add(t);
+            var b = AddState(s, "b", s.RootRegion, 1500, 1300);
+            s.Selection = new HashSet<string> { comp.Id, inner.Id, b.Id };
+            Assert.True(s.Align(b.Id, horizontally: true));
+            Assert.Equal(1235, comp.Y);
+            Assert.Equal(1315, inner.Y);
+            Assert.Equal(1335, other.Y);
+            Assert.Equal(new PointD(1200, 1295), t.Points[0]);
+            Assert.Equal((280.0, 190.0), (comp.W, comp.H));
+        }
+
+        [Fact]
+        public void AligningGrowsTheRegionsThatNoLongerHoldTheirStates()
+        {
+            var s = NewSession();
+            var outer = AddState(s, "outer", s.RootRegion, 1000, 1000, 400, 300, regions: 1);
+            var comp = AddState(s, "comp", "outer_r0", 1020, 1050, 280, 190, regions: 1);
+            var inner = AddState(s, "inner", "comp_r0", 1040, 1100);
+            var top = AddState(s, "top", s.RootRegion, 600, 1500);
+            s.Selection = new HashSet<string> { inner.Id, top.Id };
+            Assert.True(s.Align(top.Id, horizontally: true));
+            Assert.Equal(1500, inner.Y);
+            Assert.Equal("comp_r0", inner.Parent);
+            Assert.Equal((1020.0, 1050.0, 280.0), (comp.X, comp.Y, comp.W));
+            Assert.Equal(1570, comp.Y + comp.H);
+            Assert.Equal((1000.0, 1000.0, 400.0), (outer.X, outer.Y, outer.W));
+            Assert.Equal(1580, outer.Y + outer.H);
+
+            Assert.True(s.Align(top.Id, horizontally: false));
+            Assert.Equal(600, inner.X);
+            Assert.Equal((590.0, 1300.0), (comp.X, comp.X + comp.W));
+            Assert.Equal((580.0, 1400.0), (outer.X, outer.X + outer.W));
+        }
+
+        [Fact]
+        public void AligningUpwardGrowsTheStateAboveItsHeader()
+        {
+            var s = NewSession();
+            var comp = AddState(s, "comp", s.RootRegion, 1000, 1000, 280, 190, regions: 1);
+            var inner = AddState(s, "inner", "comp_r0", 1040, 1100);
+            var top = AddState(s, "top", s.RootRegion, 600, 900);
+            s.Selection = new HashSet<string> { inner.Id, top.Id };
+            Assert.True(s.Align(top.Id, horizontally: true));
+            var header = Geometry.HeaderHeight(s.Model, comp);
+            Assert.Equal(900 - DiagramSession.FitMargin - header, comp.Y, 6);
+            Assert.Equal(1190, comp.Y + comp.H, 6);
+            Assert.Equal(900, Geometry.RegionRects(s.Model, comp)[0].Rect.Y + DiagramSession.FitMargin, 6);
+        }
+
+        [Fact]
+        public void AligningGrowsEveryRegionOfAnOrthogonalState()
+        {
+            var s = NewSession();
+            // Stacked regions of 100 below a header: the second one holds b.
+            var orth = AddState(s, "orth", s.RootRegion, 1000, 1000, 300, 0, regions: 2);
+            var header = Geometry.HeaderHeight(s.Model, orth);
+            orth.H = header + 200;
+            var a = AddState(s, "a", "orth_r0", 1020, 1000 + header + 20);
+            var b = AddState(s, "b", "orth_r1", 1020, 1000 + header + 120);
+            var c = AddState(s, "c", s.RootRegion, 1600, 1000 + header + 300);
+            s.Selection = new HashSet<string> { b.Id, c.Id };
+            Assert.True(s.Align(c.Id, horizontally: true));
+            var rects = Geometry.RegionRects(s.Model, orth);
+            Assert.True(rects[0].Rect.Bottom >= a.Y + a.H + DiagramSession.FitMargin - 1e-6);
+            Assert.True(rects[1].Rect.Y <= b.Y - DiagramSession.FitMargin + 1e-6);
+            Assert.True(rects[1].Rect.Bottom >= b.Y + b.H + DiagramSession.FitMargin - 1e-6);
+            Assert.Equal(1000, orth.Y);
+            Assert.Equal(rects[0].Rect.H, rects[1].Rect.H, 6);
+        }
+
+        [Fact]
+        public void StatesOfStackedRegionsCannotShareARow()
+        {
+            var s = NewSession();
+            var orth = AddState(s, "orth", s.RootRegion, 1000, 1000, 340, 250, regions: 2);
+            var a = AddState(s, "a", "orth_r0", 1020, 1050);
+            var b = AddState(s, "b", "orth_r1", 1180, 1160);
+            string message = null;
+            s.Message += (o, m) => message = m;
+            s.Selection = new HashSet<string> { a.Id, b.Id };
+            Assert.False(s.Align(a.Id, horizontally: true));
+            Assert.Equal("The states cannot be aligned: they would leave their regions of 'orth'.", message);
+            Assert.Equal((1180.0, 1160.0), (b.X, b.Y));
+            Assert.Equal((1000.0, 1000.0, 340.0, 250.0), (orth.X, orth.Y, orth.W, orth.H));
+            // Side by side, the same states can share a row but not a column.
+            orth.RegionLayout = RegionLayout.Horizontal;
+            b.X = 1200;
+            Assert.True(s.Align(a.Id, horizontally: true));
+            Assert.Equal(a.Y, b.Y);
+            Assert.False(s.Align(a.Id, horizontally: false));
+        }
     }
 }

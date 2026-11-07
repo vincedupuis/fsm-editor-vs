@@ -491,6 +491,152 @@ namespace FsmEditor.Core
             return true;
         }
 
+        /// <summary>Space kept between a region's border and its contents when <see cref="Align"/> grows a state.</summary>
+        public const double FitMargin = 10;
+
+        /// <summary>
+        /// Aligns the selected states (without a selected ancestor) with <paramref name="anchorId"/>: on its
+        /// horizontal center line when <paramref name="horizontally"/>, else on its vertical one. Each state
+        /// moves with its contents and stays in its region; the enclosing composite states grow so that their
+        /// regions still hold their states. Returns false, changing nothing, when fewer than two states are
+        /// selected or when states of different regions of one state would overlap along its region layout.
+        /// </summary>
+        public bool Align(string anchorId, bool horizontally)
+        {
+            var states = SelectionRoots().Where(v => v.Type == VertexType.State).ToList();
+            var clicked = Index.Vertex(anchorId);
+            if (clicked == null) return false;
+            var anchor = Index.Ancestors(clicked).LastOrDefault(a => Selection.Contains(a.Id)) ?? clicked;
+            if (states.Count < 2 || !states.Contains(anchor)) return false;
+
+            var saved = Model.Vertices.Select(v => (V: v, v.X, v.Y, v.W, v.H)).ToList();
+            var savedPoints = Model.Transitions.Select(t => (T: t, t.Points)).ToList();
+            var moved = new List<Vertex>();
+            foreach (var v in states)
+            {
+                var dx = horizontally ? 0 : anchor.CenterX - v.CenterX;
+                var dy = horizontally ? anchor.CenterY - v.CenterY : 0;
+                if (dx == 0 && dy == 0) continue;
+                moved.Add(v);
+                var group = new[] { v }.Concat(Index.Descendants(v)).ToList();
+                foreach (var x in group)
+                {
+                    x.X += dx;
+                    x.Y += dy;
+                }
+                var ids = new HashSet<string>(group.Select(x => x.Id));
+                foreach (var t in Model.Transitions)
+                {
+                    if (t.Points.Count > 0 && ids.Contains(t.Source) && ids.Contains(t.Target))
+                    {
+                        t.Points = t.Points.Select(q => new PointD(q.X + dx, q.Y + dy)).ToList();
+                    }
+                }
+            }
+            if (moved.Count == 0) return false;
+
+            // Innermost first: a state that grows may no longer fit in its own region.
+            foreach (var s in moved.SelectMany(Index.Ancestors).Distinct().OrderByDescending(Index.Depth).ToList())
+            {
+                if (FitRegions(s)) continue;
+                foreach (var (v, x, y, w, h) in saved)
+                {
+                    v.X = x;
+                    v.Y = y;
+                    v.W = w;
+                    v.H = h;
+                }
+                foreach (var (t, points) in savedPoints) t.Points = points;
+                Say($"The states cannot be aligned: they would leave their regions of '{s.Name}'.");
+                return false;
+            }
+            Commit();
+            return true;
+        }
+
+        /// <summary>Grows <paramref name="s"/> so that each of its regions holds its vertices; false when no size can.</summary>
+        private bool FitRegions(Vertex s)
+        {
+            var n = s.Regions.Count;
+            var boxes = new List<(int I, RectD R)>();
+            for (int i = 0; i < n; i++)
+            {
+                var id = s.Regions[i].Id;
+                var kids = Model.Vertices.Where(v => v.Parent == id).ToList();
+                if (kids.Count == 0) continue;
+                var x0 = kids.Min(v => v.X);
+                var y0 = kids.Min(v => v.Y);
+                boxes.Add((i, new RectD(x0, y0, kids.Max(v => v.X + v.W) - x0, kids.Max(v => v.Y + v.H) - y0)));
+            }
+            if (boxes.Count == 0) return true;
+            if (s.RegionLayout == RegionLayout.Horizontal)
+            {
+                var along = FitAlong(s.X, s.X + s.W, n, boxes.Select(b => (b.I, b.R.X, b.R.Right)));
+                if (along == null) return false;
+                Stretch(s.X, s.X + s.W, along.Value, n, out var x, out var w);
+                s.X = x;
+                s.W = w;
+                var header = Geometry.HeaderHeight(Model, s);
+                Stretch(s.Y + header, s.Y + s.H, boxes.Min(b => b.R.Y) - FitMargin, boxes.Max(b => b.R.Bottom) + FitMargin, out var top, out var bottom);
+                s.Y = top - header;
+                s.H = bottom - s.Y;
+            }
+            else
+            {
+                Stretch(s.X, s.X + s.W, boxes.Min(b => b.R.X) - FitMargin, boxes.Max(b => b.R.Right) + FitMargin, out var left, out var right);
+                s.X = left;
+                s.W = right - left;
+                // After the width: the wrapped activities depend on it.
+                var header = Geometry.HeaderHeight(Model, s);
+                var along = FitAlong(s.Y + header, s.Y + s.H, n, boxes.Select(b => (b.I, b.R.Y, b.R.Bottom)));
+                if (along == null) return false;
+                Stretch(s.Y + header, s.Y + s.H, along.Value, n, out var top, out var bottom);
+                s.Y = top - header;
+                s.H = bottom - s.Y;
+            }
+            KeepPointsOnBorder(s);
+            return true;
+        }
+
+        /// <summary>
+        /// Start and size of <paramref name="n"/> equal regions laid out from <paramref name="start0"/> to
+        /// <paramref name="end0"/>, grown as little as possible so that region <c>I</c> spans <c>[Lo, Hi]</c>
+        /// with the margin; null when the extents overlap so that no size fits them.
+        /// </summary>
+        private static (double Start, double Size)? FitAlong(double start0, double end0, int n, IEnumerable<(int I, double Lo, double Hi)> items)
+        {
+            // Region i spans [start + i * size, start + (i + 1) * size]. Upper bounds: start + j * size <= a;
+            // lower bounds: start + (k + 1) * size >= b. The first and last ones keep the old extent.
+            var uppers = new List<(int J, double A)> { (0, start0) };
+            var lowers = new List<(int K, double B)> { (n - 1, end0) };
+            foreach (var (i, lo, hi) in items)
+            {
+                uppers.Add((i, lo - FitMargin));
+                lowers.Add((i, hi + FitMargin));
+            }
+            // Each pair bounds the size from below when the lower bound's region doesn't come before the upper one's.
+            var size = Math.Max(0, (end0 - start0) / n);
+            foreach (var (j, a) in uppers)
+            {
+                foreach (var (k, b) in lowers)
+                {
+                    if (k + 1 > j) size = Math.Max(size, (b - a) / (k + 1 - j));
+                }
+            }
+            var start = uppers.Min(u => u.A - u.J * size);
+            return lowers.All(l => start + (l.K + 1) * size >= l.B - 1e-6) ? (start, size) : ((double, double)?)null;
+        }
+
+        private static void Stretch(double start0, double end0, (double Start, double Size) along, int n, out double start, out double end) =>
+            Stretch(start0, end0, along.Start, along.Start + n * along.Size, out start, out end);
+
+        /// <summary>The extent <paramref name="start0"/>..<paramref name="end0"/> grown to cover <paramref name="lo"/>..<paramref name="hi"/>, unchanged where it already does.</summary>
+        private static void Stretch(double start0, double end0, double lo, double hi, out double start, out double end)
+        {
+            start = lo < start0 - 1e-6 ? lo : start0;
+            end = hi > end0 + 1e-6 ? hi : end0;
+        }
+
         /// <summary>Selected elements without a selected ancestor, which lead a move.</summary>
         public List<Vertex> SelectionRoots() =>
             Selection.Select(Index.Vertex).Where(v => v != null && !Index.Ancestors(v).Any(a => Selection.Contains(a.Id))).ToList();
