@@ -1083,20 +1083,26 @@ namespace FsmEditor.Editor
             return IntPtr.Zero;
         }
 
-        /// <summary>The menu of a right-click on a state: it selects the state unless it is already selected.</summary>
+        /// <summary>
+        /// The menu of a right-click on an element or on empty canvas. A right-click
+        /// on an element selects it unless it is already selected.
+        /// </summary>
         private void ShowContextMenu(PointD p)
         {
+            if (Tool != null) return;
             S.Reindex();
+            var at = Mouse.GetPosition(this);
             var hit = HitTest(p);
-            var state = hit.Kind == HitKind.Vertex ? S.Index.Vertex(hit.Id) : null;
-            if (state == null || state.Type != VertexType.State || Tool != null) return;
-            if (!S.Selection.Contains(state.Id))
+            var id = hit.Kind == HitKind.Vertex || hit.Kind == HitKind.Transition || hit.Kind == HitKind.Label || hit.Kind == HitKind.Waypoint ? hit.Id
+                : hit.Kind == HitKind.Handle && S.Selection.Count == 1 ? S.Selection.First()
+                : null;
+            if (id != null && !S.Selection.Contains(id))
             {
-                S.Selection = new HashSet<string> { state.Id };
+                S.Selection = new HashSet<string> { id };
                 _editor.RenderProps();
                 _editor.RenderStatus();
+                InvalidateVisual();
             }
-            var canAlign = S.SelectionRoots().Count(v => v.Type == VertexType.State) >= 2;
             var th = Theme.Current;
             var items = new StackPanel { Margin = new Thickness(2) };
             var popup = new Popup
@@ -1114,23 +1120,34 @@ namespace FsmEditor.Editor
                     MinWidth = 160,
                 },
             };
-            void Item(string label, bool horizontally)
+            void Item(string label, Action onClick, bool enabled = true)
             {
                 var b = EditorControl.FlatButton(new TextBlock { Text = label, Margin = new Thickness(4, 0, 12, 0) }, null);
                 b.HorizontalContentAlignment = HorizontalAlignment.Left;
                 b.Padding = new Thickness(4);
-                b.IsEnabled = canAlign;
-                if (!canAlign) b.Opacity = 0.45;
+                b.IsEnabled = enabled;
+                if (!enabled) b.Opacity = 0.45;
                 b.Click += (s, e) =>
                 {
                     popup.IsOpen = false;
-                    if (S.Align(state.Id, horizontally)) _editor.RenderProps();
-                    InvalidateVisual();
+                    onClick();
                 };
                 items.Children.Add(b);
             }
-            Item("Align Horizontally", true);
-            Item("Align Vertically", false);
+            var state = id != null ? S.Index.Vertex(id) : null;
+            if (state != null && state.Type == VertexType.State)
+            {
+                var canAlign = S.SelectionRoots().Count(v => v.Type == VertexType.State) >= 2;
+                void Align(bool horizontally)
+                {
+                    if (S.Align(state.Id, horizontally)) _editor.RenderProps();
+                    InvalidateVisual();
+                }
+                Item("Align Horizontally", () => Align(true), canAlign);
+                Item("Align Vertically", () => Align(false), canAlign);
+                items.Children.Add(new Border { Height = 1, Margin = new Thickness(0, 4, 0, 4), Background = th.BrushOf(th.Border) });
+            }
+            Item("Properties…", () => _editor.OpenPropertiesWindow(id, at));
             popup.IsOpen = true;
         }
 

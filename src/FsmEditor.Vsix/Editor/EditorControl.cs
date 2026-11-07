@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
@@ -67,6 +68,10 @@ namespace FsmEditor.Editor
         private Dictionary<string, List<Issue>> _issuesById = new Dictionary<string, List<Issue>>();
         private bool _firstLoad = true;
         private InlineEdit _inline;
+        /// <summary>The properties window opened from the context menu, its panel and the element it shows (null: the machine).</summary>
+        private Border _window;
+        private PropertiesPanel _windowProps;
+        private string _windowId;
 
         public EditorControl(IEditorHost host)
         {
@@ -141,6 +146,10 @@ namespace FsmEditor.Editor
             };
             // Clicking the diagram takes the focus away from an auto-hidden panel.
             _canvasHost.PreviewMouseDown += (s, e) => HideSlidPanes(false);
+            PreviewMouseDown += (s, e) =>
+            {
+                if (_window != null && !InWindow(e.OriginalSource)) ClosePropertiesWindow();
+            };
             LoadPanes();
             BuildChrome();
         }
@@ -151,6 +160,7 @@ namespace FsmEditor.Editor
 
         private void OnThemeChanged(object sender, EventArgs e)
         {
+            ClosePropertiesWindow();
             BuildChrome();
             RenderProps();
             _canvas.InvalidateVisual();
@@ -200,7 +210,7 @@ namespace FsmEditor.Editor
                 }
                 RenderProps();
             }
-            else if (!_props.IsKeyboardFocusWithin)
+            else if (!_props.IsKeyboardFocusWithin && _windowProps?.IsKeyboardFocusWithin != true)
             {
                 RenderProps();
             }
@@ -220,9 +230,109 @@ namespace FsmEditor.Editor
 
         public List<Issue> IssuesFor(string id) => _issuesById.TryGetValue(id, out var list) ? list : new List<Issue>();
 
+        /// <summary>Rebuilds the properties panel, and the properties window if it still shows the selection.</summary>
         public void RenderProps()
         {
-            if (Session != null) _props.Render();
+            if (_window != null)
+            {
+                Session?.Reindex();
+                var shown = Session != null && (_windowId == null
+                    ? Session.Selection.Count == 0
+                    : Session.Selection.Count == 1 && Session.Selection.Contains(_windowId)
+                        && (Session.Index.Vertex(_windowId) != null || Session.Index.Transition(_windowId) != null));
+                if (!shown) ClosePropertiesWindow();
+            }
+            if (Session == null) return;
+            _props.Render();
+            _windowProps?.Render();
+        }
+
+        // ---------------------------------------------------------------- properties window
+
+        /// <summary>
+        /// Opens the properties of element <paramref name="id"/> (null: the machine) in a window
+        /// over the diagram at <paramref name="at"/> (relative to the canvas), selecting the element.
+        /// </summary>
+        public void OpenPropertiesWindow(string id, Point at)
+        {
+            ClosePropertiesWindow();
+            if (Session == null) return;
+            Session.Selection = id != null ? new HashSet<string> { id } : new HashSet<string>();
+            var th = Theme.Current;
+            var head = new DockPanel { Height = 24, Background = th.BrushOf(Theme.Mix(th.Panel, th.Foreground, 0.06)) };
+            var close = FlatButton(Icons.Create("close", th.Foreground, th.Panel, 14), "Close (Esc)");
+            close.Padding = new Thickness(2);
+            close.Margin = new Thickness(1, 0, 1, 0);
+            close.Click += (s, e) => ClosePropertiesWindow();
+            SetDock(close, Dock.Right);
+            head.Children.Add(close);
+            head.Children.Add(new TextBlock { Text = "Properties", FontSize = 12, Margin = new Thickness(8, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center });
+            _windowProps = new PropertiesPanel(this) { Margin = new Thickness(12, 8, 12, 12) };
+            var body = new DockPanel();
+            SetDock(head, Dock.Top);
+            body.Children.Add(head);
+            body.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _windowProps });
+            _window = new Border
+            {
+                Child = body,
+                Width = 290,
+                Background = th.BrushOf(th.Panel),
+                BorderBrush = th.BrushOf(th.Border),
+                BorderThickness = new Thickness(1),
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 16, ShadowDepth = 3, Opacity = 0.3 },
+                Focusable = true,
+                FocusVisualStyle = null,
+            };
+            AutomationProperties.SetName(_window, "Properties");
+            _window.PreviewKeyDown += (s, e) =>
+            {
+                // Esc on an open drop-down closes just the drop-down.
+                if (e.Key != Key.Escape || e.OriginalSource is ComboBoxItem || (e.OriginalSource as ComboBox)?.IsDropDownOpen == true) return;
+                e.Handled = true;
+                ClosePropertiesWindow();
+                _canvas.Focus();
+            };
+            Panel.SetZIndex(_window, 10);
+            _windowId = id;
+            _floatLayer.Children.Add(_window);
+            RenderProps();
+            _canvas.InvalidateVisual();
+            RenderStatus();
+
+            var p = _canvas.TranslatePoint(at, _floatLayer);
+            var layerW = _floatLayer.ActualWidth;
+            var layerH = _floatLayer.ActualHeight;
+            _window.Measure(new Size(_window.Width, double.PositiveInfinity));
+            var x = Math.Max(4, Math.Min(p.X, layerW - _window.Width - 4));
+            var y = Math.Max(4, Math.Min(p.Y, layerH - _window.DesiredSize.Height - 4));
+            System.Windows.Controls.Canvas.SetLeft(_window, x);
+            System.Windows.Controls.Canvas.SetTop(_window, y);
+            _window.MaxHeight = Math.Max(120, layerH - y - 4);
+            _window.Focus();
+        }
+
+        /// <summary>Whether <paramref name="source"/> is in the properties window, including its combo box drop-downs.</summary>
+        private bool InWindow(object source)
+        {
+            for (var d = source as DependencyObject; d != null;)
+            {
+                if (d == _window) return true;
+                if (d is FrameworkElement fe && fe.Parent is Popup popup) d = popup;
+                else d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
+            }
+            return false;
+        }
+
+        public void ClosePropertiesWindow()
+        {
+            if (_window == null) return;
+            var window = _window;
+            _window = null;
+            _windowProps = null;
+            _windowId = null;
+            // Apply the field being edited (on losing the focus) before the window goes away.
+            if (window.IsKeyboardFocusWithin) _canvas.Focus();
+            _floatLayer.Children.Remove(window);
         }
 
         public void OpenSubmachine(string href) => _host.OpenSubmachine(href);

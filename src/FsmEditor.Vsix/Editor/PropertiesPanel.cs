@@ -103,7 +103,7 @@ namespace FsmEditor.Editor
         private void Commit(bool props = false)
         {
             S.Commit();
-            if (props) Render();
+            if (props) _editor.RenderProps();
         }
 
         // ---------------------------------------------------------------- building blocks
@@ -426,13 +426,13 @@ namespace FsmEditor.Editor
         private void SetColor(Vertex v, string key, string color)
         {
             S.SetColor(v, key, color);
-            Render();
+            _editor.RenderProps();
         }
 
         private void SetColor(Transition t, string key, string color)
         {
             S.SetColor(t, key, color);
-            Render();
+            _editor.RenderProps();
         }
 
         // ---------------------------------------------------------------- machine
@@ -498,7 +498,7 @@ namespace FsmEditor.Editor
                 Add(SelectField("Kind", v.Type.Key(), group.Select(t => (t.Key(), t.Title())), value =>
                 {
                     if (VertexTypes.TryParseKey(value, out var type)) S.ChangeType(v, type);
-                    Render();
+                    _editor.RenderProps();
                 }));
             }
             if (v.Type == VertexType.ConnectionPointRef)
@@ -589,7 +589,7 @@ namespace FsmEditor.Editor
             Add(SelectField("Referenced state machine", current, options, value =>
             {
                 S.SetSubmachine(v, value);
-                Render();
+                _editor.RenderProps();
             }));
             if (S.Machines.Count == 0 && current.Length == 0) Add(Muted("No other state machine (.fsm) was found in the solution."));
             if (v.Submachine.Length > 0)
@@ -620,13 +620,13 @@ namespace FsmEditor.Editor
                     Add(Row(WithPlaceholder(tb, $"Region {i + 1}"), PButton("✕", () =>
                     {
                         S.RemoveRegion(v, region.Id);
-                        Render();
+                        _editor.RenderProps();
                     }, "Remove region and its contents", true)));
                 }
                 Add(PButton("+ Add region", () =>
                 {
                     S.AddRegion(v);
-                    Render();
+                    _editor.RenderProps();
                 }));
                 if (v.Regions.Count > 1)
                 {
@@ -668,13 +668,13 @@ namespace FsmEditor.Editor
                 Add(Row(tb, ColorButton(t.Color, c => SetColor(internalTransition, null, c), $"Color of {Or(Labels.TransitionLabel(S.Model, t), "the internal transition")}"), PButton("✕", () =>
                 {
                     S.RemoveTransition(t);
-                    Render();
+                    _editor.RenderProps();
                 }, "Remove", true)));
             }
             Add(PButton("+ Add internal transition", () =>
             {
                 S.AddInternalTransition(v);
-                Render();
+                _editor.RenderProps();
             }));
         }
 
@@ -756,7 +756,7 @@ namespace FsmEditor.Editor
                     : PButton("Add", () =>
                     {
                         S.AddAllReferences(v, point);
-                        Render();
+                        _editor.RenderProps();
                     }, "Add a reference on the border", true);
                 Add(Row(label, action));
             }
@@ -765,7 +765,7 @@ namespace FsmEditor.Editor
                 Add(PButton("Add all references", () =>
                 {
                     S.AddAllReferences(v);
-                    Render();
+                    _editor.RenderProps();
                 }));
             }
         }
@@ -782,7 +782,7 @@ namespace FsmEditor.Editor
                 SelectField("Kind", t.Kind.ToString().ToLowerInvariant(), new[] { ("external", "External"), ("local", "Local"), ("internal", "Internal") }, value =>
                 {
                     S.SetKind(t, value == "internal" ? TransitionKind.Internal : value == "local" ? TransitionKind.Local : TransitionKind.External);
-                    Render();
+                    _editor.RenderProps();
                 }),
                 ColorField(t.Color, c => SetColor(t, null, c), "the transition"));
             // Internal transitions drawn in their state's compartment take a single color.
@@ -825,12 +825,12 @@ namespace FsmEditor.Editor
             routing.Children.Add(PButton("Straighten", () =>
             {
                 S.Straighten(t);
-                Render();
+                _editor.RenderProps();
             }));
             routing.Children.Add(PButton("Reverse", () =>
             {
                 S.Reverse(t);
-                Render();
+                _editor.RenderProps();
             }));
             Add(routing);
             var issues = IssuesFor(t.Id);
