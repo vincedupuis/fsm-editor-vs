@@ -1120,6 +1120,7 @@ namespace FsmEditor.Editor
                     MinWidth = 160,
                 },
             };
+            Border Separator() => new Border { Height = 1, Margin = new Thickness(0, 4, 0, 4), Background = th.BrushOf(th.Border) };
             void Item(string label, Action onClick, bool enabled = true)
             {
                 var b = EditorControl.FlatButton(new TextBlock { Text = label, Margin = new Thickness(4, 0, 12, 0) }, null);
@@ -1145,7 +1146,16 @@ namespace FsmEditor.Editor
                 }
                 Item("Align Horizontally", () => Align(true), canAlign);
                 Item("Align Vertically", () => Align(false), canAlign);
-                items.Children.Add(new Border { Height = 1, Margin = new Thickness(0, 4, 0, 4), Background = th.BrushOf(th.Border) });
+                items.Children.Add(Separator());
+            }
+            if (id != null)
+            {
+                Item("Delete", () =>
+                {
+                    _editor.DeleteSelection();
+                    InvalidateVisual();
+                });
+                items.Children.Add(Separator());
             }
             Item("Properties…", () => _editor.OpenPropertiesWindow(id, at));
             popup.IsOpen = true;

@@ -267,7 +267,7 @@ namespace FsmEditor.Editor
             SetDock(close, Dock.Right);
             head.Children.Add(close);
             head.Children.Add(new TextBlock { Text = "Properties", FontSize = 12, Margin = new Thickness(8, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center });
-            _windowProps = new PropertiesPanel(this) { Margin = new Thickness(12, 8, 12, 12) };
+            _windowProps = new PropertiesPanel(this, inWindow: true) { Margin = new Thickness(12, 8, 12, 12) };
             var body = new DockPanel();
             SetDock(head, Dock.Top);
             body.Children.Add(head);
