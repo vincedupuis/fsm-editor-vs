@@ -23,13 +23,10 @@ namespace FsmEditor.Editor
     internal sealed class PropertiesPanel : StackPanel
     {
         private readonly EditorControl _editor;
-        /// <summary>In the properties window, which leaves Delete to the context menu.</summary>
-        private readonly bool _inWindow;
 
-        public PropertiesPanel(EditorControl editor, bool inWindow = false)
+        public PropertiesPanel(EditorControl editor)
         {
             _editor = editor;
-            _inWindow = inWindow;
             Margin = new Thickness(12, 8, 12, 24);
         }
 
@@ -81,7 +78,6 @@ namespace FsmEditor.Editor
             if (ids.Count > 1)
             {
                 Add(H3($"{ids.Count} elements selected"));
-                Add(PButton("Delete", _editor.DeleteSelection));
                 Add(Muted("Drag to move them together. Ctrl+D duplicates, Ctrl+C and Ctrl+V copy between diagrams."));
                 return;
             }
@@ -560,10 +556,6 @@ namespace FsmEditor.Editor
             Add(Muted($"{where} · {Math.Round(v.X)}, {Math.Round(v.Y)} · {Math.Round(v.W)}×{Math.Round(v.H)}"));
             var issues = IssuesFor(v.Id);
             if (issues != null) Add(issues);
-            if (_inWindow) return;
-            var delete = PButton("Delete", _editor.DeleteSelection);
-            delete.Margin = new Thickness(0, 12, 0, 0);
-            Add(delete);
         }
 
         private void StateProps(Vertex v)
@@ -839,10 +831,6 @@ namespace FsmEditor.Editor
             Add(routing);
             var issues = IssuesFor(t.Id);
             if (issues != null) Add(issues);
-            if (_inWindow) return;
-            var delete = PButton("Delete", _editor.DeleteSelection);
-            delete.Margin = new Thickness(0, 12, 0, 0);
-            Add(delete);
         }
     }
 }
