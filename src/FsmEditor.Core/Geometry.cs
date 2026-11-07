@@ -216,37 +216,80 @@ namespace FsmEditor.Core
             return s != null && s.Type == VertexType.State;
         }
 
-        /// <summary>Smallest distance between a state and the far corner of its self-transition loop.</summary>
+        /// <summary>Smallest distance between a state and the far corner of its self-transition loop, and between its ends and that corner of the state.</summary>
         public const double LoopMinGap = 10;
 
         /// <summary>
-        /// Far corner of a state's self-transition loop: its only bend point, or by default over the
-        /// top-right corner. The quadrant around the state's center that holds it picks the state's
-        /// corner, and it stays outside the state.
+        /// A state's self-transition loop: the state's corner it goes over (<see cref="Right"/>, <see cref="Below"/>),
+        /// its far corner (<see cref="Cx"/>, <see cref="Cy"/>), and where it meets the state's top or bottom edge
+        /// (<see cref="Hx"/>) and its side (<see cref="Vy"/>).
         /// </summary>
-        public static (PointD Corner, bool Right, bool Below) LoopCorner(Transition t, Vertex s)
+        public struct LoopFrame
         {
-            var gap = Math.Max(18, Math.Min(30, s.W / 3));
-            var p = t.Points.Count == 1 ? t.Points[0] : new PointD(s.X + s.W + gap, s.Y - gap);
-            var right = p.X >= s.X + s.W / 2;
-            var below = p.Y > s.Y + s.H / 2;
-            var corner = new PointD(
-                right ? Math.Max(p.X, s.X + s.W + LoopMinGap) : Math.Min(p.X, s.X - LoopMinGap),
-                below ? Math.Max(p.Y, s.Y + s.H + LoopMinGap) : Math.Min(p.Y, s.Y - LoopMinGap));
-            return (corner, right, below);
+            public bool Right, Below;
+            public double Cx, Cy, Hx, Vy;
+
+            /// <summary>Whether the loop starts on the state's top or bottom edge: clockwise over its top-right or bottom-left corner.</summary>
+            public bool StartsOnTopOrBottom => Right != Below;
+
+            /// <summary>The loop's three corners, in the order it is drawn.</summary>
+            public List<PointD> Corners()
+            {
+                var h = new PointD(Hx, Cy);
+                var far = new PointD(Cx, Cy);
+                var v = new PointD(Cx, Vy);
+                return StartsOnTopOrBottom ? new List<PointD> { h, far, v } : new List<PointD> { v, far, h };
+            }
         }
+
+        /// <summary>
+        /// The loop of a state's self-transition. Its bend points are its three corners, or only its far corner,
+        /// or none for the default loop over the top-right corner. The far corner's quadrant around the state's
+        /// center picks the state's corner.
+        /// </summary>
+        public static LoopFrame Loop(Transition t, Vertex s)
+        {
+            var pts = t.Points;
+            var gap = Math.Max(18, Math.Min(30, s.W / 3));
+            var far = pts.Count == 1 || pts.Count == 3 ? pts[(pts.Count - 1) / 2] : new PointD(s.X + s.W + gap, s.Y - gap);
+            var f = new LoopFrame
+            {
+                Right = far.X >= s.X + s.W / 2,
+                Below = far.Y > s.Y + s.H / 2,
+                Cx = far.X,
+                Cy = far.Y,
+            };
+            f.Hx = f.Right ? s.X + s.W * 0.72 : s.X + s.W * 0.28;
+            f.Vy = f.Below ? s.Y + s.H - Math.Min(s.H * 0.3, 22) : s.Y + Math.Min(s.H * 0.3, 22);
+            if (pts.Count == 3)
+            {
+                f.Hx = (f.StartsOnTopOrBottom ? pts[0] : pts[2]).X;
+                f.Vy = (f.StartsOnTopOrBottom ? pts[2] : pts[0]).Y;
+            }
+            return ClampLoop(f, s);
+        }
+
+        /// <summary>Keeps a loop's far corner outside the state, and its ends on the state's edges away from the corner it goes over.</summary>
+        public static LoopFrame ClampLoop(LoopFrame f, Vertex s) => new LoopFrame
+        {
+            Right = f.Right,
+            Below = f.Below,
+            Cx = f.Right ? Math.Max(f.Cx, s.X + s.W + LoopMinGap) : Math.Min(f.Cx, s.X - LoopMinGap),
+            Cy = f.Below ? Math.Max(f.Cy, s.Y + s.H + LoopMinGap) : Math.Min(f.Cy, s.Y - LoopMinGap),
+            Hx = f.Right ? Clamp(f.Hx, s.X, s.X + s.W - LoopMinGap) : Clamp(f.Hx, s.X + LoopMinGap, s.X + s.W),
+            Vy = f.Below ? Clamp(f.Vy, s.Y, s.Y + s.H - LoopMinGap) : Clamp(f.Vy, s.Y + LoopMinGap, s.Y + s.H),
+        };
 
         /// <summary>Points of a state's self-transition loop, clockwise around the state's corner.</summary>
         public static List<PointD> LoopRoute(Transition t, Vertex s)
         {
-            var (c, right, below) = LoopCorner(t, s);
-            var hx = right ? s.X + s.W * 0.72 : s.X + s.W * 0.28;
-            var hy = below ? s.Y + s.H : s.Y;
-            var vx = right ? s.X + s.W : s.X;
-            var vy = below ? s.Y + s.H - Math.Min(s.H * 0.3, 22) : s.Y + Math.Min(s.H * 0.3, 22);
-            return right == below
-                ? new List<PointD> { new PointD(vx, vy), new PointD(c.X, vy), c, new PointD(hx, c.Y), new PointD(hx, hy) }
-                : new List<PointD> { new PointD(hx, hy), new PointD(hx, c.Y), c, new PointD(c.X, vy), new PointD(vx, vy) };
+            var f = Loop(t, s);
+            var onTopOrBottom = new PointD(f.Hx, f.Below ? s.Y + s.H : s.Y);
+            var onSide = new PointD(f.Right ? s.X + s.W : s.X, f.Vy);
+            var output = new List<PointD> { f.StartsOnTopOrBottom ? onTopOrBottom : onSide };
+            output.AddRange(f.Corners());
+            output.Add(f.StartsOnTopOrBottom ? onSide : onTopOrBottom);
+            return output;
         }
 
         /// <summary>The polyline a transition is drawn along, or null when an end is missing.</summary>

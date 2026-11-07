@@ -278,10 +278,10 @@ namespace FsmEditor.Core
                 t.Effect = t.Effect ?? "";
                 t.Precondition = t.Precondition ?? "";
                 t.Postcondition = t.Postcondition ?? "";
-                // A state's self-transition is a loop whose only bend point is its far corner:
-                // older free bend points go back to the default loop.
+                // A state's self-transition is a loop whose bend points are its three corners, or only its
+                // far corner: other numbers of free bend points, from older versions, go back to the default loop.
                 if (t.Source == t.Target && t.Kind != TransitionKind.Internal && t.Source != null
-                    && types.TryGetValue(t.Source, out var type) && type == VertexType.State && t.Points.Count > 1)
+                    && types.TryGetValue(t.Source, out var type) && type == VertexType.State && (t.Points.Count == 2 || t.Points.Count > 3))
                 {
                     t.Points.Clear();
                     t.LabelOffset = null;

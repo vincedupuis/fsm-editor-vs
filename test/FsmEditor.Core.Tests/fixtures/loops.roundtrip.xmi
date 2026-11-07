@@ -16,6 +16,12 @@
         <transition xmi:type="uml:Transition" xmi:id="t_inside" kind="local" source="a" target="a">
           <trigger xmi:type="uml:Trigger" xmi:id="t_inside_trigger1" name="e3" event="ev_e3"/>
         </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_corners" kind="external" source="a" target="a">
+          <trigger xmi:type="uml:Trigger" xmi:id="t_corners_trigger1" name="e7" event="ev_e7"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t_two" kind="external" source="a" target="a">
+          <trigger xmi:type="uml:Trigger" xmi:id="t_two_trigger1" name="e8" event="ev_e8"/>
+        </transition>
         <transition xmi:type="uml:Transition" xmi:id="t_free" kind="external" source="a" target="a">
           <trigger xmi:type="uml:Trigger" xmi:id="t_free_trigger1" name="e4" event="ev_e4"/>
         </transition>
@@ -52,6 +58,10 @@
     <packagedElement xmi:type="uml:Signal" xmi:id="sig_e2" name="e2"/>
     <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e3" name="e3" signal="sig_e3"/>
     <packagedElement xmi:type="uml:Signal" xmi:id="sig_e3" name="e3"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e7" name="e7" signal="sig_e7"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e7" name="e7"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e8" name="e8" signal="sig_e8"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e8" name="e8"/>
     <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e4" name="e4" signal="sig_e4"/>
     <packagedElement xmi:type="uml:Signal" xmi:id="sig_e4" name="e4"/>
     <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e5" name="e5" signal="sig_e5"/>
@@ -90,6 +100,17 @@
     <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_inside" modelElement="t_inside" source="di_a" target="di_a">
       <waypoint xmi:type="dc:Point" x="190" y="130"/>
       <waypoint xmi:type="dc:Point" x="250" y="150"/>
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_corners" modelElement="t_corners" source="di_a" target="di_a">
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+      <waypoint xmi:type="dc:Point" x="150" y="50"/>
+      <waypoint xmi:type="dc:Point" x="300" y="40"/>
+      <waypoint xmi:type="dc:Point" x="320" y="140"/>
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_two" modelElement="t_two" source="di_a" target="di_a">
+      <waypoint xmi:type="dc:Point" x="190" y="130"/>
       <waypoint xmi:type="dc:Point" x="190" y="130"/>
     </ownedElement>
     <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_free" modelElement="t_free" source="di_a" target="di_a">

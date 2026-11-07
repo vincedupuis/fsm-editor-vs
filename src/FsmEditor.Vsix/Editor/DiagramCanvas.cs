@@ -469,9 +469,9 @@ namespace FsmEditor.Editor
             }
         }
 
-        /// <summary>The bend points to drag: the far corner of a state's self-transition loop, or the transition's bend points.</summary>
+        /// <summary>The bend points to drag: the corners of a state's self-transition loop, or the transition's bend points.</summary>
         private IReadOnlyList<PointD> WaypointHandles(Transition t) =>
-            Geo.IsLoop(S.Index, t) ? new[] { Geo.LoopCorner(t, S.Index.Vertex(t.Source)).Corner } : (IReadOnlyList<PointD>)t.Points;
+            Geo.IsLoop(S.Index, t) ? Geo.Loop(t, S.Index.Vertex(t.Source)).Corners() : t.Points;
 
         private static Point P(PointD p) => new Point(p.X, p.Y);
 
@@ -905,7 +905,7 @@ namespace FsmEditor.Editor
                 case DragKind.Waypoint:
                 {
                     var q = Alt ? p : new PointD(Geo.Snap(p.X), Geo.Snap(p.Y));
-                    if (Geo.IsLoop(S.Index, d.Transition)) S.MoveLoopCorner(d.Transition, q);
+                    if (Geo.IsLoop(S.Index, d.Transition)) S.MoveLoopCorner(d.Transition, d.Index, q);
                     else d.Transition.Points[d.Index] = q;
                     break;
                 }

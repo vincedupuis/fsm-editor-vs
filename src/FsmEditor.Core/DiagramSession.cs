@@ -364,7 +364,7 @@ namespace FsmEditor.Core
         /// <summary>Adds a bend point at <paramref name="p"/>, on the segment nearest to it.</summary>
         public void AddWaypoint(Transition t, PointD p)
         {
-            if (Geometry.IsLoop(Index, t)) return; // a self-transition loop has no bend points
+            if (Geometry.IsLoop(Index, t)) return; // a self-transition loop has no bend points but its corners
             var pts = Geometry.Route(Index, t);
             if (pts == null) return;
             if (t.Points.Count == 0) t.Points = pts.Skip(1).Take(pts.Count - 2).Select(q => new PointD(Num.Round(q.X), Num.Round(q.Y))).ToList();
@@ -385,19 +385,46 @@ namespace FsmEditor.Core
             Commit();
         }
 
-        /// <summary>Moves the far corner of a state's self-transition loop to <paramref name="p"/>, kept outside the state.</summary>
-        public void MoveLoopCorner(Transition t, PointD p)
+        /// <summary>
+        /// Drags corner <paramref name="index"/> (in drawing order) of a state's self-transition loop to <paramref name="p"/>.
+        /// The far corner resizes the loop and moves it to the state's corner in its quadrant; each other corner moves its
+        /// leg and slides the leg's end along the state's edge. The loop then keeps its three corners as bend points.
+        /// </summary>
+        public void MoveLoopCorner(Transition t, int index, PointD p)
         {
             var s = Index.Vertex(t.Source);
             if (s == null || !Geometry.IsLoop(Index, t)) return;
-            t.Points = new List<PointD> { p };
-            t.Points = new List<PointD> { Geometry.LoopCorner(t, s).Corner };
+            var f = Geometry.Loop(t, s);
+            if (index == 1)
+            {
+                var right = p.X >= s.X + s.W / 2;
+                var below = p.Y > s.Y + s.H / 2;
+                // Moved to another corner of the state, the loop is mirrored.
+                if (right != f.Right) f.Hx = 2 * s.X + s.W - f.Hx;
+                if (below != f.Below) f.Vy = 2 * s.Y + s.H - f.Vy;
+                f.Right = right;
+                f.Below = below;
+                f.Cx = p.X;
+                f.Cy = p.Y;
+            }
+            else if ((index == 0) == f.StartsOnTopOrBottom)
+            {
+                f.Hx = p.X;
+                f.Cy = p.Y;
+            }
+            else
+            {
+                f.Cx = p.X;
+                f.Vy = p.Y;
+            }
+            t.Points = Geometry.ClampLoop(f, s).Corners();
         }
 
         public void RemoveWaypoint(Transition t, int index)
         {
             if (index < 0 || index >= t.Points.Count) return;
-            t.Points.RemoveAt(index);
+            if (Geometry.IsLoop(Index, t)) t.Points.Clear(); // back to the default loop
+            else t.Points.RemoveAt(index);
             Commit();
         }
 

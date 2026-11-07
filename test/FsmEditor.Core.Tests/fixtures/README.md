@@ -12,7 +12,8 @@ validates state machines exactly the same way:
   (uppercase and invalid values, unknown items, a missing element, a foreign
   extension) to check that reading them is lenient, and `loops.fsm`, given extra
   waypoints on self-transitions (as older versions wrote them) to check that
-  reading resets a state's loop and keeps a pseudostate's bend points;
+  reading resets a state's loop unless it has one or three, and keeps a
+  pseudostate's bend points;
 - `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`.
 
 They were generated with a small script bundling `src/xmi.ts`,
