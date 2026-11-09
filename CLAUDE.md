@@ -12,6 +12,8 @@ scripts/fetch-cli.sh         # or scripts\fetch-cli.ps1: copy fsm.exe + template
 
 F5 in Visual Studio (startup project FsmEditor.Vsix) starts the experimental instance; try `examples/MediaPlayer.fsm` and `examples/Order.fsm` (uses `Payment.fsm` as a submachine).
 
+On macOS or Linux, `dotnet build` and `dotnet test` cover only `FsmEditor.Core` and its tests. The VSIX (WPF, VS SDK) builds and runs only on Windows, so a change under `src/FsmEditor.Vsix` can't be compiled or tried there. Keep it small, mirror the JetBrains edition's equivalent code where there is some, and tell the user what to check in the experimental instance.
+
 ## Architecture
 
 - `src/FsmEditor.Core` (netstandard2.0, no VS references, testable anywhere) holds all the logic:
@@ -26,7 +28,7 @@ F5 in Visual Studio (startup project FsmEditor.Vsix) starts the experimental ins
 
 ## Project rules
 
-- Keep parity with the VS Code extension: text grammar, validation rules and messages, XMI output, clipboard JSON. `test/FsmEditor.Core.Tests/fixtures` holds reference results from it; regenerate them (see fixtures/README.md) when the reference changes, and add a parity case for any format or rule change.
+- Keep parity with the VS Code extension: text grammar, validation rules and messages, XMI output, clipboard JSON. `test/FsmEditor.Core.Tests/fixtures` holds reference results from it, shared with the JetBrains edition. Regenerate them from the umbrella repo with `node parity/fixtures.mjs` when the reference changes (see fixtures/README.md), and add a parity case for any format or rule change. `Geometry.cs` mirrors `media/editor.js` of the VS Code edition, and only its UML DI region shapes are covered by the fixtures: compare the rest by hand. `../fsm-editor-jb` ports this Core to Kotlin file for file, so a Core change goes there next.
 - **Text grammar:** behaviors are argument-less calls separated by `;`; conditions combine calls with `!`, `&&`, `||` and parentheses; `else` only on choice/junction branches; triggers are event names or `after(<number><ms|s|m|h>)`. The editor refuses invalid text, and the validator reports it.
 - **Out of scope:** state machine extension/inheritance and the transition-oriented notation.
 - Don't reimplement code generation: templates and the code model belong to the `fsm` CLI.
