@@ -612,10 +612,14 @@ namespace FsmEditor.Core
             }
             foreach (var v in model.Vertices)
             {
-                if (v.Regions.Count < 2) continue;
-                if (regionShapes.TryGetValue(v.Regions[0].Id, out var a) && regionShapes.TryGetValue(v.Regions[1].Id, out var b))
+                if (v.Regions.Count >= 2 && regionShapes.TryGetValue(v.Regions[0].Id, out var a) && regionShapes.TryGetValue(v.Regions[1].Id, out var b))
                 {
                     v.RegionLayout = Math.Abs(b.X - a.X) > Math.Abs(b.Y - a.Y) ? RegionLayout.Horizontal : RegionLayout.Vertical;
+                }
+                // Each region's own size, along the layout.
+                foreach (var r in v.Regions)
+                {
+                    if (regionShapes.TryGetValue(r.Id, out var box)) r.Size = v.RegionLayout == RegionLayout.Horizontal ? box.W : box.H;
                 }
             }
 

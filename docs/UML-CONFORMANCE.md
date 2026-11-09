@@ -76,7 +76,7 @@ A `.fsm` file is an XMI 2.5.1 document with the UML 2.5.1 model and a UML DI dia
 
 The layout is a `umldi:UMLStateMachineDiagram`:
 
-- every vertex, region and comment has a `umldi:UMLShape` with `dc:Bounds`;
+- every vertex, region and comment has a `umldi:UMLShape` with `dc:Bounds`. The region shapes of a composite state give its region layout (stacked or side by side) and each region's own size along it; the regions fill the state below its name and internal activities compartment;
 - every drawn transition has a `umldi:UMLEdge` whose waypoints run from the center of its source, through its bend points, to the center of its target. An external or local self-transition of a state is drawn as a loop with three right angles over one of the state's corners, and its bend points are the loop's three corners, in drawing order (none for the default loop over the top-right corner, and a single one, the far corner, keeps the default ends); a file with two or more than three bend points on such a transition gets the default loop;
 - a moved transition label is a `umldi:UMLLabel` on its edge;
 - comment links are `umldi:UMLEdge`s from the comment to the annotated element;
@@ -160,6 +160,9 @@ Beyond the [text syntax](#text-syntax), the validator checks the following. ✕ 
 **Reachability** *(tool)*
 - ⚠ The top-level region has an initial pseudostate (unless the machine is entered through its own entry points).
 - ⚠ Every state can be entered, starting from the initial pseudostate and the machine's own entry points.
+
+**Layout** *(tool, diagram editor only)*
+- ⚠ Elements don't overlap, except a state and what it contains. Comments, transitions and labels don't count, nor a point on its own state's border. The diagram editor shows this warning; the Error List and code generation don't.
 
 ## SVG export
 

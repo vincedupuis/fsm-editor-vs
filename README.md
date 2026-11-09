@@ -36,17 +36,18 @@ See **[docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blo
 
 ## Using the editor
 
-- **Add elements**: click a toolbox item and then the canvas, or drag it onto the canvas. Drop inside a region to nest it. A composite state moves by its title bar: dragging inside its regions draws a selection band. Double-click empty canvas to add a state.
+- **Add elements**: click a toolbox item and then the canvas, or drag it onto the canvas. Drop an element entirely inside a region to nest it. A composite state moves by its title bar: dragging inside its regions draws a selection band. Double-click empty canvas to add a state.
+- **Nesting**: an element inside a composite state stays in its region. Dragging or resizing it past the region's border grows the region, its state and the states around it, and moving back during the same drag shrinks them again. Right-click it and choose *Leave Parent* to move it up one level, to the region holding its state. Overlapping elements get a warning on the diagram.
 - **Transitions**: select an element and drag its ⊕ handle to the target, or use the Transition tool (T). Drawing from a comment attaches the comment instead. Drag an end of a selected transition onto another element to move its source or target there.
 - **Labels**: double-click a name or transition label to edit it in place. The transition syntax is `event, after(2s) [isReady() && !isBusy()] / doIt(); log()`.
 - **Routing**: double-click a transition to add a bend point, double-click a bend point to remove it, and drag labels to move them.
-- **Regions**: use the Add Region tool (R) or the properties panel.
+- **Regions**: use the Add Region tool (R) or the properties panel. Each region has its own size: drag the line between two regions to resize the one before it. Resizing the state on the side of its first or last region resizes that region.
 - **Align**: select states, right-click one of them and choose *Align Horizontally* (on its horizontal center line) or *Align Vertically* (on its vertical one). The states keep their regions: a composite state grows when its region no longer holds them.
 - **Colors**: in the properties panel, *Color* colors the selected element, and the swatch beside an entry, exit, do, deferrable events, invariant, trigger, guard or effect field colors just that text. A composite state has a *Title color* (its outline, text and header) and a *Background color* (its regions) instead. *Default* removes the color.
 - **View**: right-drag, middle-drag or Space+drag pans, the mouse wheel zooms (Shift+wheel pans sideways), F fits the diagram.
 - **Properties window**: right-click an element, or empty canvas for the state machine, and choose *Properties…* to edit its properties in a window next to the pointer, without the properties panel. It closes with Esc or a click outside it. *Delete* in the same menu deletes the selection.
 - **Panels**: the toolbox and the properties panel work like tool windows. The pushpin auto-hides a panel to a tab on the editor's edge (hover over it or click it to slide the panel out), ▾ Window Position also floats it over the diagram, and ✕ closes it. The two buttons at the right of the toolbar show them again. The layout applies to every diagram.
-- **Editing**: Delete removes the selection. Ctrl+C/X/V copies, cuts and pastes, including between diagrams and with VS Code. Ctrl+D duplicates. Arrow keys nudge (Shift for 10px). Undo and redo (Ctrl+Z, Ctrl+Y) are Visual Studio's own, shared with the XMI text.
+- **Editing**: Delete removes the selection. Ctrl+C/X/V copies, cuts and pastes, including between diagrams and with VS Code. Ctrl+D duplicates. *Cut*, *Copy* and *Paste* are also in the context menu, which pastes where you right-clicked. Undo and redo (Ctrl+Z, Ctrl+Y) are Visual Studio's own, shared with the XMI text.
 - **Shortcuts**: S state, X final, I initial, H history, C choice, J junction, N comment, T transition, R region, V/Esc select. Shift+click a tool to keep it active.
 - **Submachines**: Alt+double-click a submachine state, or use the button in its properties, to open the referenced machine.
 

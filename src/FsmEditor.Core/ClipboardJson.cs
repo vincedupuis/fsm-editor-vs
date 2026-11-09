@@ -27,7 +27,7 @@ namespace FsmEditor.Core
             var o = new JsonObjectWriter();
             o.Str("id", v.Id).Str("type", v.Type.Key()).Str("name", v.Name).Str("parent", v.Parent)
                 .Num("x", v.X).Num("y", v.Y).Num("w", v.W).Num("h", v.H);
-            o.Raw("regions", "[" + string.Join(",", v.Regions.Select(r => new JsonObjectWriter().Str("id", r.Id).Str("name", r.Name).ToString())) + "]");
+            o.Raw("regions", "[" + string.Join(",", v.Regions.Select(WriteRegion)) + "]");
             if (v.Regions.Count > 1) o.Str("regionLayout", v.RegionLayout == RegionLayout.Horizontal ? "horizontal" : "vertical");
             o.Opt("entry", v.Entry).Opt("exit", v.Exit).Opt("doActivity", v.DoActivity).Opt("invariant", v.Invariant)
                 .Opt("submachine", v.Submachine).Opt("stereotype", v.Stereotype);
@@ -35,6 +35,13 @@ namespace FsmEditor.Core
             if (v.Type == VertexType.ConnectionPointRef) o.Str("ref", v.Ref).Str("pointKind", v.PointKind == PointKind.Exit ? "exit" : "entry");
             if (v.Type == VertexType.Comment) o.Str("text", v.Text).Raw("anchors", StringArray(v.Anchors));
             WriteColors(o, v.Color, v.ItemColors);
+            return o.ToString();
+        }
+
+        private static string WriteRegion(Region r)
+        {
+            var o = new JsonObjectWriter().Str("id", r.Id).Str("name", r.Name);
+            if (r.Size is double size) o.Num("size", size);
             return o.ToString();
         }
 
@@ -152,7 +159,7 @@ namespace FsmEditor.Core
                     Y = Dbl(item, "y"),
                     W = Dbl(item, "w", 40),
                     H = Dbl(item, "h", 40),
-                    Regions = List(item, "regions").OfType<Dictionary<string, object>>().Select(r => new Region { Id = Str(r, "id"), Name = Str(r, "name") }).ToList(),
+                    Regions = List(item, "regions").OfType<Dictionary<string, object>>().Select(r => new Region { Id = Str(r, "id"), Name = Str(r, "name"), Size = r.TryGetValue("size", out var size) && size is double d ? d : (double?)null }).ToList(),
                     RegionLayout = Str(item, "regionLayout") == "horizontal" ? RegionLayout.Horizontal : RegionLayout.Vertical,
                     Entry = Str(item, "entry"),
                     Exit = Str(item, "exit"),

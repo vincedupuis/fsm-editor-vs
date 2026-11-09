@@ -411,6 +411,70 @@
           "message": "Choices form a cycle without a state: choice -> choice."
         }
       ]
+    },
+    "regions": {
+      "issues": [
+        {
+          "id": "Stacked",
+          "severity": "warning",
+          "message": "'Stacked' is entered by default but its region 'top' has no initial pseudostate."
+        },
+        {
+          "id": "Stacked",
+          "severity": "warning",
+          "message": "'Stacked' is entered by default but its region 'middle' has no initial pseudostate."
+        },
+        {
+          "id": "Stacked",
+          "severity": "warning",
+          "message": "'Stacked' is entered by default but its region 'bottom' has no initial pseudostate."
+        },
+        {
+          "id": "S1",
+          "severity": "warning",
+          "message": "State 'S1' can never be entered."
+        },
+        {
+          "id": "S2",
+          "severity": "warning",
+          "message": "State 'S2' can never be entered."
+        },
+        {
+          "id": "S3",
+          "severity": "warning",
+          "message": "State 'S3' can never be entered."
+        },
+        {
+          "id": "Side",
+          "severity": "warning",
+          "message": "State 'Side' can never be entered."
+        },
+        {
+          "id": "H1",
+          "severity": "warning",
+          "message": "State 'H1' can never be entered."
+        },
+        {
+          "id": "H2",
+          "severity": "warning",
+          "message": "State 'H2' can never be entered."
+        },
+        {
+          "id": "Single",
+          "severity": "warning",
+          "message": "State 'Single' can never be entered."
+        },
+        {
+          "id": "X1",
+          "severity": "warning",
+          "message": "State 'X1' can never be entered."
+        },
+        {
+          "id": "Oversized",
+          "severity": "warning",
+          "message": "State 'Oversized' can never be entered."
+        }
+      ]
     }
   },
   "grammar": [

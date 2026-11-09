@@ -94,6 +94,18 @@ namespace FsmEditor.Core
             return h;
         }
 
+        /// <summary>
+        /// Extents of a state's regions along its region layout, out of <paramref name="total"/>: their own sizes,
+        /// the last one taking the rest, or equal parts when some size is missing or they leave nothing for the last one.
+        /// </summary>
+        public static List<double> RegionSizes(IReadOnlyList<Region> regs, double total)
+        {
+            var own = regs.Take(regs.Count - 1).Select(r => r.Size).ToList();
+            var sum = own.Sum(s => s ?? 0);
+            if (own.All(s => s.HasValue && s.Value > 0) && sum < total) return own.Select(s => s.Value).Concat(new[] { total - sum }).ToList();
+            return regs.Select(_ => total / regs.Count).ToList();
+        }
+
         public static List<RegionRect> RegionRects(FsmModel model, Vertex v, Func<string, double> measure = null)
         {
             var regs = v.Regions;
@@ -101,16 +113,44 @@ namespace FsmEditor.Core
             if (regs.Count == 0) return output;
             var top = v.Y + Math.Min(HeaderHeight(model, v, measure), v.H - 20);
             var bh = v.Y + v.H - top;
-            var n = regs.Count;
             var horizontal = v.RegionLayout == RegionLayout.Horizontal;
-            for (int i = 0; i < n; i++)
+            var sizes = RegionSizes(regs, horizontal ? v.W : bh);
+            var at = horizontal ? v.X : top;
+            for (int i = 0; i < regs.Count; i++)
             {
-                var rect = horizontal
-                    ? new RectD(v.X + i * v.W / n, top, v.W / n, bh)
-                    : new RectD(v.X, top + i * bh / n, v.W, bh / n);
+                var rect = horizontal ? new RectD(at, top, sizes[i], bh) : new RectD(v.X, at, v.W, sizes[i]);
+                at += sizes[i];
                 output.Add(new RegionRect { Id = regs[i].Id, Name = regs[i].Name, Rect = rect });
             }
             return output;
+        }
+
+        /// <summary>Deepest region that holds the whole box <paramref name="b"/>, ignoring the states in <paramref name="exclude"/>.</summary>
+        public static RegionRect RegionHolding(ModelIndex ix, RectD b, ISet<string> exclude)
+        {
+            var states = ix.Model.Vertices
+                .Where(v => v.Type == VertexType.State && v.Regions.Count > 0 && !exclude.Contains(v.Id))
+                .OrderByDescending(ix.Depth);
+            foreach (var s in states)
+            {
+                foreach (var r in RegionRects(ix.Model, s))
+                {
+                    var q = r.Rect;
+                    if (b.X >= q.X - 1e-6 && b.Y >= q.Y - 1e-6 && b.Right <= q.Right + 1e-6 && b.Bottom <= q.Bottom + 1e-6) return r;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>Whether region <paramref name="id"/> is region <paramref name="outer"/> or lies inside it, at any depth.</summary>
+        public static bool RegionWithin(ModelIndex ix, string id, string outer)
+        {
+            if (id == outer) return true;
+            for (var o = ix.RegionOwner.TryGetValue(id ?? "", out var s) ? s : null; o != null; o = ix.RegionOwner.TryGetValue(o.Parent ?? "", out var p) ? p : null)
+            {
+                if (o.Parent == outer) return true;
+            }
+            return false;
         }
 
         /// <summary>Deepest region under <paramref name="p"/>, ignoring the states in <paramref name="exclude"/>.</summary>

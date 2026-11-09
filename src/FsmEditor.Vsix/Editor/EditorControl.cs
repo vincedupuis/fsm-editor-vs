@@ -64,6 +64,9 @@ namespace FsmEditor.Editor
         private readonly Dictionary<string, Button> _toolButtons = new Dictionary<string, Button>();
         private TextBlock _title;
         private TextBlock _zoom;
+        /// <summary>Problems found by validation.</summary>
+        private List<Issue> _validationIssues = new List<Issue>();
+        /// <summary>Those plus the editor's own layout warnings (overlapping elements).</summary>
         private List<Issue> _issues = new List<Issue>();
         private Dictionary<string, List<Issue>> _issuesById = new Dictionary<string, List<Issue>>();
         private bool _firstLoad = true;
@@ -176,8 +179,8 @@ namespace FsmEditor.Editor
         public void Update(FsmModel model, List<Issue> issues, string error,
             IReadOnlyDictionary<string, SubmachineInfo> submachines, IReadOnlyList<MachineInfo> machines)
         {
-            _issues = issues ?? new List<Issue>();
-            _issuesById = _issues.GroupBy(i => i.Id).ToDictionary(g => g.Key, g => g.ToList());
+            _validationIssues = issues ?? new List<Issue>();
+            RefreshLayoutIssues();
             if (error != null)
             {
                 ShowParseError(error);
@@ -199,6 +202,7 @@ namespace FsmEditor.Editor
                 }
             }
             if (Session == null) return;
+            RefreshLayoutIssues();
             Session.Submachines = submachines ?? new Dictionary<string, SubmachineInfo>();
             Session.Machines = machines ?? new List<MachineInfo>();
             if (model != null)
@@ -222,10 +226,18 @@ namespace FsmEditor.Editor
 
         private void OnCommitted()
         {
+            RefreshLayoutIssues();
             _host.Write(Session.Model);
             _canvas.InvalidateVisual();
             UpdateTitle();
             RenderStatus();
+        }
+
+        /// <summary>Recomputes the overlap warnings of the current layout, next to the validation results.</summary>
+        public void RefreshLayoutIssues()
+        {
+            _issues = Session == null ? _validationIssues : _validationIssues.Concat(Session.OverlapIssues()).ToList();
+            _issuesById = _issues.GroupBy(i => i.Id).ToDictionary(g => g.Key, g => g.ToList());
         }
 
         public List<Issue> IssuesFor(string id) => _issuesById.TryGetValue(id, out var list) ? list : new List<Issue>();
@@ -396,24 +408,35 @@ namespace FsmEditor.Editor
         }
 
         /// <summary>Pastes copied elements; returns false when the clipboard holds something else.</summary>
-        public bool Paste()
+        public bool Paste() => PasteData(null);
+
+        /// <summary>Pastes copied elements with their top-left corner at <paramref name="at"/>, into the region there (context menu).</summary>
+        public bool PasteAt(PointD at) => PasteData(at);
+
+        private bool PasteData(PointD? at)
         {
             if (Session == null) return false;
-            string text;
-            try
-            {
-                text = Clipboard.ContainsText() ? Clipboard.GetText() : null;
-            }
-            catch (System.Runtime.InteropServices.ExternalException)
-            {
-                return false;
-            }
-            var data = ClipboardJson.TryRead(text);
+            var data = ClipboardJson.TryRead(ClipboardText());
             if (data == null) return false;
-            Session.Paste(data);
+            Session.Paste(data, at);
             RenderProps();
             return true;
         }
+
+        private static string ClipboardText()
+        {
+            try
+            {
+                return Clipboard.ContainsText() ? Clipboard.GetText() : null;
+            }
+            catch (System.Runtime.InteropServices.ExternalException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>Whether the clipboard holds diagram elements, for the context menu's Paste.</summary>
+        public bool ClipboardHoldsElements => Session != null && ClipboardJson.TryRead(ClipboardText())?.Vertices.Count > 0;
 
         public bool CanPaste
         {

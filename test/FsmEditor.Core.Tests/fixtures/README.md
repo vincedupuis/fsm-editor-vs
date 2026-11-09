@@ -13,9 +13,18 @@ validates state machines exactly the same way:
   extension) to check that reading them is lenient, and `loops.fsm`, given extra
   waypoints on self-transitions (as older versions wrote them) to check that
   reading resets a state's loop unless it has one or three, and keeps a
-  pseudostate's bend points;
+  pseudostate's bend points, and `regions.fsm`, composite states whose regions
+  have their own sizes (stacked, side by side, a single region, and sizes that
+  don't fit their state);
 - `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`.
 
-They were generated with a small script bundling `src/xmi.ts`,
-`src/validation.ts` and `media/expressions.js` of the VS Code extension.
-Regenerate them when the reference implementation changes its rules or format.
+Regenerate them when the reference implementation changes its rules or format,
+from the umbrella repo: `node parity/fixtures.mjs` (needs `npm install` done in
+fsm-editor-vscode; `--vscode`, `--vs` and `--jb` point it at other checkouts).
+It bundles `src/xmi.ts`, `src/validation.ts` and `media/expressions.js` of the
+VS Code extension, rewrites `expected.json` and the `.roundtrip.xmi` files in
+both the Visual Studio and JetBrains fixtures, and copies the `<case>.fsm` files
+from the Visual Studio fixtures to the JetBrains ones. The grammar texts and the
+case list are in the script; a new case is a `<case>.fsm` added to the Visual
+Studio fixtures and to the script's list, then to `ParityTests.cs` and
+`ParityTest.kt`.

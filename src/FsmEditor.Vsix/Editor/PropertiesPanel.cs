@@ -471,7 +471,8 @@ namespace FsmEditor.Editor
                 ("Double-click", "a transition to add a bend point, a bend point to remove it."),
                 ("Drag", "an end of a selected transition onto another element to reconnect it."),
                 ("Drag", "a corner of a selected self-transition to reshape its loop; the far corner moves it to another corner of the state."),
-                ("Drop", "an element into a region to nest it."),
+                ("Drop", "an element entirely inside a region to nest it. It then stays in its region, which grows to hold it; right-click › Leave Parent takes it out."),
+                ("Drag", "the line between two regions to resize the region before it."),
                 ("Drag", "a composite state by its title bar; dragging inside its regions selects what it encloses."),
                 ("Right-drag", "Space+drag or middle-drag pans; the wheel zooms; F fits."),
                 ("Shift+click", "a tool keeps it active."),
@@ -626,8 +627,7 @@ namespace FsmEditor.Editor
                     Add(SelectField("Region layout", v.RegionLayout == RegionLayout.Horizontal ? "horizontal" : "vertical",
                         new[] { ("vertical", "Stacked (top to bottom)"), ("horizontal", "Side by side") }, value =>
                         {
-                            v.RegionLayout = value == "horizontal" ? RegionLayout.Horizontal : RegionLayout.Vertical;
-                            Commit();
+                            S.SetRegionLayout(v, value == "horizontal" ? RegionLayout.Horizontal : RegionLayout.Vertical);
                         }));
                 }
             }

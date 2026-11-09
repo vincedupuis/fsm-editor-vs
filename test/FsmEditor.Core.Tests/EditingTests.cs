@@ -378,7 +378,7 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
-        public void AligningGrowsEveryRegionOfAnOrthogonalState()
+        public void AligningGrowsTheRegionOfTheMovedState()
         {
             var s = NewSession();
             // Stacked regions of 100 below a header: the second one holds b.
@@ -395,7 +395,7 @@ namespace FsmEditor.Core.Tests
             Assert.True(rects[1].Rect.Y <= b.Y - DiagramSession.FitMargin + 1e-6);
             Assert.True(rects[1].Rect.Bottom >= b.Y + b.H + DiagramSession.FitMargin - 1e-6);
             Assert.Equal(1000, orth.Y);
-            Assert.Equal(rects[0].Rect.H, rects[1].Rect.H, 6);
+            Assert.Equal(100, rects[0].Rect.H, 6);
         }
 
         [Fact]

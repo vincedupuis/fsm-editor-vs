@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="sm_model" name="Regions">
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="sm" name="Regions">
+      <region xmi:type="uml:Region" xmi:id="r_root">
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="init" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="Stacked" name="Stacked">
+          <entry xmi:type="uml:OpaqueBehavior" xmi:id="Stacked_entry">
+            <language>FSM</language>
+            <body>start(); log()</body>
+          </entry>
+          <region xmi:type="uml:Region" xmi:id="rs1" name="top">
+            <subvertex xmi:type="uml:State" xmi:id="S1" name="S1"/>
+          </region>
+          <region xmi:type="uml:Region" xmi:id="rs2" name="middle">
+            <subvertex xmi:type="uml:State" xmi:id="S2" name="S2"/>
+          </region>
+          <region xmi:type="uml:Region" xmi:id="rs3" name="bottom">
+            <subvertex xmi:type="uml:State" xmi:id="S3" name="S3"/>
+          </region>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="Side" name="Side">
+          <region xmi:type="uml:Region" xmi:id="rh1">
+            <subvertex xmi:type="uml:State" xmi:id="H1" name="H1"/>
+          </region>
+          <region xmi:type="uml:Region" xmi:id="rh2">
+            <subvertex xmi:type="uml:State" xmi:id="H2" name="H2"/>
+          </region>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="Single" name="Single">
+          <region xmi:type="uml:Region" xmi:id="rx">
+            <subvertex xmi:type="uml:State" xmi:id="X1" name="X1"/>
+          </region>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="Oversized" name="Oversized">
+          <region xmi:type="uml:Region" xmi:id="ro1"/>
+          <region xmi:type="uml:Region" xmi:id="ro2"/>
+        </subvertex>
+        <transition xmi:type="uml:Transition" xmi:id="t0" kind="external" source="init" target="Stacked"/>
+      </region>
+    </packagedElement>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="Regions" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_init" modelElement="init">
+      <bounds xmi:type="dc:Bounds" x="20" y="30" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_Stacked" modelElement="Stacked">
+      <bounds xmi:type="dc:Bounds" x="80" y="20" width="320" height="330"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_rs1" modelElement="rs1">
+      <bounds xmi:type="dc:Bounds" x="80" y="64" width="320" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_rs2" modelElement="rs2">
+      <bounds xmi:type="dc:Bounds" x="80" y="124" width="320" height="132.5"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_rs3" modelElement="rs3">
+      <bounds xmi:type="dc:Bounds" x="80" y="256.5" width="320" height="93.5"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_S1" modelElement="S1">
+      <bounds xmi:type="dc:Bounds" x="100" y="75" width="100" height="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_S2" modelElement="S2">
+      <bounds xmi:type="dc:Bounds" x="100" y="150" width="100" height="40"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_S3" modelElement="S3">
+      <bounds xmi:type="dc:Bounds" x="100" y="290" width="100" height="40"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_Side" modelElement="Side">
+      <bounds xmi:type="dc:Bounds" x="440" y="20" width="400" height="200"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_rh1" modelElement="rh1">
+      <bounds xmi:type="dc:Bounds" x="440" y="44" width="250" height="176"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_rh2" modelElement="rh2">
+      <bounds xmi:type="dc:Bounds" x="690" y="44" width="150" height="176"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_H1" modelElement="H1">
+      <bounds xmi:type="dc:Bounds" x="460" y="80" width="100" height="40"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_H2" modelElement="H2">
+      <bounds xmi:type="dc:Bounds" x="710" y="80" width="100" height="40"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_Single" modelElement="Single">
+      <bounds xmi:type="dc:Bounds" x="440" y="260" width="220" height="160"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_rx" modelElement="rx">
+      <bounds xmi:type="dc:Bounds" x="440" y="284" width="220" height="136"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_X1" modelElement="X1">
+      <bounds xmi:type="dc:Bounds" x="460" y="310" width="100" height="40"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_Oversized" modelElement="Oversized">
+      <bounds xmi:type="dc:Bounds" x="700" y="260" width="200" height="160"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_ro1" modelElement="ro1">
+      <bounds xmi:type="dc:Bounds" x="700" y="284" width="200" height="68"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_ro2" modelElement="ro2">
+      <bounds xmi:type="dc:Bounds" x="700" y="352" width="200" height="68"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t0" modelElement="t0" source="di_init" target="di_Stacked">
+      <waypoint xmi:type="dc:Point" x="30" y="40"/>
+      <waypoint xmi:type="dc:Point" x="240" y="185"/>
+    </ownedElement>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>

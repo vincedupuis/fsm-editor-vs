@@ -149,6 +149,7 @@ namespace FsmEditor.Editor
             DrawGrid(dc);
             if (S == null) return;
             S.Reindex();
+            _editor.RefreshLayoutIssues();
             _labels.Clear();
             dc.PushTransform(new MatrixTransform(Zoom, 0, 0, Zoom, ViewX, ViewY));
             var ix = S.Index;
@@ -597,6 +598,20 @@ namespace FsmEditor.Editor
                     }
                 }
             }
+            // The lines between regions: dragged, they resize the region before them.
+            for (int k = ix.Model.Vertices.Count - 1; k >= 0; k--)
+            {
+                var s = ix.Model.Vertices[k];
+                var rects = Geo.RegionRects(S.Model, s);
+                for (int i = 0; i < rects.Count - 1; i++)
+                {
+                    var r = rects[i].Rect;
+                    var near = s.RegionLayout == RegionLayout.Horizontal
+                        ? Math.Abs(p.X - r.Right) <= 3 + tolerance && p.Y >= r.Y && p.Y <= r.Bottom
+                        : Math.Abs(p.Y - r.Bottom) <= 3 + tolerance && p.X >= r.X && p.X <= r.Right;
+                    if (near) return new Hit { Kind = HitKind.Handle, Handle = "sep", Id = s.Id, Index = i };
+                }
+            }
             var item = ItemAt(p, true);
             if (item.Kind != HitKind.Empty) return item;
             return new Hit { Kind = HitKind.Empty };
@@ -673,7 +688,7 @@ namespace FsmEditor.Editor
 
         // ---------------------------------------------------------------- mouse
 
-        private enum DragKind { Pan, Move, Resize, Connect, Waypoint, Reconnect, Label, Band }
+        private enum DragKind { Pan, Move, Resize, Region, Connect, Waypoint, Reconnect, Label, Band }
 
         private sealed class DragState
         {
@@ -703,6 +718,10 @@ namespace FsmEditor.Editor
             public HashSet<string> Base;
             /// <summary>A right-button pan, which opens the context menu when the pointer doesn't move.</summary>
             public bool RightButton;
+            /// <summary>Move, resize and region drags: the layout at the start, restored at each step.</summary>
+            public DiagramSession.LayoutSnapshot Snapshot;
+            /// <summary>Move: the boxes of the roots at the start.</summary>
+            public Dictionary<string, RectD> Boxes;
         }
 
         private static bool Additive => (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0;
@@ -778,9 +797,15 @@ namespace FsmEditor.Editor
             {
                 case HitKind.Handle:
                 {
+                    if (hit.Handle == "sep")
+                    {
+                        var s = S.Index.Vertex(hit.Id);
+                        _drag = new DragState { Kind = DragKind.Region, Vertex = s, Index = hit.Index, Start = p, Snapshot = S.BeginLayoutDrag(s) };
+                        break;
+                    }
                     var v = S.Index.Vertex(S.Selection.First());
                     if (v == null) break;
-                    if (hit.Handle.StartsWith("resize-")) _drag = new DragState { Kind = DragKind.Resize, Corner = hit.Handle.Substring(7), Vertex = v, Start = p, X0 = v.X, Y0 = v.Y, W0 = v.W, H0 = v.H };
+                    if (hit.Handle.StartsWith("resize-")) _drag = new DragState { Kind = DragKind.Resize, Corner = hit.Handle.Substring(7), Vertex = v, Start = p, X0 = v.X, Y0 = v.Y, W0 = v.W, H0 = v.H, Snapshot = S.BeginLayoutDrag(v) };
                     else StartConnect(v, p);
                     break;
                 }
@@ -858,6 +883,8 @@ namespace FsmEditor.Editor
                 Roots = roots,
                 Moving = new HashSet<string>(moving.Keys),
                 ClickedId = clickedId,
+                Snapshot = S.Snapshot(),
+                Boxes = roots.ToDictionary(v => v.Id, v => new RectD(v.X, v.Y, v.W, v.H)),
             };
         }
 
@@ -894,52 +921,20 @@ namespace FsmEditor.Editor
                         dx = Geo.Snap(it.X0 + dx) - it.X0;
                         dy = Geo.Snap(it.Y0 + dy) - it.Y0;
                     }
-                    foreach (var it in d.Items)
-                    {
-                        it.V.X = it.X0 + dx;
-                        it.V.Y = it.Y0 + dy;
-                    }
-                    foreach (var (t, pts0) in d.Transitions) t.Points = pts0.Select(q => new PointD(q.X + dx, q.Y + dy)).ToList();
-                    // Connection points dragged on their own stay glued to their state's border.
-                    if (d.Roots.Count == 1 && ix.IsBorderVertex(lead))
-                    {
-                        var s = ix.Vertex(lead.Parent);
-                        if (s != null) Geo.SnapToBorder(lead, s, p);
-                    }
-                    var probe = lead != null ? lead.Center : p;
-                    var rr = d.Roots.All(r => !ix.IsBorderVertex(r)) ? Geo.RegionAt(ix, probe, d.Moving) : null;
+                    // From the layout at the start: the regions grown for the previous position shrink back.
+                    S.MoveFrom(d.Snapshot, d.Items, d.Transitions, d.Roots, d.Boxes, dx, dy, p, Alt);
+                    var rr = lead != null && d.Roots.All(r => !ix.IsBorderVertex(r)) ? S.DropHighlight(lead, d.Moving) : null;
                     d.DropRegion = rr?.Id;
                     d.DropState = rr != null && ix.RegionOwner.TryGetValue(rr.Id, out var owner) ? owner?.Id : null;
                     break;
                 }
                 case DragKind.Resize:
-                {
-                    var v = d.Vertex;
-                    var west = d.Corner.Contains('w');
-                    var north = d.Corner.Contains('n');
-                    var dx = p.X - d.Start.X;
-                    var dy = p.Y - d.Start.Y;
-                    var (minW, _) = S.MinimumSize(v);
-                    if (west)
-                    {
-                        // The right edge stays put.
-                        var right = d.X0 + d.W0;
-                        v.X = Math.Min(right - minW, Alt ? d.X0 + dx : Geo.Snap(d.X0 + dx));
-                        v.W = right - v.X;
-                    }
-                    else v.W = Math.Max(minW, Alt ? d.W0 + dx : Geo.Snap(v.X + d.W0 + dx) - v.X);
-                    var (_, minH) = S.MinimumSize(v); // wrapped text depends on the new width
-                    if (north)
-                    {
-                        // The bottom edge stays put.
-                        var bottom = d.Y0 + d.H0;
-                        v.Y = Math.Min(bottom - minH, Alt ? d.Y0 + dy : Geo.Snap(d.Y0 + dy));
-                        v.H = bottom - v.Y;
-                    }
-                    else v.H = Math.Max(minH, Alt ? d.H0 + dy : Geo.Snap(v.Y + d.H0 + dy) - v.Y);
-                    S.KeepPointsOnBorder(v);
+                    S.ResizeFrom(d.Snapshot, d.Vertex, d.Corner, d.X0, d.Y0, d.W0, d.H0, p.X - d.Start.X, p.Y - d.Start.Y, Alt);
                     break;
-                }
+                case DragKind.Region:
+                    // The line after region Index: the region resizes, its state with it, and the later regions move.
+                    S.ResizeRegionFrom(d.Snapshot, d.Vertex, d.Index, d.Vertex.RegionLayout == RegionLayout.Horizontal ? p.X - d.Start.X : p.Y - d.Start.Y, Alt);
+                    break;
                 case DragKind.Connect:
                     d.Cur = p;
                     d.Hover = ConnectTargetAt(p, d.Source);
@@ -996,6 +991,9 @@ namespace FsmEditor.Editor
             var hit = HitTest(p);
             switch (hit.Kind)
             {
+                case HitKind.Handle when hit.Handle == "sep":
+                    Cursor = S.Index.Vertex(hit.Id)?.RegionLayout == RegionLayout.Horizontal ? Cursors.SizeWE : Cursors.SizeNS;
+                    break;
                 case HitKind.Handle: Cursor = hit.Handle == "resize-nw" || hit.Handle == "resize-se" ? Cursors.SizeNWSE : hit.Handle.StartsWith("resize-") ? Cursors.SizeNESW : Cursors.Cross; break;
                 case HitKind.End: Cursor = Cursors.Cross; break;
                 case HitKind.Waypoint:
@@ -1033,6 +1031,7 @@ namespace FsmEditor.Editor
                     _editor.RenderProps();
                     break;
                 case DragKind.Resize:
+                case DragKind.Region:
                 case DragKind.Waypoint:
                     S.Commit();
                     break;
@@ -1216,6 +1215,25 @@ namespace FsmEditor.Editor
                 Item("Align Vertically", () => Align(false), canAlign);
                 items.Children.Add(Separator());
             }
+            if (S.CanLeaveParent)
+            {
+                Item("Leave Parent", () =>
+                {
+                    S.LeaveParent();
+                    _editor.RenderProps();
+                    InvalidateVisual();
+                });
+                items.Children.Add(Separator());
+            }
+            var copyable = S.CollectSelection() != null;
+            Item("Cut", () => _editor.Copy(true), copyable);
+            Item("Copy", () => _editor.Copy(false), copyable);
+            Item("Paste", () =>
+            {
+                _editor.PasteAt(p);
+                InvalidateVisual();
+            }, _editor.ClipboardHoldsElements);
+            items.Children.Add(Separator());
             if (id != null)
             {
                 Item("Delete", () =>
@@ -1294,6 +1312,7 @@ namespace FsmEditor.Editor
                 case Key.Escape:
                     if (_drag != null)
                     {
+                        if (_drag.Snapshot != null) S.Restore(_drag.Snapshot);
                         _drag = null;
                         if (IsMouseCaptured) ReleaseMouseCapture();
                         InvalidateVisual();
@@ -1316,13 +1335,9 @@ namespace FsmEditor.Editor
                 case Key.Right:
                 case Key.Up:
                 case Key.Down:
-                {
-                    var step = (mods & ModifierKeys.Shift) != 0 ? Geo.Grid : 1;
-                    var dx = key == Key.Left ? -step : key == Key.Right ? step : 0;
-                    var dy = key == Key.Up ? -step : key == Key.Down ? step : 0;
-                    if (S.Nudge(dx, dy)) e.Handled = true;
+                    // Arrow keys don't move elements: elements move by dragging, which keeps them in their regions.
+                    e.Handled = true;
                     return;
-                }
                 case Key.Enter:
                 case Key.F2:
                     if (S.Selection.Count == 1)

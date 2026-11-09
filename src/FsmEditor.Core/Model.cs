@@ -119,8 +119,14 @@ namespace FsmEditor.Core
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
+        /// <summary>
+        /// Regions of a state: extent along the state's region layout (height when stacked, width side by
+        /// side). The last region takes whatever the others leave; without sizes, the regions share the
+        /// state equally.
+        /// </summary>
+        public double? Size { get; set; }
 
-        public Region Clone() => new Region { Id = Id, Name = Name };
+        public Region Clone() => new Region { Id = Id, Name = Name, Size = Size };
     }
 
     public sealed class Vertex

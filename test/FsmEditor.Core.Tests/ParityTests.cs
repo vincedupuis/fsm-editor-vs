@@ -22,7 +22,7 @@ namespace FsmEditor.Core.Tests
         public static IEnumerable<object[]> ExampleFiles() =>
             new[] { "MediaPlayer.fsm", "Order.fsm", "Payment.fsm" }.Select(f => new object[] { f });
 
-        public static IEnumerable<object[]> CaseNames() => new[] { "grammar", "structure", "protocol", "cycles", "colors", "loops" }.Select(c => new object[] { c });
+        public static IEnumerable<object[]> CaseNames() => new[] { "grammar", "structure", "protocol", "cycles", "colors", "loops", "regions" }.Select(c => new object[] { c });
 
         private static string Read(string path) => File.ReadAllText(path).Replace("\r\n", "\n");
 
