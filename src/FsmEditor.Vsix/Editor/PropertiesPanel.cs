@@ -472,6 +472,7 @@ namespace FsmEditor.Editor
                 ("Drag", "an end of a selected transition onto another element to reconnect it."),
                 ("Drag", "a corner of a selected self-transition to reshape its loop; the far corner moves it to another corner of the state."),
                 ("Drop", "an element into a region to nest it."),
+                ("Drag", "a composite state by its title bar; dragging inside its regions selects what it encloses."),
                 ("Right-drag", "Space+drag or middle-drag pans; the wheel zooms; F fits."),
                 ("Shift+click", "a tool keeps it active."),
                 ("Label syntax", m.Kind == MachineKind.Protocol ? "[isReady()] event / [isDone()]" : "event, after(2s) [isReady() && !isBusy()] / doIt(); log()"),

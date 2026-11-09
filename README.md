@@ -36,7 +36,7 @@ See **[docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blo
 
 ## Using the editor
 
-- **Add elements**: click a toolbox item and then the canvas, or drag it onto the canvas. Drop inside a region to nest it. Double-click empty canvas to add a state.
+- **Add elements**: click a toolbox item and then the canvas, or drag it onto the canvas. Drop inside a region to nest it. A composite state moves by its title bar: dragging inside its regions draws a selection band. Double-click empty canvas to add a state.
 - **Transitions**: select an element and drag its ⊕ handle to the target, or use the Transition tool (T). Drawing from a comment attaches the comment instead. Drag an end of a selected transition onto another element to move its source or target there.
 - **Labels**: double-click a name or transition label to edit it in place. The transition syntax is `event, after(2s) [isReady() && !isBusy()] / doIt(); log()`.
 - **Routing**: double-click a transition to add a bend point, double-click a bend point to remove it, and drag labels to move them.

@@ -771,6 +771,9 @@ namespace FsmEditor.Editor
                 return;
             }
 
+            // A composite state moves by its title bar: its regions are empty canvas, for a selection band.
+            if (hit.Kind == HitKind.Vertex && Geo.RegionRects(S.Model, S.Index.Vertex(hit.Id)).Any(r => r.Rect.Contains(p))) hit = new Hit { Kind = HitKind.Empty };
+
             switch (hit.Kind)
             {
                 case HitKind.Handle:
