@@ -43,7 +43,7 @@ namespace FsmEditor.Editor
         private uint _dataEventsCookie;
         private IDisposable _resyncSubscription;
         private int _generation;
-        /// <summary>The last XMI this editor wrote, with the model it came from.</summary>
+        /// <summary>The XMI the diagram shows (the last one this editor wrote or loaded), with its model.</summary>
         private string _echoText;
         private FsmModel _echoModel;
         private string _pendingReveal;
@@ -165,6 +165,14 @@ namespace FsmEditor.Editor
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             }
             if (generation != _generation || _control == null) return; // a newer sync is on its way
+            if (model == null) _echoText = null;
+            else if (!echo)
+            {
+                // The diagram now shows this text: a later change back to the last text written,
+                // such as a redo after an undo, is not our own edit.
+                _echoText = text;
+                _echoModel = model.Clone();
+            }
             _package.Validation.Publish(FilePath, text, issues, error);
             _control.Update(echo ? null : model, issues, error, submachines, machines);
             if (_pendingReveal != null && model != null)
