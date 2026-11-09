@@ -466,6 +466,11 @@ namespace FsmEditor.Editor
             {
                 var wpPen = th.PenOf(th.Accent, 1.5);
                 foreach (var p in WaypointHandles(t)) dc.DrawEllipse(th.BrushOf(th.Background), wpPen, P(p), 4.5, 4.5);
+                // Its ends: dragged onto another element, they reconnect it.
+                if (!(_drag?.Kind == DragKind.Reconnect && _drag.Transition == t))
+                {
+                    foreach (var p in new[] { pts[0], pts[pts.Count - 1] }) dc.DrawEllipse(th.BrushOf(th.Accent), th.PenOf(th.Background, 1), P(p), 4.5, 4.5);
+                }
             }
         }
 
@@ -512,6 +517,19 @@ namespace FsmEditor.Editor
                 var to = target != null ? Geo.Clip(target, from) : cur;
                 dc.DrawLine(th.PenOf(accent, 1.5, 1, new[] { 5.0, 3.0 }), P(from), P(to));
             }
+            if (_drag?.Kind == DragKind.Reconnect && _drag.Cur is PointD end)
+            {
+                // From the bend point next to the dragged end, or from the element at the other end.
+                var t = _drag.Transition;
+                var pts = t.Points.Count > 0 && !Geo.IsLoop(S.Index, t) ? t.Points : new List<PointD>();
+                var target = _drag.Hover != null ? S.Index.Vertex(_drag.Hover) : null;
+                var toward = target != null ? target.Center : end;
+                PointD? near = pts.Count == 0 ? (PointD?)null : _drag.AtSource ? pts[0] : pts[pts.Count - 1];
+                var fixedEnd = S.Index.Vertex(_drag.AtSource ? t.Target : t.Source);
+                var from = near ?? (fixedEnd != null ? Geo.Clip(fixedEnd, toward) : toward);
+                var to = target != null ? Geo.Clip(target, from) : end;
+                dc.DrawLine(th.PenOf(accent, 1.5, 1, new[] { 5.0, 3.0 }), P(from), P(to));
+            }
             if (_drag?.Kind == DragKind.Band && _drag.Cur is PointD bandEnd)
             {
                 var r = RectD.FromPoints(_drag.Start, bandEnd);
@@ -528,7 +546,7 @@ namespace FsmEditor.Editor
 
         // ---------------------------------------------------------------- hit testing
 
-        private enum HitKind { Empty, Handle, Waypoint, Label, Vertex, Transition }
+        private enum HitKind { Empty, Handle, Waypoint, End, Label, Vertex, Transition }
 
         private struct Hit
         {
@@ -536,6 +554,8 @@ namespace FsmEditor.Editor
             public string Id;
             public string Handle;
             public int Index;
+            /// <summary>For an end: its source end rather than its target end.</summary>
+            public bool AtSource;
         }
 
         private Hit HitTest(PointD p)
@@ -563,6 +583,11 @@ namespace FsmEditor.Editor
                     }
                 }
                 var selected = ix.Transition(S.Selection.First());
+                if (selected != null && Geo.IsDrawn(ix, selected) && Geo.Route(ix, selected) is List<PointD> route)
+                {
+                    if (Geo.Dist(p, route[route.Count - 1]) <= 4.5 + tolerance) return new Hit { Kind = HitKind.End, Id = selected.Id };
+                    if (Geo.Dist(p, route[0]) <= 4.5 + tolerance) return new Hit { Kind = HitKind.End, Id = selected.Id, AtSource = true };
+                }
                 if (selected != null)
                 {
                     var handles = WaypointHandles(selected);
@@ -635,9 +660,20 @@ namespace FsmEditor.Editor
             return null;
         }
 
+        /// <summary>The topmost state or pseudostate at <paramref name="p"/>, through transitions and comments.</summary>
+        private string ReconnectTargetAt(PointD p)
+        {
+            var sorted = Geo.DrawingOrder(S.Index);
+            for (int i = sorted.Count - 1; i >= 0; i--)
+            {
+                if (sorted[i].Type != VertexType.Comment && Contains(sorted[i], p)) return sorted[i].Id;
+            }
+            return null;
+        }
+
         // ---------------------------------------------------------------- mouse
 
-        private enum DragKind { Pan, Move, Resize, Connect, Waypoint, Label, Band }
+        private enum DragKind { Pan, Move, Resize, Connect, Waypoint, Reconnect, Label, Band }
 
         private sealed class DragState
         {
@@ -661,6 +697,7 @@ namespace FsmEditor.Editor
             public string Hover;
             public Transition Transition;
             public int Index;
+            public bool AtSource;
             public PointD Offset0;
             public bool Additive;
             public HashSet<string> Base;
@@ -746,6 +783,9 @@ namespace FsmEditor.Editor
                 }
                 case HitKind.Waypoint:
                     _drag = new DragState { Kind = DragKind.Waypoint, Transition = S.Index.Transition(hit.Id), Index = hit.Index };
+                    break;
+                case HitKind.End:
+                    _drag = new DragState { Kind = DragKind.Reconnect, Transition = S.Index.Transition(hit.Id), AtSource = hit.AtSource, Cur = p };
                     break;
                 case HitKind.Label:
                 {
@@ -902,6 +942,10 @@ namespace FsmEditor.Editor
                     d.Hover = ConnectTargetAt(p, d.Source);
                     if (d.Hover != null && S.Index.Vertex(d.Hover) == null) d.Hover = null;
                     break;
+                case DragKind.Reconnect:
+                    d.Cur = p;
+                    d.Hover = ReconnectTargetAt(p);
+                    break;
                 case DragKind.Waypoint:
                 {
                     var q = Alt ? p : new PointD(Geo.Snap(p.X), Geo.Snap(p.Y));
@@ -950,6 +994,7 @@ namespace FsmEditor.Editor
             switch (hit.Kind)
             {
                 case HitKind.Handle: Cursor = hit.Handle == "resize-nw" || hit.Handle == "resize-se" ? Cursors.SizeNWSE : hit.Handle.StartsWith("resize-") ? Cursors.SizeNESW : Cursors.Cross; break;
+                case HitKind.End: Cursor = Cursors.Cross; break;
                 case HitKind.Waypoint:
                 case HitKind.Label: Cursor = Cursors.SizeAll; break;
                 default: Cursor = null; break;
@@ -1006,6 +1051,17 @@ namespace FsmEditor.Editor
                     }
                     InvalidateVisual();
                     ToolDone();
+                    break;
+                }
+                case DragKind.Reconnect:
+                {
+                    var target = ReconnectTargetAt(ToWorld(e.GetPosition(this)));
+                    if (target != null)
+                    {
+                        S.Reconnect(d.Transition, d.AtSource, S.Index.Vertex(target));
+                        _editor.RenderProps();
+                    }
+                    InvalidateVisual();
                     break;
                 }
                 case DragKind.Band:
@@ -1102,7 +1158,7 @@ namespace FsmEditor.Editor
             S.Reindex();
             var at = Mouse.GetPosition(this);
             var hit = HitTest(p);
-            var id = hit.Kind == HitKind.Vertex || hit.Kind == HitKind.Transition || hit.Kind == HitKind.Label || hit.Kind == HitKind.Waypoint ? hit.Id
+            var id = hit.Kind == HitKind.Vertex || hit.Kind == HitKind.Transition || hit.Kind == HitKind.Label || hit.Kind == HitKind.Waypoint || hit.Kind == HitKind.End ? hit.Id
                 : hit.Kind == HitKind.Handle && S.Selection.Count == 1 ? S.Selection.First()
                 : null;
             if (id != null && !S.Selection.Contains(id))

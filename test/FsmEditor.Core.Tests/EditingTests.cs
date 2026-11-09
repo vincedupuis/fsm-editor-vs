@@ -421,6 +421,38 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
+        public void ReconnectMovesATransitionsEnds()
+        {
+            var s = NewSession();
+            var messages = new List<string>();
+            s.Message += (o, m) => messages.Add(m);
+            var a = AddState(s, "a", s.RootRegion, 100, 100);
+            var b = AddState(s, "b", s.RootRegion, 400, 100);
+            var c = AddState(s, "c", s.RootRegion, 400, 300);
+            var t = new Transition { Id = "t1", Source = a.Id, Target = b.Id, Points = new List<PointD> { new PointD(300, 50) } };
+            s.Model.Transitions.Add(t);
+            s.Reindex();
+            var commits = 0;
+            s.Committed += (o, e) => commits++;
+            // Bend points stay.
+            s.Reconnect(t, false, c);
+            Assert.Equal((a.Id, c.Id, 1), (t.Source, t.Target, t.Points.Count));
+            // Invalid ends are refused.
+            s.Reconnect(t, false, s.Index.Vertex("v_init"));
+            Assert.Equal(c.Id, t.Target);
+            Assert.Equal(new[] { "An initial pseudostate cannot be the target of a transition." }, messages);
+            // Becoming a loop drops the bend points, which would be its corners.
+            s.Reconnect(t, true, c);
+            Assert.Equal((c.Id, c.Id, 0), (t.Source, t.Target, t.Points.Count));
+            s.MoveLoopCorner(t, 1, new PointD(600, 400));
+            s.Reconnect(t, true, a);
+            Assert.Equal((a.Id, c.Id, 0), (t.Source, t.Target, t.Points.Count));
+            // The same end is no change.
+            s.Reconnect(t, true, a);
+            Assert.Equal(3, commits);
+        }
+
+        [Fact]
         public void SelfTransitionLoopsAreReshapedByTheirCorners()
         {
             var s = NewSession();

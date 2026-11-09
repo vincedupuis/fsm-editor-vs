@@ -469,6 +469,7 @@ namespace FsmEditor.Editor
                 ("Double-click", "empty canvas to add a state; a name or label to edit it."),
                 ("Drag", "the ⊕ handle of a selected element to draw a transition."),
                 ("Double-click", "a transition to add a bend point, a bend point to remove it."),
+                ("Drag", "an end of a selected transition onto another element to reconnect it."),
                 ("Drag", "a corner of a selected self-transition to reshape its loop; the far corner moves it to another corner of the state."),
                 ("Drop", "an element into a region to nest it."),
                 ("Right-drag", "Space+drag or middle-drag pans; the wheel zooms; F fits."),

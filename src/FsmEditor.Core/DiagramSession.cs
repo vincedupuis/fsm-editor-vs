@@ -332,24 +332,10 @@ namespace FsmEditor.Core
                 Commit();
                 return null;
             }
-            if (source.Type == VertexType.ConnectionPointRef && source.PointKind == PointKind.Entry)
+            var problem = ConnectProblem(source, target);
+            if (problem != null)
             {
-                Say("An entry reference only receives transitions; execution continues inside the submachine.");
-                return null;
-            }
-            if (target.Type == VertexType.ConnectionPointRef && target.PointKind == PointKind.Exit)
-            {
-                Say("An exit reference only has outgoing transitions; it is reached when the submachine exits.");
-                return null;
-            }
-            if (source.Type == VertexType.Final || source.Type == VertexType.Terminate)
-            {
-                Say($"A {source.Type.Title().ToLowerInvariant()} cannot have outgoing transitions.");
-                return null;
-            }
-            if (target.Type == VertexType.Initial)
-            {
-                Say("An initial pseudostate cannot be the target of a transition.");
+                Say(problem);
                 return null;
             }
             var t = new Transition { Id = NewId("t"), Source = source.Id, Target = target.Id };
@@ -357,6 +343,48 @@ namespace FsmEditor.Core
             Selection = new HashSet<string> { t.Id };
             Commit();
             return t;
+        }
+
+        /// <summary>Why a transition can't go from <paramref name="source"/> to <paramref name="target"/>, or null when it can.</summary>
+        private static string ConnectProblem(Vertex source, Vertex target)
+        {
+            if (source.Type == VertexType.ConnectionPointRef && source.PointKind == PointKind.Entry)
+            {
+                return "An entry reference only receives transitions; execution continues inside the submachine.";
+            }
+            if (target.Type == VertexType.ConnectionPointRef && target.PointKind == PointKind.Exit)
+            {
+                return "An exit reference only has outgoing transitions; it is reached when the submachine exits.";
+            }
+            if (source.Type == VertexType.Final || source.Type == VertexType.Terminate)
+            {
+                return $"A {source.Type.Title().ToLowerInvariant()} cannot have outgoing transitions.";
+            }
+            if (target.Type == VertexType.Initial) return "An initial pseudostate cannot be the target of a transition.";
+            return null;
+        }
+
+        /// <summary>
+        /// Moves the source (<paramref name="atSource"/>) or the target of <paramref name="t"/> to <paramref name="v"/>. Its bend
+        /// points stay, unless it becomes or stops being a state's self-transition loop, whose bend points are its corners.
+        /// </summary>
+        public void Reconnect(Transition t, bool atSource, Vertex v)
+        {
+            if ((atSource ? t.Source : t.Target) == v.Id) return;
+            var source = atSource ? v : Index.Vertex(t.Source);
+            var target = atSource ? Index.Vertex(t.Target) : v;
+            if (source == null || target == null) return;
+            var problem = ConnectProblem(source, target);
+            if (problem != null)
+            {
+                Say(problem);
+                return;
+            }
+            var wasLoop = Geometry.IsLoop(Index, t);
+            if (atSource) t.Source = v.Id;
+            else t.Target = v.Id;
+            if (Geometry.IsLoop(Index, t) != wasLoop) t.Points.Clear();
+            Commit();
         }
 
         // ---------------------------------------------------------------- transitions
