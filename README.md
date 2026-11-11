@@ -2,7 +2,7 @@
 
 [![Visual Studio Marketplace version](https://badgen.net/vs-marketplace/v/VinceGoSoftware.fsm-editor-vs)](https://marketplace.visualstudio.com/items?itemName=VinceGoSoftware.fsm-editor-vs)
 
-A visual editor and code generator for UML 2.5.1 state machines in Visual Studio 2022 and later. Draw a machine in any `*.fsm` file, with a toolbox, a properties panel, live validation in the Error List and SVG export, then generate its source code from templates, in Visual Studio or with the bundled `fsm` command-line generator. Files are standard XMI 2.5.1: the UML model plus its diagram layout in UML DI, in the same file.
+A visual editor and code generator for UML 2.5.1 state machines in Visual Studio 2022 and later. Draw a machine in any `*.fsm` file, with a toolbox, a properties panel, live validation in the Error List and SVG and PNG export, then generate its source code from templates, in Visual Studio or with the bundled `fsm` command-line generator. Files are standard XMI 2.5.1: the UML model plus its diagram layout in UML DI, in the same file.
 
 This is the Visual Studio edition of [FSM Editor for VS Code](https://github.com/vincedupuis/fsm-editor-vscode). Both editors use the same file format, rules and code generator, so a team can edit the same `.fsm` files in either, and copy and paste diagram elements between them.
 
@@ -51,7 +51,7 @@ See **[docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blo
 - **Shortcuts**: S state, X final, I initial, H history, C choice, J junction, N comment, T transition, R region, V/Esc select. Shift+click a tool to keep it active.
 - **Submachines**: Alt+double-click a submachine state, or use the button in its properties, to open the referenced machine.
 
-Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Solution Explorer and of the document tab): *New State Machine...*, *Generate Code...*, *Export as SVG...*, *Open as XMI Text*, *Open in FSM Editor*. *New State Machine...* is also on the context menu of projects and folders. **File › New › File...** and **Add › New Item...** (General, C#, Visual Basic and C++ projects) also list a *State Machine* template. The XMI text and the diagram can be open side by side: they edit the same document.
+Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Solution Explorer and of the document tab): *New State Machine...*, *Generate Code...*, *Export as SVG...*, *Export as PNG...*, *Open as XMI Text*, *Open in FSM Editor*. *New State Machine...* is also on the context menu of projects and folders. **File › New › File...** and **Add › New Item...** (General, C#, Visual Basic and C++ projects) also list a *State Machine* template. The XMI text and the diagram can be open side by side: they edit the same document.
 
 ## Development
 
@@ -82,7 +82,7 @@ On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging ste
 
 - `src/FsmEditor.Core/` (.NET Standard 2.0, no Visual Studio dependency): the model (`Model.cs`), the text grammar (`Expressions.cs`), the XMI/UML DI file format (`Xmi.cs`, `XmlTree.cs`), the validator (`Validation.cs`), diagram geometry (`Geometry.cs`, `Labels.cs`), every editing operation of the diagram (`DiagramSession.cs`, `Tools.cs`), SVG export, the clipboard format and submachine resolution (`Workspace.cs`)
 - `src/FsmEditor.Vsix/`: the Visual Studio extension
-  - `FsmEditorPackage.cs`: registration, the Error List providers, SVG export and the code generation flow
+  - `FsmEditorPackage.cs`: registration, the Error List providers, SVG and PNG export and the code generation flow
   - `Editor/FsmEditorFactory.cs`, `Editor/FsmEditorPane.cs`: the document window; syncs the text buffer and the diagram
   - `Editor/EditorControl.cs`, `Editor/DiagramCanvas.cs`, `Editor/PropertiesPanel.cs`: the WPF diagram editor
   - `Services/`: open documents, the solution's machines, the Error List, dialogs

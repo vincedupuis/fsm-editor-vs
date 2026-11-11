@@ -249,6 +249,10 @@ namespace FsmEditor.Editor
 
         public string RenderSvg() => _control?.ExportSvg();
 
+        public void ExportPng() => _package.ExportPngAsync(this).FileAndForget("FsmEditor/ExportPng");
+
+        public System.Windows.Media.Imaging.BitmapSource RenderPng() => _control?.ExportPng();
+
         public void OpenAsText()
         {
             ThreadHelper.ThrowIfNotOnUIThread();

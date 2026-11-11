@@ -16,6 +16,9 @@ namespace FsmEditor.Editor
 
         public static Theme Current => _current ?? (_current = new Theme());
 
+        /// <summary>The light colors of the SVG export, whatever the Visual Studio theme: for the PNG export.</summary>
+        public static Theme Export { get; } = new Theme(Colors.White, Rgb(0x1f, 0x1f, 0x1f), Rgb(0x33, 0x33, 0x33), Rgb(0xfd, 0xfd, 0xfd), Rgb(0xfb, 0xf3, 0xcf));
+
         public static event EventHandler Changed;
 
         static Theme()
@@ -42,6 +45,23 @@ namespace FsmEditor.Editor
             Grid = Mix(Background, Foreground, 0.14);
             Widget = Mix(Background, Foreground, 0.06);
             IsDark = Luminance(Background) < 0.5;
+        }
+
+        private Theme(Color background, Color foreground, Color line, Color stateFill, Color noteFill)
+        {
+            Background = background;
+            Foreground = foreground;
+            Muted = Rgb(0x6f, 0x6f, 0x6f);
+            Accent = Rgb(0x00, 0x78, 0xd4);
+            Panel = background;
+            Hover = Rgb(0xe0, 0xe0, 0xe0);
+            Border = Mix(Background, Foreground, 0.22);
+            Line = line;
+            StateFill = stateFill;
+            NoteFill = noteFill;
+            Grid = Mix(Background, Foreground, 0.14);
+            Widget = Mix(Background, Foreground, 0.06);
+            IsDark = false;
         }
 
         public bool IsDark { get; }

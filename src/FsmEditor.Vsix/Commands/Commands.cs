@@ -95,6 +95,23 @@ namespace FsmEditor.Commands
         }
     }
 
+    [Command(PackageGuids.CommandSetString, PackageIds.ExportPng)]
+    internal sealed class ExportPngCommand : BaseCommand<ExportPngCommand>
+    {
+        protected override void BeforeQueryStatus(System.EventArgs e)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            Command.Visible = Command.Enabled = FsmDocuments.ActiveIsDiagram();
+        }
+
+        protected override async Task ExecuteAsync(OleMenuCmdEventArgs e)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            var pane = FsmEditorPackage.Instance.PaneFor(FsmDocuments.ActiveDocumentPath());
+            await FsmEditorPackage.Instance.ExportPngAsync(pane);
+        }
+    }
+
     [Command(PackageGuids.CommandSetString, PackageIds.OpenAsText)]
     internal sealed class OpenAsTextCommand : BaseCommand<OpenAsTextCommand>
     {

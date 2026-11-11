@@ -139,7 +139,7 @@ namespace FsmEditor
             FsmDocuments.OpenInDiagram(path);
         }
 
-        // ---------------------------------------------------------------- SVG export
+        // ---------------------------------------------------------------- SVG and PNG export
 
         internal async Task ExportSvgAsync(FsmEditorPane pane)
         {
@@ -161,6 +161,31 @@ namespace FsmEditor
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
                 await VS.MessageBox.ShowErrorAsync("SVG export failed", e.Message);
+            }
+        }
+
+        internal async Task ExportPngAsync(FsmEditorPane pane)
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            var image = pane?.RenderPng();
+            if (image == null)
+            {
+                await VS.MessageBox.ShowWarningAsync("Export as PNG", "Open a .fsm state machine in the FSM Editor first.");
+                return;
+            }
+            var target = Dialogs.SaveFile("Export as PNG", "PNG image (*.png)|*.png", Path.GetDirectoryName(pane.FilePath),
+                Path.GetFileNameWithoutExtension(pane.FilePath) + ".png");
+            if (target == null) return;
+            try
+            {
+                var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image));
+                using (var stream = File.Create(target)) encoder.Save(stream);
+                await VS.StatusBar.ShowMessageAsync($"Exported to {Path.GetFileName(target)}.");
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                await VS.MessageBox.ShowErrorAsync("PNG export failed", e.Message);
             }
         }
 

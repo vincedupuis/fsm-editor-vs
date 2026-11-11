@@ -26,6 +26,7 @@ namespace FsmEditor.Editor
         void Redo();
         void GenerateCode();
         void ExportSvg();
+        void ExportPng();
         void OpenAsText();
         void OpenSubmachine(string href);
     }
@@ -360,6 +361,9 @@ namespace FsmEditor.Editor
         }
 
         public string ExportSvg() => Session == null ? null : SvgExport.Export(Session);
+
+        /// <summary>The diagram as an image at twice its size, in the SVG export's colors.</summary>
+        public System.Windows.Media.Imaging.BitmapSource ExportPng() => _canvas.ExportImage(2);
 
         // ---------------------------------------------------------------- editing commands
 
@@ -872,6 +876,7 @@ namespace FsmEditor.Editor
             var right = new StackPanel { Orientation = Orientation.Horizontal };
             right.Children.Add(ToolbarButton("code", "Generate code from a template", _host.GenerateCode, "Code"));
             right.Children.Add(ToolbarButton("export", "Export as SVG", _host.ExportSvg, "SVG"));
+            right.Children.Add(ToolbarButton("export", "Export as PNG", _host.ExportPng, "PNG"));
             right.Children.Add(Separator(th));
             right.Children.Add(ToolbarButton("xmi", "Open as XMI text", _host.OpenAsText, "XMI"));
             right.Children.Add(Separator(th));

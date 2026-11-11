@@ -22,5 +22,6 @@ namespace FsmEditor
         public const int ExportSvg = 0x0102;
         public const int OpenAsText = 0x0103;
         public const int OpenDiagram = 0x0104;
+        public const int ExportPng = 0x0105;
     }
 }

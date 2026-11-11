@@ -8,6 +8,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using FsmEditor.Core;
 using Geo = FsmEditor.Core.Geometry;
 
@@ -140,7 +141,16 @@ namespace FsmEditor.Editor
 
         // ---------------------------------------------------------------- rendering
 
-        private Theme T => Theme.Current;
+        /// <summary>While true, rendering draws the diagram for an image: export colors, no selection, problems or drag feedback.</summary>
+        private bool _exporting;
+
+        /// <summary>Device pixels per DIP of the image being exported.</summary>
+        private double _exportScale = 1;
+
+        /// <summary>Largest side of an exported image, in pixels.</summary>
+        public const double MaxImageSide = 16384;
+
+        private Theme T => _exporting ? Theme.Export : Theme.Current;
 
         protected override void OnRender(DrawingContext dc)
         {
@@ -152,13 +162,55 @@ namespace FsmEditor.Editor
             _editor.RefreshLayoutIssues();
             _labels.Clear();
             dc.PushTransform(new MatrixTransform(Zoom, 0, 0, Zoom, ViewX, ViewY));
-            var ix = S.Index;
-            var sorted = Geo.DrawingOrder(ix);
+            DrawDiagram(dc);
+            DrawOverlay(dc);
+            dc.Pop();
+        }
+
+        private void DrawDiagram(DrawingContext dc)
+        {
+            var sorted = Geo.DrawingOrder(S.Index);
             foreach (var v in sorted) DrawVertex(dc, v);
             foreach (var v in sorted.Where(v => v.Type == VertexType.Comment)) DrawAnchors(dc, v);
             foreach (var t in S.Model.Transitions) DrawTransition(dc, t);
-            DrawOverlay(dc);
-            dc.Pop();
+        }
+
+        /// <summary>
+        /// The diagram as an image, cropped to its content with a margin like the SVG export and in its colors,
+        /// at <paramref name="scale"/> times its size (less when a side would exceed <see cref="MaxImageSide"/> pixels);
+        /// null without a diagram.
+        /// </summary>
+        public BitmapSource ExportImage(double scale)
+        {
+            if (S == null) return null;
+            S.Reindex();
+            const double pad = 20;
+            var b = Geo.ContentBounds(S.Index, LabelWidth);
+            var w = b.W + pad * 2;
+            var h = b.H + pad * 2;
+            var k = Math.Min(scale, MaxImageSide / Math.Max(w, h));
+            var visual = new DrawingVisual();
+            _exporting = true;
+            _exportScale = k;
+            try
+            {
+                using (var dc = visual.RenderOpen())
+                {
+                    // One pixel more than the image, which rounds its size up.
+                    dc.DrawRectangle(T.BrushOf(T.Background), null, new Rect(0, 0, w + 1, h + 1));
+                    dc.PushTransform(new TranslateTransform(pad - b.X, pad - b.Y));
+                    DrawDiagram(dc);
+                    dc.Pop();
+                }
+            }
+            finally
+            {
+                _exporting = false;
+            }
+            var bitmap = new RenderTargetBitmap(Math.Max(1, (int)Math.Ceiling(w * k)), Math.Max(1, (int)Math.Ceiling(h * k)), 96 * k, 96 * k, PixelFormats.Pbgra32);
+            bitmap.Render(visual);
+            bitmap.Freeze();
+            return bitmap;
         }
 
         private void DrawGrid(DrawingContext dc)
@@ -182,7 +234,7 @@ namespace FsmEditor.Editor
 
         private static double Mod(double a, double m) => a % m;
 
-        private double PixelsPerDip => VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        private double PixelsPerDip => _exporting ? _exportScale : VisualTreeHelper.GetDpi(this).PixelsPerDip;
 
         private FormattedText Text(string text, double size, FontWeight weight, FontStyle style, Brush brush) =>
             new FormattedText(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
@@ -216,6 +268,7 @@ namespace FsmEditor.Editor
 
         private IssueLevel IssueOf(string id)
         {
+            if (_exporting) return IssueLevel.None;
             var list = _editor.IssuesFor(id);
             if (list.Any(i => i.Severity == Severity.Error)) return IssueLevel.Error;
             if (list.Any(i => i.Severity == Severity.Warning)) return IssueLevel.Warning;
@@ -226,9 +279,9 @@ namespace FsmEditor.Editor
         {
             var th = T;
             var ix = S.Index;
-            var selected = S.Selection.Contains(v.Id);
+            var selected = !_exporting && S.Selection.Contains(v.Id);
             var issue = IssueOf(v.Id);
-            var dropTarget = _drag != null && _drag.DropState == v.Id;
+            var dropTarget = !_exporting && _drag != null && _drag.DropState == v.Id;
 
             // Outline of the element's own shape: its color, then selection, warnings and errors, win in that order.
             var own = Theme.ColorOf(v.Color);
@@ -328,7 +381,7 @@ namespace FsmEditor.Editor
                                 else dc.DrawLine(dashed, new Point(rr.X, rr.Y), new Point(rr.X + rr.W, rr.Y));
                             }
                             if (regions[i].Name.Length > 0) DrawText(dc, rr.X + 6, rr.Y + 12, regions[i].Name, 10, dimText, TextAnchor.Start, style: FontStyles.Italic);
-                            if (_drag != null && _drag.DropRegion == regions[i].Id)
+                            if (!_exporting && _drag != null && _drag.DropRegion == regions[i].Id)
                             {
                                 dc.DrawRectangle(th.BrushOf(th.Accent, 0.08), null, new Rect(rr.X, rr.Y, rr.W, rr.H));
                             }
@@ -431,7 +484,7 @@ namespace FsmEditor.Editor
             var pts = Geo.Route(ix, t);
             if (pts == null) return;
             var th = T;
-            var selected = S.Selection.Contains(t.Id);
+            var selected = !_exporting && S.Selection.Contains(t.Id);
             var issue = IssueOf(t.Id);
             var color = issue == IssueLevel.Error ? th.Error : issue == IssueLevel.Warning ? th.Warning : selected ? th.Accent : Theme.ColorOf(t.Color) ?? th.Line;
             var pen = th.PenOf(color, selected ? 2 : 1.3);
@@ -461,7 +514,7 @@ namespace FsmEditor.Editor
                     var text = Theme.ColorOf(ElementColors.Item(t.Color, t.ItemColors, lines[i].Key)) ?? (selected ? th.Accent : th.Foreground);
                     box.Union(DrawText(dc, lp.X, Geo.LabelLineY(lp, i, lines.Count), lines[i].Text, 11, th.BrushOf(text), lp.Anchor, halo: th.Background));
                 }
-                _labels.Add((box, t.Id));
+                if (!_exporting) _labels.Add((box, t.Id));
             }
             if (selected && S.Selection.Count == 1)
             {

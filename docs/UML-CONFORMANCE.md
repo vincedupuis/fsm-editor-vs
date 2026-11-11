@@ -1,6 +1,6 @@
 # UML Conformance
 
-FSM Editor implements the state machine part of **UML 2.5.1** (OMG formal/17-12-05, chapter 14 "StateMachines"). This document lists what is supported, where the tool deliberately differs from the specification, which rules the validator checks, how files are stored, what the SVG export contains, and how generated code executes. The file format, rules and messages are the same as in FSM Editor for VS Code: both editors open and save the same files.
+FSM Editor implements the state machine part of **UML 2.5.1** (OMG formal/17-12-05, chapter 14 "StateMachines"). This document lists what is supported, where the tool deliberately differs from the specification, which rules the validator checks, how files are stored, what the SVG and PNG exports contain, and how generated code executes. The file format, rules and messages are the same as in FSM Editor for VS Code: both editors open and save the same files.
 
 - [Supported features](#supported-features)
 - [Text syntax](#text-syntax)
@@ -8,7 +8,7 @@ FSM Editor implements the state machine part of **UML 2.5.1** (OMG formal/17-12-
 - [File format](#file-format)
 - [Deviations from UML 2.5.1](#deviations-from-uml-251)
 - [Validation rules](#validation-rules)
-- [SVG export](#svg-export)
+- [SVG and PNG export](#svg-and-png-export)
 - [Code generation](#code-generation)
 
 ## Supported features
@@ -164,9 +164,9 @@ Beyond the [text syntax](#text-syntax), the validator checks the following. ✕ 
 **Layout** *(tool, diagram editor only)*
 - ⚠ Elements don't overlap, except a state and what it contains. Comments, transitions and labels don't count, nor a point on its own state's border. The diagram editor shows this warning; the Error List and code generation don't.
 
-## SVG export
+## SVG and PNG export
 
-*Export as SVG* writes a standalone drawing of the diagram exactly as shown, cropped to its content, in a light theme whatever the editor theme.
+*Export as SVG* writes a standalone drawing of the diagram exactly as shown, cropped to its content, in a light theme whatever the editor theme. *Export as PNG* writes the same drawing as an image at twice its size, or smaller when a side would exceed 16384 pixels.
 
 ## Code generation
 
