@@ -21,9 +21,11 @@ namespace FsmEditor.Core
     ///   UMLLabel whose center is the middle of those waypoints moved by the
     ///   label offset;
     /// - the region layout of an orthogonal state follows from its region shapes;
-    /// - colors are kept in one xmi:Extension at the end of the diagram, with a
-    ///   &lt;style element="id" color="#rrggbb" entry="#rrggbb" …/&gt; per colored
-    ///   vertex or transition (UML DI has no color).
+    /// - colors and groups are kept in one xmi:Extension at the end of the diagram,
+    ///   with a &lt;style element="id" color="#rrggbb" entry="#rrggbb" …/&gt; per colored
+    ///   vertex or transition (UML DI has no color), then a
+    ///   &lt;group id="g" members="id id …"/&gt; per group of vertices (members in file
+    ///   order, groups in the order of their first member).
     ///
     /// <c>ToXmi(FromXmi(x))</c> round-trips without loss (coordinates are rounded to 0.1 px),
     /// and the output is identical to the one of FSM Editor for VS Code.
@@ -301,6 +303,15 @@ namespace FsmEditor.Core
             }
             foreach (var v in m.Vertices) AddStyle(v.Id, v.Color, v.ItemColors);
             foreach (var t in m.Transitions) AddStyle(t.Id, t.Color, t.ItemColors);
+            var groups = new List<(string Id, List<string> Members)>();
+            foreach (var v in m.Vertices)
+            {
+                if (v.Group.Length == 0) continue;
+                var g = groups.FindIndex(gr => gr.Id == v.Group);
+                if (g < 0) groups.Add((v.Group, new List<string> { v.Id }));
+                else groups[g].Members.Add(v.Id);
+            }
+            foreach (var (id, members) in groups) styles.Add(new XNode("group", ("id", id), ("members", string.Join(" ", members))));
             var diagram = new XNode("umldi:UMLStateMachineDiagram", ("xmi:id", smId + "_diagram"), ("name", m.Name), ("modelElement", smId), ("isFrame", "false"))
                 .Add(shapes, edges);
             if (styles.Count > 0) diagram.Add(new XNode("xmi:Extension", ("extender", Extender)).Add(styles));
@@ -571,6 +582,16 @@ namespace FsmEditor.Core
                         }
                         if (byId.TryGetValue(id, out var sv)) Apply(c => sv.Color = c, sv.ItemColors);
                         else if (transitions.TryGetValue(id, out var st2)) Apply(c => st2.Color = c, st2.ItemColors);
+                    }
+                    // A vertex listed in several groups stays in the first.
+                    foreach (var g in Kids(ext, "group"))
+                    {
+                        var id = g.Attr("id") ?? "";
+                        if (id.Length == 0) continue;
+                        foreach (var member in (g.Attr("members") ?? "").Split((char[])null, StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            if (byId.TryGetValue(member, out var gv) && gv.Group.Length == 0) gv.Group = id;
+                        }
                     }
                 }
                 foreach (var el in Walk(d))

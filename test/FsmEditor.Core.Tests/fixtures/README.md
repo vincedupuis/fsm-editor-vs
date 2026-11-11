@@ -15,7 +15,10 @@ validates state machines exactly the same way:
   reading resets a state's loop unless it has one or three, and keeps a
   pseudostate's bend points, and `regions.fsm`, composite states whose regions
   have their own sizes (stacked, side by side, a single region, and sizes that
-  don't fit their state);
+  don't fit their state), and `groups.fsm`, whose groups were edited by hand
+  (members out of file order, a member on a state's border, members in another
+  region, a vertex in two groups, a missing member, a group without an id and
+  groups of one) to check which groups reading keeps;
 - `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`.
 
 Regenerate them when the reference implementation changes its rules or format,

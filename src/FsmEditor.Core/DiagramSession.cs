@@ -56,6 +56,7 @@ namespace FsmEditor.Core
         public void Commit()
         {
             Reindex();
+            Model.NormalizeGroups();
             KeepHeaders();
             Committed?.Invoke(this, EventArgs.Empty);
         }
@@ -1010,16 +1011,18 @@ namespace FsmEditor.Core
         /// Region a moved element is dropped into: the deepest one holding its whole box, when that is its own region
         /// or lies inside it (an element never leaves its region by a drag); null to keep its region.
         /// </summary>
-        public RegionRect DropRegionOf(Vertex v, ISet<string> moving)
+        public RegionRect DropRegionOf(Vertex v, ISet<string> moving) => DropRegionOf(BoxOf(v), v.Parent, moving);
+
+        private RegionRect DropRegionOf(RectD box, string parent, ISet<string> moving)
         {
-            var r = Geometry.RegionHolding(Index, BoxOf(v), moving);
-            return r != null && r.Id != v.Parent && Geometry.RegionWithin(Index, r.Id, v.Parent) ? r : null;
+            var r = Geometry.RegionHolding(Index, box, moving);
+            return r != null && r.Id != parent && Geometry.RegionWithin(Index, r.Id, parent) ? r : null;
         }
 
         /// <summary>Region to highlight while <paramref name="lead"/> is dragged: where it would be dropped, else its own region.</summary>
         public RegionRect DropHighlight(Vertex lead, ISet<string> moving)
         {
-            var r = DropRegionOf(lead, moving);
+            var r = DropRegionOf(DropBox(lead), lead.Parent, moving);
             if (r != null) return r;
             var s = RegionOwnerOf(lead.Parent);
             return s != null ? RectsOf(s).FirstOrDefault(x => x.Id == lead.Parent) : null;
@@ -1083,10 +1086,10 @@ namespace FsmEditor.Core
             return output;
         }
 
-        /// <summary>The selected elements (without a selected ancestor) when they all lie in a composite state's region.</summary>
+        /// <summary>The selected elements (without a selected ancestor) and their groups, when they all lie in a composite state's region.</summary>
         private List<Vertex> LeavingElements()
         {
-            var roots = SelectionRoots();
+            var roots = WithGroupMates(SelectionRoots());
             return roots.Count > 0 && roots.All(v => !Index.IsBorderVertex(v) && RegionOwnerOf(v.Parent) != null) ? roots : new List<Vertex>();
         }
 
@@ -1152,9 +1155,18 @@ namespace FsmEditor.Core
         public void DropMoved(IEnumerable<Vertex> roots, ISet<string> moving)
         {
             Reindex();
-            foreach (var v in roots)
+            var list = roots.ToList();
+            foreach (var v in list)
             {
                 if (Index.IsBorderVertex(v)) continue;
+                if (v.Group.Length > 0)
+                {
+                    // A group drops as a whole: into the region that holds all its members, or nowhere.
+                    if (v != list.First(r => r.Group == v.Group)) continue;
+                    var gr = DropRegionOf(DropBox(v), v.Parent, moving);
+                    if (gr != null) foreach (var m in GroupMembers(v.Group)) m.Parent = gr.Id;
+                    continue;
+                }
                 if (v.Type == VertexType.EntryPoint || v.Type == VertexType.ExitPoint)
                 {
                     // A machine-level point dropped on a state becomes that state's point; elsewhere it stays top-level.
@@ -1174,6 +1186,83 @@ namespace FsmEditor.Core
                 if (r != null) v.Parent = r.Id;
             }
             Commit();
+        }
+
+        // ---------------------------------------------------------------- groups
+
+        /// <summary>Members of group <paramref name="id"/>, in file order.</summary>
+        public List<Vertex> GroupMembers(string id) =>
+            string.IsNullOrEmpty(id) ? new List<Vertex>() : Model.Vertices.Where(v => v.Group == id).ToList();
+
+        /// <summary><paramref name="vs"/> with the other members of their groups, each once.</summary>
+        public List<Vertex> WithGroupMates(IEnumerable<Vertex> vs)
+        {
+            var list = vs.ToList();
+            var ids = new HashSet<string>(list.Select(v => v.Id));
+            foreach (var v in list.ToList())
+            {
+                foreach (var m in GroupMembers(v.Group))
+                {
+                    if (ids.Add(m.Id)) list.Add(m);
+                }
+            }
+            return list;
+        }
+
+        /// <summary>Box around <paramref name="vs"/>, or null when there are none.</summary>
+        public static RectD? UnionBox(IReadOnlyCollection<Vertex> vs)
+        {
+            if (vs.Count == 0) return null;
+            var x = vs.Min(v => v.X);
+            var y = vs.Min(v => v.Y);
+            return new RectD(x, y, vs.Max(v => v.X + v.W) - x, vs.Max(v => v.Y + v.H) - y);
+        }
+
+        /// <summary>The box a moved element drops by: with a group, the box around all its members.</summary>
+        public RectD DropBox(Vertex v) => (v.Group.Length > 0 ? UnionBox(GroupMembers(v.Group)) : null) ?? BoxOf(v);
+
+        /// <summary>
+        /// The elements a Group makes one group of: the selected ones and their groups' other members, when there
+        /// are at least two, in one region, none on a state's border, and they aren't already one group.
+        /// </summary>
+        private List<Vertex> Groupable()
+        {
+            var vs = WithGroupMates(SelectionRoots());
+            if (vs.Count < 2 || vs.Any(v => Index.IsBorderVertex(v) || v.Parent != vs[0].Parent)) return new List<Vertex>();
+            return vs[0].Group.Length > 0 && vs.All(v => v.Group == vs[0].Group) ? new List<Vertex>() : vs;
+        }
+
+        public bool CanGroup => Groupable().Count > 0;
+
+        public bool CanUngroup => Selection.Any(id => Index.Vertex(id)?.Group.Length > 0);
+
+        public void Group()
+        {
+            var vs = Groupable();
+            if (vs.Count == 0) return;
+            var id = NewId("g");
+            foreach (var v in vs) v.Group = id;
+            Commit();
+        }
+
+        /// <summary>Dissolves the groups of the selected elements.</summary>
+        public void Ungroup()
+        {
+            var ids = new HashSet<string>(Selection.Select(id => Index.Vertex(id)?.Group ?? "").Where(g => g.Length > 0));
+            if (ids.Count == 0) return;
+            foreach (var v in Model.Vertices)
+            {
+                if (ids.Contains(v.Group)) v.Group = "";
+            }
+            Commit();
+        }
+
+        /// <summary>G: ungroups the selection when an element of it is in a group, groups it otherwise.</summary>
+        public void ToggleGroup()
+        {
+            if (CanUngroup) Ungroup();
+            else if (CanGroup) Group();
+            else Say("Select two or more elements in the same region to group them.");
         }
 
         // ---------------------------------------------------------------- clipboard
@@ -1230,10 +1319,17 @@ namespace FsmEditor.Core
                 offX = offY = 20 * _pasteCount;
             }
             var added = new List<Vertex>();
+            var groups = new Dictionary<string, string>();
             foreach (var src in data.Vertices)
             {
                 var v = src.Clone();
                 v.Id = map[src.Id];
+                // A copied group is a new group; a lone copied member belongs to none (see FsmModel.NormalizeGroups).
+                if (v.Group.Length > 0)
+                {
+                    if (!groups.ContainsKey(v.Group)) groups[v.Group] = NewId("g");
+                    v.Group = groups[v.Group];
+                }
                 v.X += offX;
                 v.Y += offY;
                 v.Regions = v.Regions.Select(r => new Region { Id = map[r.Id], Name = r.Name, Size = r.Size }).ToList();

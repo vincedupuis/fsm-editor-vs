@@ -164,6 +164,11 @@ namespace FsmEditor.Core
         public string Color { get; set; } = "";
         /// <summary>Colors of items of the state's text, keyed by <see cref="ElementColors.ItemKeys"/>.</summary>
         public Dictionary<string, string> ItemColors { get; set; } = new Dictionary<string, string>();
+        /// <summary>
+        /// Id of the group the vertex belongs to, or empty, for the diagram: its members move together. Groups are flat,
+        /// their members share one region, and vertices on a state's border are never grouped (see <see cref="FsmModel.NormalizeGroups"/>).
+        /// </summary>
+        public string Group { get; set; } = "";
 
         public double CenterX => X + W / 2;
         public double CenterY => Y + H / 2;
@@ -270,7 +275,9 @@ namespace FsmEditor.Core
                 v.Stereotype = v.Stereotype ?? "";
                 v.Ref = v.Ref ?? "";
                 v.Text = v.Text ?? "";
+                v.Group = v.Group ?? "";
             }
+            NormalizeGroups();
             var types = new Dictionary<string, VertexType>();
             foreach (var v in Vertices)
             {
@@ -294,6 +301,39 @@ namespace FsmEditor.Core
                 }
             }
             return this;
+        }
+
+        /// <summary>
+        /// Keeps the groups the diagram can show. A group is the vertices sharing a <see cref="Vertex.Group"/> id: those on
+        /// a state's border leave it, and so do those outside the region of its first member (in file order). A group left
+        /// with fewer than two members is dissolved.
+        /// </summary>
+        public void NormalizeGroups()
+        {
+            var ids = new HashSet<string>(Vertices.Select(v => v.Id));
+            var parents = new Dictionary<string, string>();
+            var counts = new Dictionary<string, int>();
+            foreach (var v in Vertices)
+            {
+                var border = v.Type == VertexType.ConnectionPointRef
+                    || ((v.Type == VertexType.EntryPoint || v.Type == VertexType.ExitPoint) && ids.Contains(v.Parent));
+                if (string.IsNullOrEmpty(v.Group) || border)
+                {
+                    v.Group = "";
+                    continue;
+                }
+                if (!parents.TryGetValue(v.Group, out var parent)) parents[v.Group] = v.Parent;
+                else if (parent != v.Parent)
+                {
+                    v.Group = "";
+                    continue;
+                }
+                counts[v.Group] = counts.TryGetValue(v.Group, out var n) ? n + 1 : 1;
+            }
+            foreach (var v in Vertices)
+            {
+                if (v.Group.Length > 0 && counts[v.Group] < 2) v.Group = "";
+            }
         }
 
         /// <summary>Entry/exit points owned by the state machine itself (placed in a top-level region).</summary>

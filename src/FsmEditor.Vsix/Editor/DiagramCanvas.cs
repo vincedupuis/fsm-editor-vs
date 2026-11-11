@@ -547,6 +547,13 @@ namespace FsmEditor.Editor
             var selBox = th.PenOf(accent, 1, 1, new[] { 4.0, 3.0 });
             var sel = S.Selection.Select(S.Index.Vertex).Where(v => v != null).ToList();
             foreach (var v in sel) dc.DrawRoundedRectangle(null, selBox, new Rect(v.X - 4, v.Y - 4, v.W + 8, v.H + 8), 3, 3);
+            // The groups of the selected elements: a dotted rectangle around their members.
+            var groupBox = new Pen(th.BrushOf(accent), 1.5) { DashStyle = new DashStyle(new[] { 0.0, 4.0 / 1.5 }, 0), DashCap = PenLineCap.Round };
+            groupBox.Freeze();
+            foreach (var g in sel.Select(v => v.Group).Where(g => g.Length > 0).Distinct())
+            {
+                if (DiagramSession.UnionBox(S.GroupMembers(g)) is RectD gb) dc.DrawRoundedRectangle(null, groupBox, new Rect(gb.X - 10, gb.Y - 10, gb.W + 20, gb.H + 20), 4, 4);
+            }
             if (sel.Count == 1 && S.Selection.Count == 1)
             {
                 var v = sel[0];
@@ -916,10 +923,12 @@ namespace FsmEditor.Editor
             var ix = S.Index;
             var moving = new Dictionary<string, Vertex>();
             var roots = new List<Vertex>();
-            foreach (var id in S.Selection)
+            // The selected elements and the other members of their groups, which move with them.
+            var picked = S.WithGroupMates(S.Selection.Select(ix.Vertex).Where(v => v != null));
+            var pickedIds = new HashSet<string>(picked.Select(v => v.Id));
+            foreach (var v in picked)
             {
-                var v = ix.Vertex(id);
-                if (v == null || ix.Ancestors(v).Any(a => S.Selection.Contains(a.Id))) continue;
+                if (ix.Ancestors(v).Any(a => pickedIds.Contains(a.Id))) continue;
                 roots.Add(v);
                 moving[v.Id] = v;
                 foreach (var d in ix.Descendants(v)) moving[d.Id] = d;
@@ -1268,6 +1277,18 @@ namespace FsmEditor.Editor
                 Item("Align Vertically", () => Align(false), canAlign);
                 items.Children.Add(Separator());
             }
+            if (state != null && !S.Index.IsBorderVertex(state))
+            {
+                void Grouping(Action change)
+                {
+                    change();
+                    _editor.RenderProps();
+                    InvalidateVisual();
+                }
+                Item("Group", () => Grouping(S.Group), S.CanGroup);
+                Item("Ungroup", () => Grouping(S.Ungroup), S.CanUngroup);
+                items.Children.Add(Separator());
+            }
             if (S.CanLeaveParent)
             {
                 Item("Leave Parent", () =>
@@ -1401,6 +1422,13 @@ namespace FsmEditor.Editor
                     return;
                 case Key.F:
                     Fit();
+                    e.Handled = true;
+                    return;
+                case Key.G:
+                    if (mods != ModifierKeys.None) break;
+                    S.ToggleGroup();
+                    _editor.RenderProps();
+                    InvalidateVisual();
                     e.Handled = true;
                     return;
                 case Key.V:

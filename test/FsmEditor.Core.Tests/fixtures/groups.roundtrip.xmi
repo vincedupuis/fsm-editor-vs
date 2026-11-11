@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="sm_model" name="Groups">
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="sm" name="Groups">
+      <region xmi:type="uml:Region" xmi:id="r_root">
+        <ownedComment xmi:type="uml:Comment" xmi:id="v_note">
+          <body>Note</body>
+        </ownedComment>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="v_init" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="v_a" name="A"/>
+        <subvertex xmi:type="uml:State" xmi:id="v_b" name="B"/>
+        <subvertex xmi:type="uml:State" xmi:id="v_c" name="C"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="v_ch" kind="choice"/>
+        <subvertex xmi:type="uml:State" xmi:id="v_p" name="P">
+          <connectionPoint xmi:type="uml:Pseudostate" xmi:id="v_ep" name="in" kind="entryPoint"/>
+          <region xmi:type="uml:Region" xmi:id="r_p">
+            <subvertex xmi:type="uml:State" xmi:id="v_d" name="D"/>
+            <subvertex xmi:type="uml:State" xmi:id="v_e" name="E"/>
+            <subvertex xmi:type="uml:State" xmi:id="v_f" name="F"/>
+          </region>
+        </subvertex>
+        <transition xmi:type="uml:Transition" xmi:id="t_init" kind="external" source="v_init" target="v_a"/>
+      </region>
+    </packagedElement>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="Groups" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_note" modelElement="v_note">
+      <bounds xmi:type="dc:Bounds" x="100" y="260" width="160" height="64"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_init" modelElement="v_init">
+      <bounds xmi:type="dc:Bounds" x="40" y="60" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_a" modelElement="v_a">
+      <bounds xmi:type="dc:Bounds" x="100" y="40" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_b" modelElement="v_b">
+      <bounds xmi:type="dc:Bounds" x="260" y="40" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_c" modelElement="v_c">
+      <bounds xmi:type="dc:Bounds" x="100" y="140" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_ch" modelElement="v_ch">
+      <bounds xmi:type="dc:Bounds" x="300" y="150" width="28" height="28"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_p" modelElement="v_p">
+      <bounds xmi:type="dc:Bounds" x="420" y="40" width="360" height="260"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_r_p" modelElement="r_p">
+      <bounds xmi:type="dc:Bounds" x="420" y="64" width="360" height="236"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_ep" modelElement="v_ep">
+      <bounds xmi:type="dc:Bounds" x="412" y="150" width="16" height="16"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_d" modelElement="v_d">
+      <bounds xmi:type="dc:Bounds" x="440" y="100" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_e" modelElement="v_e">
+      <bounds xmi:type="dc:Bounds" x="600" y="100" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_f" modelElement="v_f">
+      <bounds xmi:type="dc:Bounds" x="440" y="200" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t_init" modelElement="t_init" source="di_v_init" target="di_v_a">
+      <waypoint xmi:type="dc:Point" x="50" y="70"/>
+      <waypoint xmi:type="dc:Point" x="160" y="65"/>
+    </ownedElement>
+    <xmi:Extension extender="FSM Editor">
+      <group id="g1" members="v_a v_b"/>
+      <group id="g3" members="v_c v_ch"/>
+      <group id="g2" members="v_d v_e"/>
+    </xmi:Extension>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>

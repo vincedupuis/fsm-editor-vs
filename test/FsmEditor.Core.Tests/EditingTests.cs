@@ -486,5 +486,127 @@ namespace FsmEditor.Core.Tests
             t.Points.Add(new PointD(20, 20));
             Assert.Equal("100,118 20,118 20,20 139.2,20 139.2,100", Route());
         }
+
+        // ---------------------------------------------------------------- groups
+
+        private static Vertex Named(DiagramSession s, string name) => s.Model.Vertices.First(v => v.Name == name);
+
+        private static void Select(DiagramSession s, params string[] names)
+        {
+            s.Reindex();
+            s.Selection = new HashSet<string>(names.Select(n => Named(s, n).Id));
+        }
+
+        [Fact]
+        public void GToggleGroupsAndUngroupsElementsOfOneRegion()
+        {
+            var s = Example("MediaPlayer.fsm");
+            string message = null;
+            s.Message += (o, m) => message = m;
+            Select(s, "Stopped", "Paused");
+            Assert.True(s.CanGroup);
+            s.ToggleGroup();
+            var g = Named(s, "Stopped").Group;
+            Assert.NotEqual("", g);
+            Assert.Equal(g, Named(s, "Paused").Group);
+            Assert.Equal(new[] { "Stopped", "Paused" }, s.GroupMembers(g).Select(v => v.Name));
+            Assert.Contains("<group id=\"" + g + "\" members=\"" + Named(s, "Stopped").Id + " " + Named(s, "Paused").Id + "\"/>", Xmi.ToXmi(s.Model));
+
+            Select(s, "Paused");
+            Assert.True(s.CanUngroup);
+            s.ToggleGroup();
+            Assert.Equal("", Named(s, "Stopped").Group);
+            Assert.Equal("", Named(s, "Paused").Group);
+
+            Select(s, "Fault");
+            s.ToggleGroup();
+            Assert.Equal("Select two or more elements in the same region to group them.", message);
+            Select(s, "Off", "Stopped");
+            Assert.False(s.CanGroup);
+        }
+
+        [Fact]
+        public void GroupingMembersOfGroupsMergesThem()
+        {
+            var s = Example("MediaPlayer.fsm");
+            Select(s, "Off", "Fault");
+            s.Group();
+            // Already one group: nothing to group, even from one member.
+            Select(s, "Off", "Fault");
+            Assert.False(s.CanGroup);
+            Select(s, "Fault");
+            Assert.False(s.CanGroup);
+            var final = s.Model.Vertices.First(v => v.Type == VertexType.Final);
+            s.Selection = new HashSet<string> { final.Id, s.Model.Vertices.First(v => v.Type == VertexType.Initial && v.Parent == s.RootRegion).Id };
+            s.Group();
+            Select(s, "Off");
+            s.Selection.Add(final.Id);
+            s.Group();
+            var g = Named(s, "Off").Group;
+            Assert.Equal(4, s.GroupMembers(g).Count);
+            Assert.Equal(g, Named(s, "Fault").Group);
+        }
+
+        [Fact]
+        public void AGroupDropsIntoARegionOnlyAsAWhole()
+        {
+            var s = NewSession();
+            var comp = s.CreateVertex("composite", new PointD(600, 400));
+            comp.W = 400;
+            comp.H = 300;
+            var a = s.CreateVertex("state", new PointD(100, 400));
+            var b = s.CreateVertex("state", new PointD(100, 500));
+            s.Selection = new HashSet<string> { a.Id, b.Id };
+            s.Group();
+            var moving = new HashSet<string> { a.Id, b.Id };
+            // Only a lands inside: the group stays where it was.
+            a.X = comp.X + 40;
+            a.Y = comp.Y + 80;
+            s.DropMoved(new[] { a, b }, moving);
+            Assert.Equal(s.RootRegion, a.Parent);
+            Assert.Equal(s.RootRegion, b.Parent);
+            b.X = comp.X + 40;
+            b.Y = comp.Y + 180;
+            s.DropMoved(new[] { a, b }, moving);
+            Assert.Equal(comp.Regions[0].Id, a.Parent);
+            Assert.Equal(comp.Regions[0].Id, b.Parent);
+            Assert.Equal(a.Group, b.Group);
+            Assert.NotEqual("", a.Group);
+
+            // Leave Parent of one member takes the whole group out.
+            s.Selection = new HashSet<string> { a.Id };
+            Assert.True(s.CanLeaveParent);
+            s.LeaveParent();
+            Assert.Equal(s.RootRegion, a.Parent);
+            Assert.Equal(s.RootRegion, b.Parent);
+        }
+
+        [Fact]
+        public void CopiesOfAWholeGroupMakeANewGroupAndDeletingLeavesNoGroupOfOne()
+        {
+            var s = Example("MediaPlayer.fsm");
+            Select(s, "Stopped", "Paused");
+            s.Group();
+            var g = Named(s, "Stopped").Group;
+            var text = ClipboardJson.Write(s.CollectSelection());
+            Assert.Contains("\"group\":\"" + g + "\"", text);
+            var before = s.Model.Vertices.Count;
+            s.Paste(ClipboardJson.TryRead(text));
+            var copies = s.Model.Vertices.Skip(before).ToList();
+            Assert.Equal(2, copies.Count);
+            Assert.NotEqual("", copies[0].Group);
+            Assert.NotEqual(g, copies[0].Group);
+            Assert.Equal(copies[0].Group, copies[1].Group);
+
+            Select(s, "Stopped");
+            before = s.Model.Vertices.Count;
+            s.Paste(s.CollectSelection());
+            Assert.Equal("", s.Model.Vertices.Last().Group);
+            Assert.Equal(before + 1, s.Model.Vertices.Count);
+
+            s.Selection = new HashSet<string> { copies[0].Id };
+            s.DeleteSelection();
+            Assert.Equal("", copies[1].Group);
+        }
     }
 }

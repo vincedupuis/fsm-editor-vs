@@ -81,6 +81,7 @@ The layout is a `umldi:UMLStateMachineDiagram`:
 - a moved transition label is a `umldi:UMLLabel` on its edge;
 - comment links are `umldi:UMLEdge`s from the comment to the annotated element;
 - colors, which UML DI cannot express, are kept in an `xmi:Extension` (extender `FSM Editor`) at the end of the diagram, with one `<style>` per colored element: `element` is the element's `xmi:id`, `color` its own color, `background` the fill of a composite state's regions, and `entry`, `exit`, `doActivity`, `deferrable`, `invariant`, `triggers`, `guard`, `effect`, `precondition` or `postcondition` the color of that item. Colors are `#rrggbb`; other tools ignore the extension.
+- groups of elements, a diagram notion that UML doesn't have, follow the styles in the same extension, with one `<group id="…" members="…"/>` per group: `members` lists the `xmi:id`s of its vertices, in file order, and groups are written in the order of their first member. When reading, a vertex listed in several groups stays in the first, members on a state's border and members outside the region of the group's first member leave the group, and a group of fewer than two members is dropped.
 
 Coordinates are rounded to 0.1 px when saved.
 

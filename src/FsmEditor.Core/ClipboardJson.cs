@@ -35,6 +35,7 @@ namespace FsmEditor.Core
             if (v.Type == VertexType.ConnectionPointRef) o.Str("ref", v.Ref).Str("pointKind", v.PointKind == PointKind.Exit ? "exit" : "entry");
             if (v.Type == VertexType.Comment) o.Str("text", v.Text).Raw("anchors", StringArray(v.Anchors));
             WriteColors(o, v.Color, v.ItemColors);
+            o.Opt("group", v.Group);
             return o.ToString();
         }
 
@@ -174,6 +175,7 @@ namespace FsmEditor.Core
                     Anchors = List(item, "anchors").OfType<string>().ToList(),
                     Color = ReadColor(item, "color"),
                     ItemColors = ReadItemColors(item),
+                    Group = Str(item, "group"),
                 });
             }
             foreach (var item in List(obj, "transitions").OfType<Dictionary<string, object>>())

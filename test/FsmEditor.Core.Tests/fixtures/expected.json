@@ -475,6 +475,50 @@
           "message": "State 'Oversized' can never be entered."
         }
       ]
+    },
+    "groups": {
+      "issues": [
+        {
+          "id": "v_ch",
+          "severity": "error",
+          "message": "A choice must have at least one incoming transition."
+        },
+        {
+          "id": "v_ch",
+          "severity": "error",
+          "message": "A choice must have at least one outgoing transition."
+        },
+        {
+          "id": "v_b",
+          "severity": "warning",
+          "message": "State 'B' can never be entered."
+        },
+        {
+          "id": "v_c",
+          "severity": "warning",
+          "message": "State 'C' can never be entered."
+        },
+        {
+          "id": "v_p",
+          "severity": "warning",
+          "message": "State 'P' can never be entered."
+        },
+        {
+          "id": "v_d",
+          "severity": "warning",
+          "message": "State 'D' can never be entered."
+        },
+        {
+          "id": "v_e",
+          "severity": "warning",
+          "message": "State 'E' can never be entered."
+        },
+        {
+          "id": "v_f",
+          "severity": "warning",
+          "message": "State 'F' can never be entered."
+        }
+      ]
     }
   },
   "grammar": [
