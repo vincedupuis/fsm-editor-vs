@@ -1265,9 +1265,9 @@ namespace FsmEditor.Editor
                 items.Children.Add(b);
             }
             var state = id != null ? S.Index.Vertex(id) : null;
-            if (state != null && state.Type == VertexType.State)
+            if (state != null && !S.Index.IsBorderVertex(state))
             {
-                var canAlign = S.SelectionRoots().Count(v => v.Type == VertexType.State) >= 2;
+                var canAlign = S.Alignable().Count >= 2;
                 void Align(bool horizontally)
                 {
                     if (S.Align(state.Id, horizontally)) _editor.RenderProps();

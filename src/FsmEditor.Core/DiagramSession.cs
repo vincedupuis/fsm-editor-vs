@@ -1105,26 +1105,26 @@ namespace FsmEditor.Core
         }
 
         /// <summary>
-        /// Aligns the selected states (without a selected ancestor) with <paramref name="anchorId"/>: on its
-        /// horizontal center line when <paramref name="horizontally"/>, else on its vertical one. Each state
-        /// moves with its contents and stays in its region; the enclosing composite states grow so that their
-        /// regions still hold their states. A state that is the only selected member of its group moves the whole
-        /// group, unless the anchor is in that group: selected members of one group are aligned within it.
-        /// Returns false, changing nothing, when fewer than two states are selected or when states of different
-        /// regions of one state would overlap along its region layout.
+        /// Aligns the selected elements (without a selected ancestor) with <paramref name="anchorId"/>: on its
+        /// horizontal center line when <paramref name="horizontally"/>, else on its vertical one. Elements on a
+        /// state's border don't align. Each element moves with its contents and stays in its region; the enclosing
+        /// composite states grow so that their regions still hold their elements. An element that is the only
+        /// selected member of its group moves the whole group, unless the anchor is in that group: selected members
+        /// of one group are aligned within it. Returns false, changing nothing, when fewer than two elements are
+        /// selected or when elements of different regions of one state would overlap along its region layout.
         /// </summary>
         public bool Align(string anchorId, bool horizontally)
         {
-            var states = SelectionRoots().Where(v => v.Type == VertexType.State).ToList();
+            var items = Alignable();
             var clicked = Index.Vertex(anchorId);
             if (clicked == null) return false;
             var anchor = Index.Ancestors(clicked).LastOrDefault(a => Selection.Contains(a.Id)) ?? clicked;
-            if (states.Count < 2 || !states.Contains(anchor)) return false;
+            if (items.Count < 2 || !items.Contains(anchor)) return false;
 
             var snap = Snapshot();
             var moved = new List<(Vertex V, RectD Old)>();
             var roots = SelectionRoots();
-            foreach (var v in states)
+            foreach (var v in items)
             {
                 var dx = horizontally ? 0 : anchor.CenterX - v.CenterX;
                 var dy = horizontally ? anchor.CenterY - v.CenterY : 0;
@@ -1148,18 +1148,21 @@ namespace FsmEditor.Core
             // Innermost first: a state that grows may no longer fit in its own region.
             foreach (var (v, old) in moved.OrderByDescending(m => Index.Depth(m.V)).ToList()) FitInRegion(v, old, true);
             double Along(Vertex v) => horizontally ? v.CenterY : v.CenterX;
-            var off = states.FirstOrDefault(v => Math.Abs(Along(v) - Along(anchor)) > 0.5);
+            var off = items.FirstOrDefault(v => Math.Abs(Along(v) - Along(anchor)) > 0.5);
             if (off != null)
             {
-                // Growing one region moved the others: states in different regions of one state can't line up.
+                // Growing one region moved the others: elements in different regions of one state can't line up.
                 Restore(snap);
                 var shared = Index.Ancestors(off).FirstOrDefault(a => Index.IsInside(anchor, a.Id));
-                Say($"The states cannot be aligned: they would leave their regions of '{shared?.Name ?? ""}'.");
+                Say($"The elements cannot be aligned: they would leave their regions of '{shared?.Name ?? ""}'.");
                 return false;
             }
             Commit();
             return true;
         }
+
+        /// <summary>The selected elements (without a selected ancestor) that Align moves: all but those on a state's border.</summary>
+        public List<Vertex> Alignable() => SelectionRoots().Where(v => !Index.IsBorderVertex(v)).ToList();
 
         /// <summary>Selected elements without a selected ancestor, which lead a move.</summary>
         public List<Vertex> SelectionRoots() =>

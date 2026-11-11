@@ -294,14 +294,13 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
-        public void AlignsTheSelectedStatesOnTheClickedOne()
+        public void AlignsTheSelectedElementsOnTheClickedOne()
         {
             var s = NewSession();
             var a = AddState(s, "a", s.RootRegion, 1000, 1000);
             var b = AddState(s, "b", s.RootRegion, 1300, 1120, 100, 40);
             var c = AddState(s, "c", s.RootRegion, 1600, 900);
             var init = s.Index.Vertex("v_init");
-            var initAt = (init.X, init.Y);
             s.Selection = new HashSet<string> { a.Id, b.Id, c.Id, init.Id };
             var commits = 0;
             s.Committed += (o, e) => commits++;
@@ -314,10 +313,14 @@ namespace FsmEditor.Core.Tests
             Assert.Equal((1000.0, 1110.0), (a.X, a.Y));
             Assert.Equal((1020.0, 1120.0), (b.X, b.Y));
             Assert.Equal((1000.0, 1110.0), (c.X, c.Y));
-            // Pseudostates are left alone, and a single state has nothing to align with.
-            Assert.Equal(initAt, (init.X, init.Y));
-            s.Selection = new HashSet<string> { a.Id, init.Id };
-            Assert.False(s.Align(a.Id, horizontally: true));
+            // Pseudostates align as well; points on a state's border don't.
+            Assert.Equal((a.CenterX, b.CenterY), (init.CenterX, init.CenterY));
+            var ep = new Vertex { Id = "ep", Type = VertexType.EntryPoint, Name = "ep", Parent = a.Id, X = 993, Y = 1150, W = 14, H = 14 };
+            s.Model.Vertices.Add(ep);
+            s.Reindex();
+            s.Selection = new HashSet<string> { ep.Id, init.Id };
+            Assert.False(s.Align(init.Id, horizontally: true));
+            Assert.Equal((993.0, 1150.0), (ep.X, ep.Y));
         }
 
         [Fact]
@@ -409,7 +412,7 @@ namespace FsmEditor.Core.Tests
             s.Message += (o, m) => message = m;
             s.Selection = new HashSet<string> { a.Id, b.Id };
             Assert.False(s.Align(a.Id, horizontally: true));
-            Assert.Equal("The states cannot be aligned: they would leave their regions of 'orth'.", message);
+            Assert.Equal("The elements cannot be aligned: they would leave their regions of 'orth'.", message);
             Assert.Equal((1180.0, 1160.0), (b.X, b.Y));
             Assert.Equal((1000.0, 1000.0, 340.0, 250.0), (orth.X, orth.Y, orth.W, orth.H));
             // Side by side, the same states can share a row but not a column.
