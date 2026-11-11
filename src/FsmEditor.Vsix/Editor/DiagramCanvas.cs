@@ -1250,13 +1250,18 @@ namespace FsmEditor.Editor
                 },
             };
             Border Separator() => new Border { Height = 1, Margin = new Thickness(0, 4, 0, 4), Background = th.BrushOf(th.Border) };
-            void Item(string label, Action onClick, bool enabled = true)
+            void Item(string label, Action onClick, bool enabled = true, string tooltip = null)
             {
                 var b = EditorControl.FlatButton(new TextBlock { Text = label, Margin = new Thickness(4, 0, 12, 0) }, null);
                 b.HorizontalContentAlignment = HorizontalAlignment.Left;
                 b.Padding = new Thickness(4);
                 b.IsEnabled = enabled;
                 if (!enabled) b.Opacity = 0.45;
+                if (tooltip != null)
+                {
+                    b.ToolTip = tooltip;
+                    ToolTipService.SetShowOnDisabled(b, true);
+                }
                 b.Click += (s, e) =>
                 {
                     popup.IsOpen = false;
@@ -1297,6 +1302,17 @@ namespace FsmEditor.Editor
                     _editor.RenderProps();
                     InvalidateVisual();
                 });
+                items.Children.Add(Separator());
+            }
+            if (state != null && !S.Index.IsBorderVertex(state))
+            {
+                // Greyed out, with the reason in its tooltip, when the selection can't become a submachine.
+                var problem = Extraction.Problem(S.Model, S.Selection);
+                Item("Extract to Submachine…", () =>
+                {
+                    _editor.ExtractToSubmachine();
+                    InvalidateVisual();
+                }, problem == null, problem);
                 items.Children.Add(Separator());
             }
             var copyable = S.CollectSelection() != null;

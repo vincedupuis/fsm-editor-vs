@@ -29,6 +29,10 @@ namespace FsmEditor.Editor
         void ExportPng();
         void OpenAsText();
         void OpenSubmachine(string href);
+        /// <summary>Asks for the name of a state machine to create next to the document, starting from <paramref name="proposed"/>; null when cancelled.</summary>
+        string AskSubmachineName(string proposed);
+        /// <summary>Creates <c>name.fsm</c> next to the document with <paramref name="xmi"/>; false (after telling why) when it can't.</summary>
+        bool CreateMachineFile(string name, string xmi);
     }
 
     /// <summary>
@@ -349,6 +353,30 @@ namespace FsmEditor.Editor
         }
 
         public void OpenSubmachine(string href) => _host.OpenSubmachine(href);
+
+        /// <summary>
+        /// Extract to Submachine: moves the selected elements into a new state machine file next to this one, and puts a
+        /// submachine state referencing it in their place (<see cref="Extraction"/>). The file isn't removed by Undo.
+        /// </summary>
+        public void ExtractToSubmachine()
+        {
+            if (Session == null) return;
+            var ids = Session.Selection.ToList();
+            var problem = Extraction.Problem(Session.Model, ids);
+            if (problem != null)
+            {
+                Toast(problem);
+                return;
+            }
+            var name = _host.AskSubmachineName(Extraction.ProposedName(Session.Model, ids));
+            if (name == null) return;
+            var result = Extraction.Extract(Session.Model, ids, name, Hrefs.EncodeUri(name + ".fsm") + "#sm");
+            if (!_host.CreateMachineFile(name, Xmi.ToXmi(result.Machine))) return;
+            Session.ReplaceModel(result.Parent);
+            Session.Selection = new HashSet<string> { result.StateId };
+            Session.Commit();
+            RenderProps();
+        }
 
         public void Reveal(string id)
         {

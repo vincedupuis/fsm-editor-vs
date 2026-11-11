@@ -55,6 +55,14 @@ Variables, arguments, comparisons, dotted names and change events (`when(...)`) 
 3. Select the submachine state. The properties panel lists the entry and exit points found in `Payment.fsm`: click **Add** or **Add all references**. You can also drop an Entry Point, Exit Point or Connection Point Ref tool on the state's border.
 4. Draw transitions **into** entry references and **out of** exit references.
 
+**Extract to Submachine** does this from existing elements: select elements of one region, or one composite state, right-click and choose *Extract to Submachine…*, then name the new machine. It is saved next to the current file.
+
+- Several elements move with their contents, the transitions between them, and the comments and groups among them. A submachine state covering their bounding box takes their place. If the region's initial pseudostate moves, the region gets a new one, to the submachine state.
+- A composite state with one region selected alone: its contents move, and the state becomes the submachine state, keeping its name, behaviors, transitions and place. Its own entry and exit points become the new machine's, with references in their place. A composite state with several regions moves whole instead, like several elements, since the new machine has one region.
+- A transition crossing the boundary is split at a connection point, keeping its trigger, guard and effect on its source's side. An incoming one goes to an entry reference, then from the new machine's entry point to its target; an outgoing one goes to an exit point of the new machine, then from the exit reference to its target. There is one entry point per inner target and one exit point per outer target, named `to<Target>`. An incoming transition to the target of the new machine's initial transition (without guard or effect) goes to the submachine state itself.
+- It isn't available, and the menu item's tooltip says why, for points on a state's border selected without their state, local transitions crossing the boundary and history pseudostates at either end of a crossing transition.
+- Undo restores the current machine but keeps the new file.
+
 The submachine and its connection points are referenced the XMI way, with `href="Payment.fsm#id"` pointing into the other file. Renaming the other machine or its points keeps the references working; moving or renaming the file breaks them, and the validator reports it. The references stay in sync with that file, including unsaved edits to it. See [`examples/Order.fsm`](../examples/Order.fsm) and [`examples/Payment.fsm`](../examples/Payment.fsm).
 
 ## File format

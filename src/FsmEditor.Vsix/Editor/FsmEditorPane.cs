@@ -272,6 +272,53 @@ namespace FsmEditor.Editor
             FsmDocuments.OpenInDiagram(file);
         }
 
+        public string AskSubmachineName(string proposed)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var folder = Path.GetDirectoryName(FilePath);
+            bool Exists(string name) => File.Exists(Path.Combine(folder, name + ".fsm"));
+            var value = proposed;
+            for (var n = 2; Exists(value); n++) value = proposed + n;
+            return Dialogs.AskMachineName(value, "Extract to Submachine", "Name of the new state machine, saved next to this one:", "Extract",
+                name => Exists(name) ? $"{name}.fsm already exists." : null);
+        }
+
+        public bool CreateMachineFile(string name, string xmi)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var path = Path.Combine(Path.GetDirectoryName(FilePath), name + ".fsm");
+            try
+            {
+                using (var stream = new FileStream(path, FileMode.CreateNew))
+                using (var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false)))
+                {
+                    writer.Write(xmi);
+                }
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                _control.Toast($"{name}.fsm could not be created: {e.Message}");
+                return false;
+            }
+            AddToProjectAsync(path).FileAndForget("FsmEditor/AddSubmachine");
+            return true;
+        }
+
+        /// <summary>Adds <paramref name="path"/> to the project holding this document (SDK-style projects pick it up on their own).</summary>
+        private async Task AddToProjectAsync(string path)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            try
+            {
+                var file = await Community.VisualStudio.Toolkit.PhysicalFile.FromFileAsync(FilePath);
+                if (file?.FindParent(Community.VisualStudio.Toolkit.SolutionItemType.Project) is Community.VisualStudio.Toolkit.Project project) await project.AddExistingFilesAsync(path);
+            }
+            catch (Exception e) when (e is COMException || e is InvalidOperationException || e is NotImplementedException)
+            {
+                // Folder views and some project types don't take new items.
+            }
+        }
+
         // ---------------------------------------------------------------- IVsTextBufferDataEvents
 
         public void OnFileChanged(uint grfChange, uint dwFileAttrs)

@@ -56,16 +56,20 @@ namespace FsmEditor.Services
             return panel;
         }
 
-        /// <summary>Asks for the name of a new state machine; null when cancelled.</summary>
-        public static string AskMachineName(string initial = "StateMachine")
+        /// <summary>
+        /// Asks for the name of a new state machine; null when cancelled. <paramref name="check"/> returns why a name
+        /// can't be used (for example, its file exists), or null.
+        /// </summary>
+        public static string AskMachineName(string initial = "StateMachine", string title = "New State Machine",
+            string prompt = "Name of the new state machine:", string action = "Create", Func<string, string> check = null)
         {
-            var w = Window("New State Machine", 380);
+            var w = Window(title, 380);
             var input = TextBox(initial);
             var error = new TextBlock { Foreground = System.Windows.Media.Brushes.IndianRed, TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed, Margin = new Thickness(0, 4, 0, 0) };
-            var ok = Button("Create", isDefault: true);
+            var ok = Button(action, isDefault: true);
             var cancel = Button("Cancel", isCancel: true);
             var panel = new StackPanel { Margin = new Thickness(16) };
-            panel.Children.Add(Label("Name of the new state machine:"));
+            panel.Children.Add(Label(prompt));
             panel.Children.Add(input);
             panel.Children.Add(error);
             panel.Children.Add(Buttons(ok, cancel));
@@ -77,6 +81,13 @@ namespace FsmEditor.Services
                 if (!Regex.IsMatch(name, @"^[\w .-]+$"))
                 {
                     error.Text = "Use letters, digits, spaces, dots, dashes or underscores.";
+                    error.Visibility = Visibility.Visible;
+                    return;
+                }
+                var problem = check?.Invoke(name);
+                if (problem != null)
+                {
+                    error.Text = problem;
                     error.Visibility = Visibility.Visible;
                     return;
                 }
