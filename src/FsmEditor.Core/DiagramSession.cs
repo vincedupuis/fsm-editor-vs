@@ -1108,8 +1108,10 @@ namespace FsmEditor.Core
         /// Aligns the selected states (without a selected ancestor) with <paramref name="anchorId"/>: on its
         /// horizontal center line when <paramref name="horizontally"/>, else on its vertical one. Each state
         /// moves with its contents and stays in its region; the enclosing composite states grow so that their
-        /// regions still hold their states. Returns false, changing nothing, when fewer than two states are
-        /// selected or when states of different regions of one state would overlap along its region layout.
+        /// regions still hold their states. A state that is the only selected member of its group moves the whole
+        /// group, unless the anchor is in that group: selected members of one group are aligned within it.
+        /// Returns false, changing nothing, when fewer than two states are selected or when states of different
+        /// regions of one state would overlap along its region layout.
         /// </summary>
         public bool Align(string anchorId, bool horizontally)
         {
@@ -1121,13 +1123,25 @@ namespace FsmEditor.Core
 
             var snap = Snapshot();
             var moved = new List<(Vertex V, RectD Old)>();
+            var roots = SelectionRoots();
             foreach (var v in states)
             {
                 var dx = horizontally ? 0 : anchor.CenterX - v.CenterX;
                 var dy = horizontally ? anchor.CenterY - v.CenterY : 0;
                 if (dx == 0 && dy == 0) continue;
-                moved.Add((v, BoxOf(v)));
-                ShiftVertices(new HashSet<string>(new[] { v }.Concat(Index.Descendants(v)).Select(x => x.Id)), dx, dy);
+                // A group follows its only selected member, unless the anchor is in it: aligning several members of a
+                // group, or members with the anchor's group, moves just them.
+                var mates = v.Group.Length > 0 && v.Group != anchor.Group && roots.Count(x => x.Group == v.Group) == 1
+                    ? GroupMembers(v.Group).Where(m => m != v).ToList()
+                    : new List<Vertex>();
+                var ids = new HashSet<string>();
+                foreach (var x in new[] { v }.Concat(mates))
+                {
+                    moved.Add((x, BoxOf(x)));
+                    ids.Add(x.Id);
+                    foreach (var d in Index.Descendants(x)) ids.Add(d.Id);
+                }
+                ShiftVertices(ids, dx, dy);
             }
             if (moved.Count == 0) return false;
 

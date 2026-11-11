@@ -608,5 +608,34 @@ namespace FsmEditor.Core.Tests
             s.DeleteSelection();
             Assert.Equal("", copies[1].Group);
         }
+
+        [Fact]
+        public void AligningAGroupedStateMovesItsGroupUnlessMembersAreAlignedTogether()
+        {
+            var s = NewSession();
+            var a = s.CreateVertex("state", new PointD(200, 200));
+            var b = s.CreateVertex("state", new PointD(400, 260));
+            var c = s.CreateVertex("state", new PointD(700, 500));
+            s.Selection = new HashSet<string> { a.Id, b.Id };
+            s.Group();
+            var (bx, by) = (b.X, b.Y);
+
+            // With a state outside the group: b follows a.
+            s.Selection = new HashSet<string> { a.Id, c.Id };
+            var dy = c.CenterY - a.CenterY;
+            Assert.True(s.Align(c.Id, true));
+            Assert.Equal(c.CenterY, a.CenterY);
+            Assert.Equal(by + dy, b.Y);
+            Assert.Equal(bx, b.X);
+
+            // Two members of the group: only the one aligned moves.
+            s.Selection = new HashSet<string> { a.Id, b.Id };
+            var (ax, ay) = (a.X, a.Y);
+            Assert.True(s.Align(a.Id, false));
+            Assert.Equal(a.CenterX, b.CenterX);
+            Assert.Equal(ax, a.X);
+            Assert.Equal(ay, a.Y);
+            Assert.Equal(a.Group, b.Group);
+        }
     }
 }
