@@ -23,5 +23,7 @@ namespace FsmEditor
         public const int OpenAsText = 0x0103;
         public const int OpenDiagram = 0x0104;
         public const int ExportPng = 0x0105;
+        public const int OpenTrace = 0x0106;
+        public const int ShowTracePlayer = 0x0107;
     }
 }

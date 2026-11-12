@@ -18,6 +18,38 @@ fsm "models/**/*.fsm" --template ts --out src/generated
 
 See **[docs/CODEGEN.md](https://github.com/vincedupuis/fsm-editor-vs/blob/main/docs/CODEGEN.md)** for the dialog, the Command Window arguments, builds, and where templates and the code model are documented.
 
+## Trace Player
+
+**Tools › FSM Editor › Open Trace...** (or the **Trace** button of the diagram's toolbar, which shows the **Trace Player** window, also in **View › Other Windows**) replays logs of your running state machines on their diagrams: the active states, the transitions taken by the current step, and the branches chosen at choices and junctions. Open several logs at once for concurrent machines: the Trace Player merges them on one timeline by their timestamps. Step through the records, drag the timeline, play them back at a chosen speed, or turn on **Live** to follow the files as your application writes them (playing to the end turns it on).
+
+A submachine state shows as active in its parent's diagram, and the states inside it light up in the submachine's own diagram when that file is open. When a machine runs several times at once (several logs, or a submachine used by several states), each instance has its own color in the diagram, shown in the status bar and in the window's records.
+
+The generated code reports what it does through an `onTrace` hook (see [Tracing](https://github.com/vincedupuis/fsm-editor-vscode/blob/main/docs/CODEGEN.md#tracing)); have it write lines in the built-in format, after any prefix your logger adds:
+
+```
+2026-11-11T10:02:03.120Z INFO fsm Order event checkout checkout
+2026-11-11T10:02:03.121Z INFO fsm Order transition ot2 Cart -> Payment (checkout)
+2026-11-11T10:02:03.121Z INFO fsm Order.Payment enter p_auth Authorizing
+```
+
+That is `fsm <machine> <kind> <id> <name>`, with `kind` one of `event`, `enter`, `exit`, `transition`, and an optional ISO 8601 time (or time of day) earlier on the line. `examples/demo.log` replays the three examples. Other logs are read with the formats of **Tools › Options › FSM Editor › Trace formats**, a JSON array of formats whose rules are regular expressions with named groups giving the record, for example:
+
+```json
+[
+  {
+    "name": "My service",
+    "time": "^(?<time>\\S+)",
+    "rules": [
+      { "kind": "event", "match": "received (?<name>\\w+)" },
+      { "kind": "enter", "match": "entering (?<name>[\\w:]+)" },
+      { "kind": "transition", "match": "(?<source>\\w+) -> (?<target>\\w+)" }
+    ]
+  }
+]
+```
+
+Groups: `time`, `machine` (the machine's name, then the submachine states leading to a submachine: `Order.Payment`), `id` (xmi:id), `name` (a name or a path of names such as `On::Playing`), `source` and `target` (a transition by its ends, through any pseudostates between them), and `kind` when the rule doesn't give one. When the lines of a log name no machine (and its format gives none), the Trace Player asks which machine they are about; click the machine next to the log in the window to change it. A log with transitions but no `enter` lines still shows the active states, from the transitions' targets.
+
 ## UML support
 
 The editor covers UML 2.5.1 state machines: composite, orthogonal and submachine states, all pseudostates, connection point references, entry/exit/do behaviors, deferrable events, the external, local and internal transition kinds, time triggers, and protocol state machines. A validator checks the well-formedness rules as you edit.
@@ -82,13 +114,14 @@ On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging ste
 
 ### Layout
 
-- `src/FsmEditor.Core/` (.NET Standard 2.0, no Visual Studio dependency): the model (`Model.cs`), the text grammar (`Expressions.cs`), the XMI/UML DI file format (`Xmi.cs`, `XmlTree.cs`), the validator (`Validation.cs`), diagram geometry (`Geometry.cs`, `Labels.cs`), every editing operation of the diagram (`DiagramSession.cs`, `Tools.cs`), SVG export, the clipboard format and submachine resolution (`Workspace.cs`)
+- `src/FsmEditor.Core/` (.NET Standard 2.0, no Visual Studio dependency): the model (`Model.cs`), the text grammar (`Expressions.cs`), the XMI/UML DI file format (`Xmi.cs`, `XmlTree.cs`), the validator (`Validation.cs`), diagram geometry (`Geometry.cs`, `Labels.cs`), every editing operation of the diagram (`DiagramSession.cs`, `Tools.cs`), SVG export, the clipboard format, submachine resolution (`Workspace.cs`) and the Trace Player's logic (`Trace.cs`)
 - `src/FsmEditor.Vsix/`: the Visual Studio extension
   - `FsmEditorPackage.cs`: registration, the Error List providers, SVG and PNG export and the code generation flow
   - `Editor/FsmEditorFactory.cs`, `Editor/FsmEditorPane.cs`: the document window; syncs the text buffer and the diagram
   - `Editor/EditorControl.cs`, `Editor/DiagramCanvas.cs`, `Editor/PropertiesPanel.cs`: the WPF diagram editor
   - `Services/`: open documents, the solution's machines, the Error List, dialogs
   - `CodeGen/`: running the `fsm` generator and its dialog
+  - `TracePlayer/`: the Trace Player tool window and the service following the logs
   - `Commands/`, `VSCommandTable.vsct`: menu commands
 - `test/FsmEditor.Core.Tests/`: tests, including parity tests against reference results of the VS Code extension (`fixtures/`)
 - `scripts/fetch-cli.*`: copies the code generator into the VSIX; fsm-generator goes in `src/FsmEditor.Vsix/generator/`, unpacked from its GitHub Release

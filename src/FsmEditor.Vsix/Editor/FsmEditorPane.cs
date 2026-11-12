@@ -243,6 +243,11 @@ namespace FsmEditor.Editor
             if (History?.CanRedo == true) History.Redo(1);
         }
 
+        public void ShowTracePlayer() => TracePlayer.TracePlayerWindow.ShowAsync().FileAndForget("FsmEditor/ShowTracePlayer");
+
+        /// <summary>The Trace Player's highlights of this machine, or null.</summary>
+        public void ShowTrace(Core.TraceView view) => _control?.SetTrace(view);
+
         public void GenerateCode() => _package.GenerateCodeAsync(FilePath, null).FileAndForget("FsmEditor/GenerateCode");
 
         public void ExportSvg() => _package.ExportSvgAsync(this).FileAndForget("FsmEditor/ExportSvg");

@@ -3,6 +3,7 @@
 
   <Extern href="stdidcmd.h" />
   <Extern href="vsshlids.h" />
+  <Include href="KnownImageIds.vsct" />
 
   <!-- Keep the ids in sync with PackageIds.cs. -->
   <Commands package="guidFsmEditorPackage">
@@ -33,6 +34,9 @@
       </Group>
       <Group guid="guidFsmEditorCmdSet" id="DocTabContextGroup" priority="0x0100">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_EZDOCWINTAB" />
+      </Group>
+      <Group guid="guidFsmEditorCmdSet" id="TraceGroup" priority="0x0600">
+        <Parent guid="guidFsmEditorCmdSet" id="ToolsSubMenu" />
       </Group>
     </Groups>
 
@@ -83,6 +87,22 @@
         <Strings>
           <ButtonText>Open in FSM Editor</ButtonText>
           <LocCanonicalName>.FSM.OpenDiagram</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidFsmEditorCmdSet" id="cmdidOpenTrace" priority="0x0100" type="Button">
+        <Parent guid="guidFsmEditorCmdSet" id="TraceGroup" />
+        <Strings>
+          <ButtonText>Open Trace...</ButtonText>
+          <LocCanonicalName>.FSM.OpenTrace</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidFsmEditorCmdSet" id="cmdidShowTracePlayer" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Icon guid="ImageCatalogGuid" id="Timeline" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Trace Player</ButtonText>
+          <LocCanonicalName>.FSM.TracePlayer</LocCanonicalName>
         </Strings>
       </Button>
     </Buttons>
@@ -145,6 +165,9 @@
       <IDSymbol name="cmdidOpenAsText" value="0x0103" />
       <IDSymbol name="cmdidOpenDiagram" value="0x0104" />
       <IDSymbol name="cmdidExportPng" value="0x0105" />
+      <IDSymbol name="cmdidOpenTrace" value="0x0106" />
+      <IDSymbol name="cmdidShowTracePlayer" value="0x0107" />
+      <IDSymbol name="TraceGroup" value="0x1014" />
     </GuidSymbol>
   </Symbols>
 </CommandTable>

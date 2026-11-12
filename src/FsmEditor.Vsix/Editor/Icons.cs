@@ -49,6 +49,11 @@ namespace FsmEditor.Editor
             ["export"] = new[] { S("M12,3 v12 M7,8 l5,-5 l5,5"), S("M5,14 v6 h14 v-6") },
             ["xmi"] = new[] { S("M8,4 C6,4 6,6 6,8 C6,10 4,12 4,12 C4,12 6,12 6,16 C6,20 6,20 8,20 M16,4 C18,4 18,6 18,8 C18,10 20,12 20,12 C20,12 18,12 18,16 C18,20 18,20 16,20") },
             ["code"] = new[] { S("M8,7 l-5,5 l5,5 M16,7 l5,5 l-5,5 M14,4 l-4,16") },
+            ["trace"] = new[] { S("M3,12 h4 l3,-7 l4,14 l3,-7 h4") },
+            // The Trace Player's First, Previous and Next record (after VS Code's Restart, Step Back and Step Over).
+            ["first"] = new[] { S("M6.3,6.3 A8,8 0 1 1 4,12"), S("M6,2 v4.5 h4.5") },
+            ["stepBack"] = new[] { S("M19,13 A7,7 0 0 0 5,13"), S("M2,10 l3,3 l3,-3"), Circle(12, 19, 2, Paint.Fill) },
+            ["stepOver"] = new[] { S("M5,13 A7,7 0 0 1 19,13"), S("M16,10 l3,3 l3,-3"), Circle(12, 19, 2, Paint.Fill) },
             ["trash"] = new[] { S("M4,7 h16 M9,7 V4 h6 v3 M6,7 l1,13 h10 l1,-13") },
             ["toolbox"] = new[] { Rect(4, 4, 7, 7, 1.5), Rect(13, 4, 7, 7, 1.5), Rect(4, 13, 7, 7, 1.5), Circle(16.5, 16.5, 3.5) },
             ["properties"] = new[] { S("M4,6 h16 M4,12 h16 M4,18 h10"), Circle(8, 6, 1.6, Paint.Fill), Circle(15, 12, 1.6, Paint.Fill) },

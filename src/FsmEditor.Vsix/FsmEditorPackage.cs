@@ -11,6 +11,7 @@ using FsmEditor.CodeGen;
 using FsmEditor.Core;
 using FsmEditor.Editor;
 using FsmEditor.Services;
+using FsmEditor.TracePlayer;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
@@ -34,6 +35,7 @@ namespace FsmEditor
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.FolderOpened_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideOptionPage(typeof(OptionsProvider.GeneralOptions), "FSM Editor", "General", 0, 0, true, SupportsProfiles = true)]
+    [ProvideToolWindow(typeof(TracePlayerWindow.Pane), Style = VsDockStyle.Tabbed, Window = WindowGuids.OutputWindow)]
     public sealed class FsmEditorPackage : ToolkitPackage
     {
         private const string SettingsCollection = @"FsmEditor\CodeGeneration";
@@ -56,6 +58,7 @@ namespace FsmEditor
             CodeGeneration = new Diagnostics(this, "FSM Code Generation", new Guid("b5c86f4e-5c2c-4b8a-9d38-2f4f5a6f1a02")) { Navigate = (file, id, line) => OpenAt(file, line) };
             RegisterEditorFactory(new FsmEditorFactory(this));
             await this.RegisterCommandsAsync();
+            this.RegisterToolWindows();
         }
 
         protected override void Dispose(bool disposing)
@@ -73,7 +76,15 @@ namespace FsmEditor
 
         internal void RegisterPane(FsmEditorPane pane)
         {
-            if (!string.IsNullOrEmpty(pane.FilePath)) _panes[FsmDocuments.SafeFullPath(pane.FilePath)] = pane;
+            if (string.IsNullOrEmpty(pane.FilePath)) return;
+            _panes[FsmDocuments.SafeFullPath(pane.FilePath)] = pane;
+            pane.ShowTrace(TracePlayerService.Instance.ViewFor(FsmDocuments.SafeFullPath(pane.FilePath)));
+        }
+
+        /// <summary>Shows the Trace Player's highlights in the open diagrams (<paramref name="viewFor"/> by full path; null: none).</summary>
+        internal void ShowTrace(Func<string, TraceView> viewFor)
+        {
+            foreach (var kv in _panes.ToList()) kv.Value.ShowTrace(viewFor(kv.Key));
         }
 
         internal void UnregisterPane(FsmEditorPane pane)

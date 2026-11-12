@@ -129,6 +129,18 @@ namespace FsmEditor.Commands
         }
     }
 
+    [Command(PackageGuids.CommandSetString, PackageIds.OpenTrace)]
+    internal sealed class OpenTraceCommand : BaseCommand<OpenTraceCommand>
+    {
+        protected override Task ExecuteAsync(OleMenuCmdEventArgs e) => TracePlayer.TracePlayerService.Instance.OpenAsync();
+    }
+
+    [Command(PackageGuids.CommandSetString, PackageIds.ShowTracePlayer)]
+    internal sealed class ShowTracePlayerCommand : BaseCommand<ShowTracePlayerCommand>
+    {
+        protected override Task ExecuteAsync(OleMenuCmdEventArgs e) => TracePlayer.TracePlayerWindow.ShowAsync();
+    }
+
     [Command(PackageGuids.CommandSetString, PackageIds.OpenDiagram)]
     internal sealed class OpenDiagramCommand : BaseCommand<OpenDiagramCommand>
     {

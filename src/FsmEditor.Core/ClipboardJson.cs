@@ -134,6 +134,9 @@ namespace FsmEditor.Core
         }
 
         /// <summary>Reads clipboard text; null when it isn't copied diagram elements.</summary>
+        /// <summary>Parses JSON: objects become dictionaries, arrays lists, numbers doubles. Throws a FormatException.</summary>
+        public static object ParseJson(string text) => new JsonReader(text ?? "").ReadDocument();
+
         public static ClipboardFragment TryRead(string text)
         {
             object root;

@@ -25,6 +25,8 @@ namespace FsmEditor.Editor
         void Undo();
         void Redo();
         void GenerateCode();
+        /// <summary>Shows the Trace Player window.</summary>
+        void ShowTracePlayer();
         void ExportSvg();
         void ExportPng();
         void OpenAsText();
@@ -163,6 +165,17 @@ namespace FsmEditor.Editor
         }
 
         public DiagramSession Session { get; private set; }
+
+        /// <summary>The Trace Player's highlights of this machine, or null without a trace.</summary>
+        public TraceView Trace { get; private set; }
+
+        public void SetTrace(TraceView view)
+        {
+            if (view == null && Trace == null) return;
+            Trace = view;
+            _canvas.InvalidateVisual();
+            RenderStatus();
+        }
 
         public DiagramCanvas Canvas => _canvas;
 
@@ -902,6 +915,7 @@ namespace FsmEditor.Editor
             left.Children.Add(Separator(th));
             left.Children.Add(ToolbarButton("trash", "Delete selection (Del)", DeleteSelection));
             var right = new StackPanel { Orientation = Orientation.Horizontal };
+            right.Children.Add(ToolbarButton("trace", "Show the Trace Player: replay a log on the diagrams", _host.ShowTracePlayer, "Trace"));
             right.Children.Add(ToolbarButton("code", "Generate code from a template", _host.GenerateCode, "Code"));
             right.Children.Add(ToolbarButton("export", "Export as SVG", _host.ExportSvg, "SVG"));
             right.Children.Add(ToolbarButton("export", "Export as PNG", _host.ExportPng, "PNG"));
@@ -1060,6 +1074,18 @@ namespace FsmEditor.Editor
             bar.Children.Add(problems);
             bar.Children.Add(counts);
             bar.Children.Add(right);
+            if (Trace != null)
+            {
+                // The Trace Player: the event of the current step, and a color key when the machine has several instances.
+                var trace = new TextBlock { ToolTip = "Trace Player", Margin = new Thickness(0, 0, 16, 0), FontWeight = FontWeights.SemiBold };
+                trace.Inlines.Add(new System.Windows.Documents.Run(Trace.StatusText) { Foreground = th.BrushOf(DiagramCanvas.TraceColor(-1)) });
+                foreach (var i in Trace.Instances.Where(i => i.Color >= 0))
+                {
+                    trace.Inlines.Add(new System.Windows.Documents.Run($"   ● {i.Label}") { Foreground = th.BrushOf(DiagramCanvas.TraceColor(i.Color)) });
+                }
+                DockPanel.SetDock(trace, Dock.Right);
+                bar.Children.Add(trace);
+            }
             TextElement.SetFontSize(bar, 12);
             _status.Child = bar;
         }

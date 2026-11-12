@@ -152,6 +152,24 @@ namespace FsmEditor.Editor
 
         private Theme T => _exporting ? Theme.Export : Theme.Current;
 
+        /// <summary>
+        /// Trace Player colors, as the VS Code edition's chart colors: an instance's (<paramref name="instance"/> &gt;= 0,
+        /// when its machine has several), else green for active states and orange for taken transitions.
+        /// </summary>
+        public static Color TraceColor(int instance, bool active = true) =>
+            instance >= 0 ? TracePalette[instance % TraceView.Colors] : active ? TracePalette[0] : TracePalette[3];
+
+        private static readonly Color[] TracePalette =
+        {
+            Color.FromRgb(0x38, 0x8a, 0x34), Color.FromRgb(0x1a, 0x85, 0xff), Color.FromRgb(0x65, 0x2d, 0x90),
+            Color.FromRgb(0xd1, 0x86, 0x16), Color.FromRgb(0x00, 0xa3, 0xa3), Color.FromRgb(0xd1, 0x6d, 0xa8),
+        };
+
+        private static readonly Color TraceCurrent = Color.FromRgb(0xcc, 0xa7, 0x00);
+
+        /// <summary>The Trace Player's highlights, not in exports.</summary>
+        private TraceView Trace => _exporting ? null : _editor.Trace;
+
         protected override void OnRender(DrawingContext dc)
         {
             var th = T;
@@ -300,6 +318,20 @@ namespace FsmEditor.Editor
                 stroke = th.Error;
                 shapeWidth = 2;
                 fill = th.Error;
+            }
+            // The Trace Player: active state, or pseudostate on the way of the taken transitions.
+            var trace = Trace;
+            List<int> activeIn = null;
+            if (trace != null)
+            {
+                trace.Active.TryGetValue(v.Id, out activeIn);
+                trace.Taken.TryGetValue(v.Id, out var takenIn);
+                if (activeIn != null || takenIn != null)
+                {
+                    stroke = fill = TraceColor((activeIn ?? takenIn)[0], activeIn != null);
+                    shapeWidth = activeIn != null ? 3 : 2.4;
+                }
+                if (trace.Current.Contains(v.Id)) DrawGlow(dc, v);
             }
             var shapePen = dropTarget ? th.PenOf(th.Accent, 2.5, 1, new[] { 6.0, 3.0 }) : th.PenOf(stroke, shapeWidth);
             Pen StrokePen(double w) => th.PenOf(stroke, w);
@@ -467,6 +499,14 @@ namespace FsmEditor.Editor
                     break;
                 }
             }
+            // A dot per instance in the color of each, above the top right corner of a state active in several instances.
+            if (activeIn != null && activeIn.Count > 1)
+            {
+                for (var i = 0; i < activeIn.Count; i++)
+                {
+                    dc.DrawEllipse(th.BrushOf(TraceColor(activeIn[i])), th.PenOf(th.Background, 1), new Point(x + w - 6 - (activeIn.Count - 1 - i) * 11, y - 7), 4, 4);
+                }
+            }
             var caption = v.Type == VertexType.ConnectionPointRef ? Or(S.PointName(ix.Vertex(v.Parent), v.Ref), "?") : v.Name;
             if (caption.Length > 0 && v.Type != VertexType.State && v.Type != VertexType.Comment)
             {
@@ -476,6 +516,28 @@ namespace FsmEditor.Editor
         }
 
         private static string Or(string a, string b) => a.Length > 0 ? a : b;
+
+        /// <summary>The Trace Player's current element: a glow around its shape.</summary>
+        private void DrawGlow(DrawingContext dc, Vertex v)
+        {
+            var pen = T.PenOf(TraceCurrent, 6, 0.45);
+            var box = new Rect(v.X - 1, v.Y - 1, v.W + 2, v.H + 2);
+            switch (v.Type)
+            {
+                case VertexType.State:
+                case VertexType.Comment:
+                    dc.DrawRoundedRectangle(null, pen, box, 11, 11);
+                    break;
+                case VertexType.Fork:
+                case VertexType.Join:
+                case VertexType.Terminate:
+                    dc.DrawRectangle(null, pen, box);
+                    break;
+                default:
+                    dc.DrawEllipse(null, pen, new Point(v.X + v.W / 2, v.Y + v.H / 2), box.Width / 2, box.Height / 2);
+                    break;
+            }
+        }
 
         private void DrawTransition(DrawingContext dc, Transition t)
         {
@@ -487,13 +549,23 @@ namespace FsmEditor.Editor
             var selected = !_exporting && S.Selection.Contains(t.Id);
             var issue = IssueOf(t.Id);
             var color = issue == IssueLevel.Error ? th.Error : issue == IssueLevel.Warning ? th.Warning : selected ? th.Accent : Theme.ColorOf(t.Color) ?? th.Line;
-            var pen = th.PenOf(color, selected ? 2 : 1.3);
+            var width = selected ? 2 : 1.3;
+            // The Trace Player: a transition taken by the current step.
+            Color? takenColor = null;
+            var trace = Trace;
+            if (trace != null && trace.Taken.TryGetValue(t.Id, out var takenIn))
+            {
+                color = (takenColor = TraceColor(takenIn[0], false)).Value;
+                width = 2.6;
+            }
+            var pen = th.PenOf(color, width);
             var line = new StreamGeometry();
             using (var ctx = line.Open())
             {
                 ctx.BeginFigure(P(pts[0]), false, false);
                 ctx.PolyLineTo(pts.Skip(1).Select(P).ToList(), true, true);
             }
+            if (trace != null && trace.Current.Contains(t.Id)) dc.DrawGeometry(null, th.PenOf(TraceCurrent, 7, 0.45), line);
             dc.DrawGeometry(null, pen, line);
             var b = pts[pts.Count - 1];
             var (p1, p2) = SvgExport.ArrowHead(pts[pts.Count - 2], b);
@@ -511,7 +583,7 @@ namespace FsmEditor.Editor
                 var box = Rect.Empty;
                 for (var i = 0; i < lines.Count; i++)
                 {
-                    var text = Theme.ColorOf(ElementColors.Item(t.Color, t.ItemColors, lines[i].Key)) ?? (selected ? th.Accent : th.Foreground);
+                    var text = Theme.ColorOf(ElementColors.Item(t.Color, t.ItemColors, lines[i].Key)) ?? takenColor ?? (selected ? th.Accent : th.Foreground);
                     box.Union(DrawText(dc, lp.X, Geo.LabelLineY(lp, i, lines.Count), lines[i].Text, 11, th.BrushOf(text), lp.Anchor, halo: th.Background));
                 }
                 if (!_exporting) _labels.Add((box, t.Id));

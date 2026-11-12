@@ -1,0 +1,153 @@
+2026-11-11T10:00:00.150Z INFO fsm MediaPlayer transition t1 initial -> Off
+2026-11-11T10:00:00.300Z INFO fsm MediaPlayer enter v_off Off
+2026-11-11T10:00:01.250Z INFO fsm Order transition ot1 initial -> Cart
+2026-11-11T10:00:01.400Z INFO fsm Order enter o_cart Cart
+2026-11-11T10:00:02.250Z INFO fsm Payment transition pt1 initial -> Authorizing
+2026-11-11T10:00:02.400Z INFO fsm Payment enter p_auth Authorizing
+2026-11-11T10:00:03.750Z INFO fsm MediaPlayer event powerOn powerOn
+2026-11-11T10:00:03.900Z INFO fsm MediaPlayer exit v_off Off
+2026-11-11T10:00:04.050Z INFO fsm MediaPlayer transition t2 Off -> On (powerOn)
+2026-11-11T10:00:04.200Z INFO fsm MediaPlayer enter v_on On
+2026-11-11T10:00:04.350Z INFO fsm MediaPlayer transition t5 initial -> Stopped
+2026-11-11T10:00:04.500Z INFO fsm MediaPlayer enter v_stopped Stopped
+2026-11-11T10:00:06.150Z INFO fsm Order event checkout checkout
+2026-11-11T10:00:06.300Z INFO fsm Order exit o_cart Cart
+2026-11-11T10:00:06.450Z INFO fsm Order transition ot2 Cart -> Payment (checkout)
+2026-11-11T10:00:06.600Z INFO fsm Order enter o_pay Payment
+2026-11-11T10:00:06.750Z INFO fsm Order.Payment transition pt1 initial -> Authorizing
+2026-11-11T10:00:06.900Z INFO fsm Order.Payment enter p_auth Authorizing
+2026-11-11T10:00:08.050Z INFO fsm MediaPlayer event play play
+2026-11-11T10:00:08.200Z INFO fsm MediaPlayer exit v_stopped Stopped
+2026-11-11T10:00:08.350Z INFO fsm MediaPlayer transition t7 Stopped -> Playing (play)
+2026-11-11T10:00:08.500Z INFO fsm MediaPlayer enter v_playing Playing
+2026-11-11T10:00:08.650Z INFO fsm MediaPlayer transition t16 initial -> Stereo
+2026-11-11T10:00:08.800Z INFO fsm MediaPlayer enter v_stereo Stereo
+2026-11-11T10:00:08.950Z INFO fsm MediaPlayer transition t19 initial -> HD
+2026-11-11T10:00:09.100Z INFO fsm MediaPlayer enter v_hd HD
+2026-11-11T10:00:10.550Z INFO fsm Order event cancel cancel
+2026-11-11T10:00:10.700Z INFO fsm Order.Payment event cancel cancel
+2026-11-11T10:00:10.850Z INFO fsm Order.Payment exit p_auth Authorizing
+2026-11-11T10:00:11.000Z INFO fsm Order.Payment transition pt7 Authorizing -> cancelled (cancel)
+2026-11-11T10:00:11.150Z INFO fsm Order exit o_pay Payment
+2026-11-11T10:00:11.300Z INFO fsm Order transition ot6 Payment.cancelled -> Cart
+2026-11-11T10:00:11.450Z INFO fsm Order enter o_cart Cart
+2026-11-11T10:00:13.400Z INFO fsm Payment event declined declined
+2026-11-11T10:00:13.550Z INFO fsm Payment exit p_auth Authorizing
+2026-11-11T10:00:13.700Z INFO fsm Payment transition pt3 Authorizing -> Declined (declined)
+2026-11-11T10:00:13.850Z INFO fsm Payment enter p_declined Declined
+2026-11-11T10:00:14.000Z INFO fsm Payment exit p_declined Declined
+2026-11-11T10:00:14.150Z INFO fsm Payment transition pt5 Declined -> failed
+2026-11-11T10:00:15.500Z INFO fsm MediaPlayer event toggleAudio toggleAudio
+2026-11-11T10:00:15.650Z INFO fsm MediaPlayer exit v_stereo Stereo
+2026-11-11T10:00:15.800Z INFO fsm MediaPlayer transition t17 Stereo -> Mono (toggleAudio)
+2026-11-11T10:00:15.950Z INFO fsm MediaPlayer enter v_mono Mono
+2026-11-11T10:00:17.200Z INFO fsm Order event checkout checkout
+2026-11-11T10:00:17.350Z INFO fsm Order exit o_cart Cart
+2026-11-11T10:00:17.500Z INFO fsm Order transition ot2 Cart -> Payment (checkout)
+2026-11-11T10:00:17.650Z INFO fsm Order enter o_pay Payment
+2026-11-11T10:00:17.800Z INFO fsm Order.Payment transition pt1 initial -> Authorizing
+2026-11-11T10:00:17.950Z INFO fsm Order.Payment enter p_auth Authorizing
+2026-11-11T10:00:19.500Z INFO fsm MediaPlayer event lowBandwidth lowBandwidth
+2026-11-11T10:00:19.650Z INFO fsm MediaPlayer exit v_hd HD
+2026-11-11T10:00:19.800Z INFO fsm MediaPlayer transition t20 HD -> SD (lowBandwidth)
+2026-11-11T10:00:19.950Z INFO fsm MediaPlayer enter v_sd SD
+2026-11-11T10:00:21.000Z INFO fsm Order event declined declined
+2026-11-11T10:00:21.150Z INFO fsm Order.Payment event declined declined
+2026-11-11T10:00:21.300Z INFO fsm Order.Payment exit p_auth Authorizing
+2026-11-11T10:00:21.450Z INFO fsm Order.Payment transition pt3 Authorizing -> Declined (declined)
+2026-11-11T10:00:21.600Z INFO fsm Order.Payment enter p_declined Declined
+2026-11-11T10:00:21.750Z INFO fsm Order.Payment exit p_declined Declined
+2026-11-11T10:00:21.900Z INFO fsm Order.Payment transition pt5 Declined -> failed
+2026-11-11T10:00:22.050Z INFO fsm Order exit o_pay Payment
+2026-11-11T10:00:22.200Z INFO fsm Order transition ot4 Payment.failed -> PaymentFailed
+2026-11-11T10:00:22.350Z INFO fsm Order enter o_failed PaymentFailed
+2026-11-11T10:00:23.600Z INFO fsm Payment transition pt6 retry -> Authorizing
+2026-11-11T10:00:23.750Z INFO fsm Payment enter p_auth Authorizing
+2026-11-11T10:00:25.200Z INFO fsm MediaPlayer event toggleAudio toggleAudio
+2026-11-11T10:00:25.350Z INFO fsm MediaPlayer exit v_mono Mono
+2026-11-11T10:00:25.500Z INFO fsm MediaPlayer transition t18 Mono -> Stereo (toggleAudio)
+2026-11-11T10:00:25.650Z INFO fsm MediaPlayer enter v_stereo Stereo
+2026-11-11T10:00:27.000Z INFO fsm MediaPlayer event highBandwidth highBandwidth
+2026-11-11T10:00:27.150Z INFO fsm MediaPlayer exit v_sd SD
+2026-11-11T10:00:27.300Z INFO fsm MediaPlayer transition t21 SD -> HD (highBandwidth)
+2026-11-11T10:00:27.450Z INFO fsm MediaPlayer enter v_hd HD
+2026-11-11T10:00:28.900Z INFO fsm MediaPlayer event pause pause
+2026-11-11T10:00:29.050Z INFO fsm MediaPlayer exit v_stereo Stereo
+2026-11-11T10:00:29.200Z INFO fsm MediaPlayer exit v_hd HD
+2026-11-11T10:00:29.350Z INFO fsm MediaPlayer exit v_playing Playing
+2026-11-11T10:00:29.500Z INFO fsm MediaPlayer transition t8 Playing -> Paused (pause)
+2026-11-11T10:00:29.650Z INFO fsm MediaPlayer enter v_paused Paused
+2026-11-11T10:00:30.800Z INFO fsm Order event retryPayment retryPayment
+2026-11-11T10:00:30.950Z INFO fsm Order exit o_failed PaymentFailed
+2026-11-11T10:00:31.100Z INFO fsm Order transition ot5 PaymentFailed -> Payment.retry (retryPayment)
+2026-11-11T10:00:31.250Z INFO fsm Order enter o_pay Payment
+2026-11-11T10:00:31.400Z INFO fsm Order.Payment transition pt6 retry -> Authorizing
+2026-11-11T10:00:31.550Z INFO fsm Order.Payment enter p_auth Authorizing
+2026-11-11T10:00:33.300Z INFO fsm MediaPlayer event volumeChanged volumeChanged
+2026-11-11T10:00:33.450Z INFO fsm MediaPlayer transition t22 Paused -> Paused (volumeChanged)
+2026-11-11T10:00:35.100Z INFO fsm Payment event approved approved
+2026-11-11T10:00:35.250Z INFO fsm Payment exit p_auth Authorizing
+2026-11-11T10:00:35.400Z INFO fsm Payment transition pt2 Authorizing -> Captured (approved)
+2026-11-11T10:00:35.550Z INFO fsm Payment enter p_captured Captured
+2026-11-11T10:00:35.700Z INFO fsm Payment exit p_captured Captured
+2026-11-11T10:00:35.850Z INFO fsm Payment transition pt4 Captured -> Final
+2026-11-11T10:00:36.000Z INFO fsm Payment enter p_final Final
+2026-11-11T10:00:37.550Z INFO fsm MediaPlayer event play play
+2026-11-11T10:00:37.700Z INFO fsm MediaPlayer exit v_paused Paused
+2026-11-11T10:00:37.850Z INFO fsm MediaPlayer transition t9 Paused -> Playing (play)
+2026-11-11T10:00:38.000Z INFO fsm MediaPlayer enter v_playing Playing
+2026-11-11T10:00:38.150Z INFO fsm MediaPlayer transition t16 initial -> Stereo
+2026-11-11T10:00:38.300Z INFO fsm MediaPlayer enter v_stereo Stereo
+2026-11-11T10:00:38.450Z INFO fsm MediaPlayer transition t19 initial -> HD
+2026-11-11T10:00:38.600Z INFO fsm MediaPlayer enter v_hd HD
+2026-11-11T10:00:39.950Z INFO fsm Order event approved approved
+2026-11-11T10:00:40.100Z INFO fsm Order.Payment event approved approved
+2026-11-11T10:00:40.250Z INFO fsm Order.Payment exit p_auth Authorizing
+2026-11-11T10:00:40.400Z INFO fsm Order.Payment transition pt2 Authorizing -> Captured (approved)
+2026-11-11T10:00:40.550Z INFO fsm Order.Payment enter p_captured Captured
+2026-11-11T10:00:40.700Z INFO fsm Order.Payment exit p_captured Captured
+2026-11-11T10:00:40.850Z INFO fsm Order.Payment transition pt4 Captured -> Final
+2026-11-11T10:00:41.000Z INFO fsm Order.Payment enter p_final Final
+2026-11-11T10:00:41.150Z INFO fsm Order.Payment exit p_final Final
+2026-11-11T10:00:41.300Z INFO fsm Order exit o_pay Payment
+2026-11-11T10:00:41.450Z INFO fsm Order transition ot3 Payment -> Shipped
+2026-11-11T10:00:41.600Z INFO fsm Order enter o_shipped Shipped
+2026-11-11T10:00:41.750Z INFO fsm Order exit o_shipped Shipped
+2026-11-11T10:00:41.900Z INFO fsm Order transition ot7 Shipped -> Final
+2026-11-11T10:00:42.050Z INFO fsm Order enter o_final Final
+2026-11-11T10:00:43.500Z INFO fsm MediaPlayer event pause pause
+2026-11-11T10:00:43.650Z INFO fsm MediaPlayer exit v_stereo Stereo
+2026-11-11T10:00:43.800Z INFO fsm MediaPlayer exit v_hd HD
+2026-11-11T10:00:43.950Z INFO fsm MediaPlayer exit v_playing Playing
+2026-11-11T10:00:44.100Z INFO fsm MediaPlayer transition t8 Playing -> Paused (pause)
+2026-11-11T10:00:44.250Z INFO fsm MediaPlayer enter v_paused Paused
+2026-11-11T10:00:45.600Z INFO fsm MediaPlayer event stop stop
+2026-11-11T10:00:45.750Z INFO fsm MediaPlayer exit v_paused Paused
+2026-11-11T10:00:45.900Z INFO fsm MediaPlayer transition t10 Paused -> Stopped (stop)
+2026-11-11T10:00:46.050Z INFO fsm MediaPlayer enter v_stopped Stopped
+2026-11-11T10:00:47.600Z INFO fsm MediaPlayer event eject eject
+2026-11-11T10:00:47.750Z INFO fsm MediaPlayer exit v_stopped Stopped
+2026-11-11T10:00:47.900Z INFO fsm MediaPlayer transition t11 Stopped -> choice (eject)
+2026-11-11T10:00:48.050Z INFO fsm MediaPlayer transition t12 choice -> Stopped
+2026-11-11T10:00:48.200Z INFO fsm MediaPlayer enter v_stopped Stopped
+2026-11-11T10:00:49.850Z INFO fsm MediaPlayer event eject eject
+2026-11-11T10:00:50.000Z INFO fsm MediaPlayer exit v_stopped Stopped
+2026-11-11T10:00:50.150Z INFO fsm MediaPlayer transition t11 Stopped -> choice (eject)
+2026-11-11T10:00:50.300Z INFO fsm MediaPlayer exit v_on On
+2026-11-11T10:00:50.450Z INFO fsm MediaPlayer transition t13 choice -> fault
+2026-11-11T10:00:50.600Z INFO fsm MediaPlayer transition t14 fault -> Fault
+2026-11-11T10:00:50.750Z INFO fsm MediaPlayer enter v_fault Fault
+2026-11-11T10:00:53.400Z INFO fsm MediaPlayer event reset reset
+2026-11-11T10:00:53.550Z INFO fsm MediaPlayer exit v_fault Fault
+2026-11-11T10:00:53.700Z INFO fsm MediaPlayer transition t15 Fault -> deepHistory (reset)
+2026-11-11T10:00:53.850Z INFO fsm MediaPlayer enter v_on On
+2026-11-11T10:00:54.000Z INFO fsm MediaPlayer enter v_stopped Stopped
+2026-11-11T10:00:55.650Z INFO fsm MediaPlayer event powerOff powerOff
+2026-11-11T10:00:55.800Z INFO fsm MediaPlayer exit v_stopped Stopped
+2026-11-11T10:00:55.950Z INFO fsm MediaPlayer exit v_on On
+2026-11-11T10:00:56.100Z INFO fsm MediaPlayer transition t3 On -> Off (powerOff)
+2026-11-11T10:00:56.250Z INFO fsm MediaPlayer enter v_off Off
+2026-11-11T10:00:57.600Z INFO fsm MediaPlayer event unplug unplug
+2026-11-11T10:00:57.750Z INFO fsm MediaPlayer exit v_off Off
+2026-11-11T10:00:57.900Z INFO fsm MediaPlayer transition t4 Off -> Final (unplug)
+2026-11-11T10:00:58.050Z INFO fsm MediaPlayer enter v_final Final

@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <None Include="..\..\examples\*.fsm" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\examples\*.log" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
     <None Include="fixtures\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\FsmEditor.Vsix\ItemTemplates\StateMachine\StateMachine.fsm" Link="templates\StateMachine.fsm" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
