@@ -255,4 +255,7 @@ world</body>
     <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_note_anchor1" modelElement="note" source="di_note" target="di_s1"/>
     <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_note_anchor2" modelElement="note" source="di_note" target="di_t1"/>
   </umldi:UMLStateMachineDiagram>
+  <xmi:Extension extender="FSM Editor">
+    <modelHash value="937c662e2786053c"/>
+  </xmi:Extension>
 </xmi:XMI>

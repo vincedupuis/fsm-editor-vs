@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using FsmEditor.Core;
 using Xunit;
 
@@ -187,8 +188,11 @@ namespace FsmEditor.Core.Tests
         [Fact]
         public void ItemTemplateIsTheDefaultMachine()
         {
+            // Without the model hash, which depends on the name: the editor writes it with the first edit.
             var template = Read(Path.Combine(AppContext.BaseDirectory, "templates", "StateMachine.fsm"));
-            Assert.Equal(Xmi.ToXmi(FsmModel.CreateDefault("Machine")), template.Replace("$fileinputname$", "Machine"));
+            var expected = Regex.Replace(Xmi.ToXmi(FsmModel.CreateDefault("Machine")),
+                "  <xmi:Extension extender=\"FSM Editor\">\n    <modelHash value=\"[0-9a-f]{16}\"/>\n  </xmi:Extension>\n", "");
+            Assert.Equal(expected, template.Replace("$fileinputname$", "Machine"));
         }
 
         [Fact]

@@ -70,4 +70,7 @@
       <group id="g2" members="v_d v_e"/>
     </xmi:Extension>
   </umldi:UMLStateMachineDiagram>
+  <xmi:Extension extender="FSM Editor">
+    <modelHash value="17393a24e63a7b0d"/>
+  </xmi:Extension>
 </xmi:XMI>

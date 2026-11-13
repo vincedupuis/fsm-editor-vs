@@ -93,6 +93,14 @@ The layout is a `umldi:UMLStateMachineDiagram`:
 
 Coordinates are rounded to 0.1 px when saved.
 
+The file ends with the model hash, in its own `xmi:Extension` (extender `FSM Editor`): `<modelHash value="…"/>`, written on every save. It identifies the state machine model without its layout, so moving, resizing or coloring elements doesn't change it, while any change to the model does (names, behaviors, triggers, guards, stereotypes, comments, documentation, `xmi:id`s). The value is the first 16 hex digits of the SHA-256 of the UTF-8 canonical form of the document element, where:
+
+- each element is written `<name a="v" …>text children</name>`, with namespace prefixes `xmi`, `uml`, `umldi`, `dc` and `di` for their namespaces (prefixes in the file don't matter), its attributes sorted by name without the namespace declarations, and its own text unless that is only white space (space, tab, line feed, carriage return);
+- `&`, `<`, `>` and `"` are written `&amp;`, `&lt;`, `&gt;` and `&quot;` in attribute values and text;
+- UML DI elements (the diagram) and `xmi:Extension`s of `FSM Editor` (the hash itself) are left out.
+
+The code generator computes the hash again from the file, and the bundled templates write it in the header of every generated file of a machine.
+
 ## Deviations from UML 2.5.1
 
 ### Deliberately excluded

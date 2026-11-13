@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace FsmEditor.Core
@@ -26,6 +28,10 @@ namespace FsmEditor.Core
     ///   vertex or transition (UML DI has no color), then a
     ///   &lt;group id="g" members="id id …"/&gt; per group of vertices (members in file
     ///   order, groups in the order of their first member).
+    ///
+    /// The file ends with the model hash, in its own xmi:Extension:
+    /// &lt;modelHash value="…"/&gt;, the first 16 hex digits of the SHA-256 of the
+    /// document without its layout (see <see cref="ModelHash"/>).
     ///
     /// <c>ToXmi(FromXmi(x))</c> round-trips without loss (coordinates are rounded to 0.1 px),
     /// and the output is identical to the one of FSM Editor for VS Code.
@@ -353,7 +359,44 @@ namespace FsmEditor.Core
                 ("xmlns:di", NsDi));
             if (stereoNames.Count > 0) root.Attrs.Add(($"xmlns:{ProfileName}", ProfileNs));
             root.Add(new XNode("uml:Model", ("xmi:id", smId + "_model"), ("name", m.Name)).Add(profileApplication, packaged), diagram, applications);
+            root.Add(new XNode("xmi:Extension", ("extender", Extender)).Add(new XNode("modelHash", ("value", ModelHash(XmlTree.Write(root))))));
             return XmlTree.Write(root);
+        }
+
+        // ------------------------------------------------------------------ model hash
+
+        /// <summary>
+        /// Hash of the state machine model in a file (<paramref name="text"/>): the first 16 hex digits of the
+        /// SHA-256 of the UTF-8 canonical form of its document element, leaving out the layout. The canonical
+        /// form writes each element as <c>&lt;name a="v" …&gt;text children&lt;/name&gt;</c>, with
+        /// - names under the canonical prefixes (as <see cref="XmlTree.Parse"/> gives them), attributes sorted
+        ///   by name (ordinal), without the namespace declarations;
+        /// - the element's own text, left out when it is only XML white space (space, tab, CR, LF);
+        /// - <c>&amp;</c>, <c>&lt;</c>, <c>&gt;</c> and <c>"</c> written as <c>&amp;amp;</c>, <c>&amp;lt;</c>,
+        ///   <c>&amp;gt;</c> and <c>&amp;quot;</c> in values and text;
+        /// - no UML DI elements (the diagram) and no FSM Editor xmi:Extension (colors, groups, the hash itself).
+        /// Throws <see cref="XmlParseException"/> when the text isn't XML.
+        /// </summary>
+        public static string ModelHash(string text)
+        {
+            string Esc(string s) => s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
+            var sb = new StringBuilder();
+            void Write(XmlElem el)
+            {
+                if (el.Ns == NsUmlDi || (el.Name == "xmi:Extension" && el.Attr("extender") == Extender)) return;
+                sb.Append('<').Append(el.Name);
+                foreach (var k in el.Attrs.Keys.OrderBy(k => k, StringComparer.Ordinal)) sb.Append(' ').Append(k).Append("=\"").Append(Esc(el.Attrs[k])).Append('"');
+                sb.Append('>');
+                if (el.Text.Any(c => c != ' ' && c != '\t' && c != '\r' && c != '\n')) sb.Append(Esc(el.Text));
+                foreach (var c in el.Children) Write(c);
+                sb.Append("</").Append(el.Name).Append('>');
+            }
+            Write(XmlTree.Parse(text, Canonical));
+            using (var sha = SHA256.Create())
+            {
+                var digest = sha.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+                return string.Concat(digest.Take(8).Select(b => b.ToString("x2")));
+            }
         }
 
         // ------------------------------------------------------------------ reading

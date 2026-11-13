@@ -137,4 +137,7 @@
     </ownedElement>
   </umldi:UMLStateMachineDiagram>
   <FsmStereotypes:1bad xmi:id="a_st" base_State="a"/>
+  <xmi:Extension extender="FSM Editor">
+    <modelHash value="e0fd3d8618c5c0e1"/>
+  </xmi:Extension>
 </xmi:XMI>

@@ -113,4 +113,7 @@
       <waypoint xmi:type="dc:Point" x="773" y="40"/>
     </ownedElement>
   </umldi:UMLStateMachineDiagram>
+  <xmi:Extension extender="FSM Editor">
+    <modelHash value="7ddd5394885355be"/>
+  </xmi:Extension>
 </xmi:XMI>
