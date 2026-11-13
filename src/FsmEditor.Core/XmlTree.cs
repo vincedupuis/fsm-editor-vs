@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -120,7 +121,7 @@ namespace FsmEditor.Core
             private void SkipSpace()
             {
                 int j = _i;
-                while (j < _text.Length && char.IsWhiteSpace(_text[j])) j++;
+                while (j < _text.Length && JsWhitespace.Contains(_text[j])) j++;
                 Advance(j);
             }
 
@@ -138,8 +139,12 @@ namespace FsmEditor.Core
                     var e = m.Groups[1].Value;
                     if (e[0] == '#')
                     {
-                        var code = e[1] == 'x' ? Convert.ToInt32(e.Substring(2), 16) : int.Parse(e.Substring(1), CultureInfo.InvariantCulture);
-                        return char.ConvertFromUtf32(code);
+                        var ok = e[1] == 'x'
+                            ? int.TryParse(e.Substring(2), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var code)
+                            : int.TryParse(e.Substring(1), NumberStyles.None, CultureInfo.InvariantCulture, out code);
+                        if (!ok || code < 0 || code > 0x10FFFF) throw new XmlParseException($"Unknown entity {m.Value}.", line);
+                        // A lone surrogate reads as that character, as in the other editions.
+                        return code >= 0xD800 && code <= 0xDFFF ? ((char)code).ToString() : char.ConvertFromUtf32(code);
                     }
                     switch (e)
                     {
@@ -374,19 +379,101 @@ namespace FsmEditor.Core
         /// <summary>Rounds to 0.1.</summary>
         public static double R1(double n) => Math.Floor(n * 10 + 0.5) / 10;
 
-        /// <summary>Shortest invariant text of a number: <c>60</c>, <c>12.5</c>, never <c>-0</c> or an exponent.</summary>
+        /// <summary>
+        /// The text JavaScript's <c>String(n)</c> gives: the shortest digits that read back
+        /// as <paramref name="n"/>, <c>60</c>, <c>12.5</c>, <c>1e-7</c>, <c>1.5e+21</c>; <c>-0</c> gives <c>0</c>.
+        /// NaN and infinities give <c>0</c>. Computed exactly, so it doesn't depend on the
+        /// runtime's own formatting ("R" can print 17 digits on .NET Framework).
+        /// </summary>
         public static string Format(double n)
         {
             if (double.IsNaN(n) || double.IsInfinity(n)) return "0";
             if (n == 0) return "0";
             if (n == Math.Floor(n) && Math.Abs(n) < 1e15) return ((long)n).ToString(CultureInfo.InvariantCulture);
-            var s = n.ToString("R", CultureInfo.InvariantCulture);
-            if (s.IndexOf('E') >= 0) s = n.ToString("0.###############", CultureInfo.InvariantCulture);
-            return s;
+            if (n < 0) return "-" + Format(-n);
+            ShortestDigits(n, out var digits, out var point);
+            return Layout(digits, point);
+        }
+
+        /// <summary>
+        /// Shortest digits <paramref name="digits"/> (no trailing zero) such that
+        /// 0.<paramref name="digits"/> × 10^<paramref name="point"/> reads back as <paramref name="n"/> (&gt; 0),
+        /// the closest to <paramref name="n"/> when several do (ECMAScript Number::toString).
+        /// </summary>
+        private static void ShortestDigits(double n, out string digits, out int point)
+        {
+            long bits = BitConverter.DoubleToInt64Bits(n);
+            int biased = (int)((bits >> 52) & 0x7FF);
+            long fraction = bits & 0xFFFFFFFFFFFFFL;
+            long f = biased == 0 ? fraction : fraction | (1L << 52);
+            int e = biased == 0 ? -1074 : biased - 1075;
+            // n = f × 2^e. In units of 2^(e-2): n is 4f, and the numbers that read back as n lie
+            // between 4f-2 (4f-1 just above a power of two) and 4f+2, the bounds included when f is even.
+            var v = new BigInteger(f) * 4;
+            var hi = v + 2;
+            var lo = v - (fraction == 0 && biased > 1 ? 1 : 2);
+            bool inclusive = (f & 1) == 0;
+            var twoUp = e - 2 >= 0 ? BigInteger.Pow(2, e - 2) : BigInteger.One;
+            var twoDown = e - 2 < 0 ? BigInteger.Pow(2, 2 - e) : BigInteger.One;
+
+            // Decimal exponent k with 10^k <= n < 10^(k+1).
+            int k = (int)Math.Floor(Math.Log10(n));
+            bool AtLeastPow10(int x) =>
+                v * twoUp * (x < 0 ? BigInteger.Pow(10, -x) : BigInteger.One) >= twoDown * (x > 0 ? BigInteger.Pow(10, x) : BigInteger.One);
+            while (!AtLeastPow10(k)) k--;
+            while (AtLeastPow10(k + 1)) k++;
+
+            for (int p = 1; p <= 17; p++)
+            {
+                // Candidates with p digits are N × 10^s; n / 10^s = num / den.
+                int s = k - p + 1;
+                var scale = twoUp * (s < 0 ? BigInteger.Pow(10, -s) : BigInteger.One);
+                var den = twoDown * (s > 0 ? BigInteger.Pow(10, s) : BigInteger.One);
+                var num = v * scale;
+                var numLo = lo * scale;
+                var numHi = hi * scale;
+                var down = BigInteger.DivRem(num, den, out var rem);
+                var up = down + 1;
+                bool Reads(BigInteger c)
+                {
+                    var x = c * den;
+                    return inclusive ? x >= numLo && x <= numHi : x > numLo && x < numHi;
+                }
+                bool downOk = Reads(down), upOk = Reads(up);
+                if (!downOk && !upOk) continue;
+                BigInteger chosen;
+                if (downOk && upOk)
+                {
+                    int c = (rem * 2).CompareTo(den);
+                    chosen = c < 0 ? down : c > 0 ? up : (down.IsEven ? down : up);
+                }
+                else
+                {
+                    chosen = downOk ? down : up;
+                }
+                var text = chosen.ToString(CultureInfo.InvariantCulture);
+                point = s + text.Length;
+                digits = text.TrimEnd('0');
+                return;
+            }
+            // 17 digits always identify a double.
+            throw new InvalidOperationException("No round-trip digits for " + n.ToString("R", CultureInfo.InvariantCulture));
+        }
+
+        /// <summary>Lays out 0.<paramref name="d"/> × 10^<paramref name="n"/> as ECMAScript Number::toString does.</summary>
+        private static string Layout(string d, int n)
+        {
+            int k = d.Length;
+            if (k <= n && n <= 21) return d + new string('0', n - k);
+            if (0 < n && n <= 21) return d.Substring(0, n) + "." + d.Substring(n);
+            if (-6 < n && n <= 0) return "0." + new string('0', -n) + d;
+            int exp = n - 1;
+            var tail = "e" + (exp < 0 ? "-" : "+") + Math.Abs(exp).ToString(CultureInfo.InvariantCulture);
+            return k == 1 ? d + tail : d.Substring(0, 1) + "." + d.Substring(1) + tail;
         }
 
         /// <summary>Parses a number like JavaScript's unary plus would for XMI attributes (invalid gives 0).</summary>
         public static double Parse(string s) =>
-            double.TryParse((s ?? "").Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && !double.IsNaN(d) ? d : 0;
+            double.TryParse(JsWhitespace.Trim(s), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && !double.IsNaN(d) ? d : 0;
     }
 }

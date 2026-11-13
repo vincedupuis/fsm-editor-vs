@@ -50,16 +50,57 @@ namespace FsmEditor.Core
             return sb.ToString();
         }
 
+        private static readonly Encoding StrictUtf8 = new UTF8Encoding(false, true);
+
+        /// <summary>
+        /// Like JavaScript's decodeURI: decodes <c>%XX</c> escapes (UTF-8), except those of reserved characters
+        /// (<c>;/?:@&amp;=+$,#</c>), and keeps malformed ones as they are.
+        /// </summary>
         public static string DecodeUri(string s)
         {
-            try
+            if (s.IndexOf('%') < 0) return s;
+            int At(int i) =>
+                i + 2 < s.Length && s[i] == '%' && Uri.IsHexDigit(s[i + 1]) && Uri.IsHexDigit(s[i + 2])
+                    ? Convert.ToInt32(s.Substring(i + 1, 2), 16)
+                    : -1;
+            var sb = new StringBuilder();
+            var i = 0;
+            while (i < s.Length)
             {
-                return Uri.UnescapeDataString(s);
+                var b = At(i);
+                if (b >= 0)
+                {
+                    var len = b < 0x80 ? 1 : b >= 0xC0 && b <= 0xDF ? 2 : b >= 0xE0 && b <= 0xEF ? 3 : b >= 0xF0 && b <= 0xF7 ? 4 : 0;
+                    var run = new List<byte> { (byte)b };
+                    var j = i + 3;
+                    while (run.Count < len && At(j) >= 0)
+                    {
+                        run.Add((byte)At(j));
+                        j += 3;
+                    }
+                    string text = null;
+                    if (run.Count == len)
+                    {
+                        try
+                        {
+                            text = StrictUtf8.GetString(run.ToArray());
+                        }
+                        catch (DecoderFallbackException)
+                        {
+                            text = null;
+                        }
+                    }
+                    if (text != null)
+                    {
+                        sb.Append(len == 1 && ";/?:@&=+$,#".IndexOf(text[0]) >= 0 ? s.Substring(i, j - i) : text);
+                        i = j;
+                        continue;
+                    }
+                }
+                sb.Append(s[i]);
+                i++;
             }
-            catch (UriFormatException)
-            {
-                return s;
-            }
+            return sb.ToString();
         }
 
         /// <summary>Relative path with <c>/</c> separators from directory <paramref name="fromDir"/> to <paramref name="to"/>.</summary>
@@ -83,7 +124,8 @@ namespace FsmEditor.Core
         {
             var hash = href.IndexOf('#');
             var file = hash >= 0 ? href.Substring(0, hash) : href;
-            var id = hash >= 0 ? href.Substring(hash + 1) : "";
+            // As href.split('#') in the other editions: the id ends at a second #.
+            var id = hash >= 0 ? href.Substring(hash + 1).Split('#')[0] : "";
             var path = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(documentFile), DecodeUri(file).Replace('/', Path.DirectorySeparatorChar)));
             return (path, id);
         }
@@ -122,7 +164,17 @@ namespace FsmEditor.Core
                     continue;
                 }
                 // Outside the workspace, or written with a different relative path.
-                var (file, id) = Hrefs.Resolve(documentFile, href);
+                string file, id;
+                try
+                {
+                    (file, id) = Hrefs.Resolve(documentFile, href);
+                }
+                catch (Exception e) when (e is ArgumentException || e is NotSupportedException || e is PathTooLongException)
+                {
+                    // Not a file path (characters a path can't hold): a machine that can't be found.
+                    info[href] = new SubmachineInfo { Found = false };
+                    continue;
+                }
                 var s = summaryOf(file);
                 info[href] = s != null && s.Id == id
                     ? new SubmachineInfo { Found = true, Name = s.Name, File = display(file), Points = s.Points }

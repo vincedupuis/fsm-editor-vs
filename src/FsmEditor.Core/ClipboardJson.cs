@@ -336,8 +336,11 @@ namespace FsmEditor.Core
                         case 'b': sb.Append('\b'); break;
                         case 'f': sb.Append('\f'); break;
                         case 'u':
-                            if (_i + 4 > _s.Length) throw new FormatException("Bad escape.");
-                            sb.Append((char)Convert.ToInt32(_s.Substring(_i, 4), 16));
+                            if (_i + 4 > _s.Length || !int.TryParse(_s.Substring(_i, 4), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var code))
+                            {
+                                throw new FormatException("Bad escape.");
+                            }
+                            sb.Append((char)code);
                             _i += 4;
                             break;
                         default: sb.Append(e); break;

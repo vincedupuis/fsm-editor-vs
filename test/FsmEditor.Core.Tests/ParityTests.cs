@@ -22,7 +22,7 @@ namespace FsmEditor.Core.Tests
         public static IEnumerable<object[]> ExampleFiles() =>
             new[] { "MediaPlayer.fsm", "Order.fsm", "Payment.fsm" }.Select(f => new object[] { f });
 
-        public static IEnumerable<object[]> CaseNames() => new[] { "grammar", "structure", "protocol", "cycles", "colors", "loops", "regions", "groups" }.Select(c => new object[] { c });
+        public static IEnumerable<object[]> CaseNames() => new[] { "grammar", "structure", "protocol", "cycles", "colors", "loops", "regions", "groups", "edges" }.Select(c => new object[] { c });
 
         private static string Read(string path) => File.ReadAllText(path).Replace("\r\n", "\n");
 
@@ -82,6 +82,53 @@ namespace FsmEditor.Core.Tests
             {
                 Assert.Equal(expected.GetProperty("error").GetString(), actual.Error);
             }
+        }
+
+        [Fact]
+        public void CharacterReferencesReadAsInTheOtherEditions()
+        {
+            var none = new Dictionary<string, string>();
+            Assert.Equal("\uD800", XmlTree.Parse("<a b=\"&#xD800;\"/>", none).Attr("b"));
+            Assert.Equal("\U0001F600", XmlTree.Parse("<a b=\"&#128512;\"/>", none).Attr("b"));
+            foreach (var bad in new[] { "&#x110000;", "&#xFFFFFFFF;", "&#99999999999;" })
+            {
+                var e = Assert.Throws<XmlParseException>(() => XmlTree.Parse($"<a>\n<b c=\"{bad}\"/></a>", none));
+                Assert.Equal($"Line 2: Unknown entity {bad}.", e.Message);
+            }
+        }
+
+        [Fact]
+        public void HrefsDecodeAsDecodeUriKeepingMalformedEscapes()
+        {
+            Assert.Equal("My Machine.fsm", Hrefs.DecodeUri("My%20Machine.fsm"));
+            Assert.Equal("café.fsm", Hrefs.DecodeUri("caf%C3%A9.fsm"));
+            Assert.Equal("a%23b%2Fc", Hrefs.DecodeUri("a%23b%2Fc"));
+            Assert.Equal("café%zz", Hrefs.DecodeUri("caf%C3%A9%zz"));
+            Assert.Equal("a%E0.fsm", Hrefs.DecodeUri("a%E0.fsm"));
+            Assert.Equal("a%E0A.fsm", Hrefs.DecodeUri("a%E0%41.fsm"));
+            Assert.Equal("a%C0%80%", Hrefs.DecodeUri("a%C0%80%"));
+            Assert.Equal("sm", Hrefs.Resolve(Path.Combine(Examples, "M.fsm"), "a.fsm#sm#x").Id);
+        }
+
+        [Fact]
+        public void SubmachineHrefsThatAreNotPathsAreNotFound()
+        {
+            var model = FsmModel.CreateDefault("M");
+            model.Vertices[1].Submachine = "a%00b.fsm#sm";
+            var info = SubmachineResolver.Resolve(Path.Combine(Examples, "M.fsm"), model, new List<MachineInfo>(), _ => null, f => f);
+            Assert.False(info["a%00b.fsm#sm"].Found);
+        }
+
+        [Fact]
+        public void KeepsATimeTriggerAndAnEventWhoseIdsWouldBeTheSameApart()
+        {
+            var model = FsmModel.CreateDefault("M");
+            model.Transitions.Add(new Transition { Id = "t1", Source = "v_idle", Target = "v_idle", Triggers = { "after(1s)" } });
+            model.Transitions.Add(new Transition { Id = "t2", Source = "v_idle", Target = "v_idle", Triggers = { "after_1s_" } });
+            var xmi = Xmi.ToXmi(model);
+            Assert.Equal(new[] { "", "after(1s)", "after_1s_" }, Xmi.FromXmi(xmi).Transitions.Select(t => string.Join(",", t.Triggers)));
+            var ids = System.Text.RegularExpressions.Regex.Matches(xmi, "xmi:id=\"([^\"]*)\"").Cast<System.Text.RegularExpressions.Match>().Select(m => m.Groups[1].Value).ToList();
+            Assert.Equal(ids.Count, ids.Distinct().Count());
         }
 
         [Fact]

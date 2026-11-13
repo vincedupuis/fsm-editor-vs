@@ -202,11 +202,11 @@ namespace FsmEditor.Core
                         if (outgoing.Count == 0) Add(v.Id, Severity.Error, $"A {kind} must have at least one outgoing transition.");
                         if (outgoing.Count > 1)
                         {
-                            if (outgoing.Any(t => t.Guard.Trim().Length == 0))
+                            if (outgoing.Any(t => JsWhitespace.Trim(t.Guard).Length == 0))
                             {
                                 Add(v.Id, Severity.Warning, $"Every branch of a {kind} with several outgoing transitions should have a guard.");
                             }
-                            if (!outgoing.Any(t => t.Guard.Trim() == "else"))
+                            if (!outgoing.Any(t => JsWhitespace.Trim(t.Guard) == "else"))
                             {
                                 Add(v.Id, Severity.Info, $"Consider an [else] branch so the {kind} can always be left.");
                             }
@@ -371,7 +371,7 @@ namespace FsmEditor.Core
                 }
                 if (s.Type == VertexType.State && g.Type == VertexType.State && t.Triggers.Count == 0 && t.Guard.Length == 0 && s != g && s.Regions.Count == 0)
                 {
-                    if (ix.Outgoing(s.Id).Count(o => o.Kind != TransitionKind.Internal && o.Triggers.Count == 0) > 1)
+                    if (ix.Outgoing(s.Id).Count(o => o.Kind != TransitionKind.Internal && o.Triggers.Count == 0 && o.Guard.Length == 0) > 1)
                     {
                         Add(t.Id, Severity.Warning, $"{Name(s)} has several completion transitions without triggers or guards.");
                     }

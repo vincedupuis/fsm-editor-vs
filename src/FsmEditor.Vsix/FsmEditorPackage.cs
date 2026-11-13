@@ -135,7 +135,15 @@ namespace FsmEditor
                 await VS.MessageBox.ShowErrorAsync("New State Machine", $"{name}.fsm already exists.");
                 return;
             }
-            File.WriteAllText(path, Xmi.ToXmi(FsmModel.CreateDefault(name)), new UTF8Encoding(false));
+            try
+            {
+                File.WriteAllText(path, Xmi.ToXmi(FsmModel.CreateDefault(name)), new UTF8Encoding(false));
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                await VS.MessageBox.ShowErrorAsync("New State Machine", e.Message);
+                return;
+            }
             // Add it to the project owning the folder (SDK-style projects pick it up on their own).
             try
             {

@@ -244,6 +244,8 @@ namespace FsmEditor.Editor
 
         private void OnCommitted()
         {
+            // The document can't be read: writing the model shown before would replace the text being fixed.
+            if (_parseError.Visibility == Visibility.Visible) return;
             RefreshLayoutIssues();
             _host.Write(Session.Model);
             _canvas.InvalidateVisual();

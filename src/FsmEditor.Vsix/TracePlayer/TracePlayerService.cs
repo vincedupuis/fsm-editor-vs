@@ -269,7 +269,7 @@ namespace FsmEditor.TracePlayer
                 _parsed[file] = (key, machine);
                 return machine;
             }
-            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is FormatException || e is System.Xml.XmlException || e is InvalidOperationException)
+            catch (Exception e) when (e is XmlParseException || e is XmiException || e is IOException || e is UnauthorizedAccessException || e is FormatException || e is System.Xml.XmlException || e is InvalidOperationException)
             {
                 return null;
             }

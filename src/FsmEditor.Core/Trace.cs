@@ -76,11 +76,11 @@ namespace FsmEditor.Core
         public const string BuiltInName = "FSM Editor (built-in)";
 
         /// <summary>An ISO 8601 date and time, or a time of day, as loggers print them.</summary>
-        private static readonly Regex IsoTime = new Regex(@"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?(?:Z|[+-]\d{2}:?\d{2})?|\b\d{2}:\d{2}:\d{2}(?:[.,]\d+)?", RegexOptions.CultureInvariant);
+        private static readonly Regex IsoTime = new Regex(@"[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.,][0-9]+)?(?:Z|[+-][0-9]{2}:?[0-9]{2})?|\b[0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.,][0-9]+)?", RegexOptions.CultureInvariant);
         private static readonly Regex BuiltInLine = new Regex(@"(?:^|\s)fsm\s+(\S+)\s+(event|enter|exit|transition)\s+(\S+)(?:\s+(.*?))?\s*$", RegexOptions.CultureInvariant);
-        private static readonly Regex Number = new Regex(@"^\d+(\.\d+)?$");
-        private static readonly Regex TimeOfDay = new Regex(@"^(\d{2}):(\d{2}):(\d{2})(?:[.,](\d+))?$");
-        private static readonly Regex DateOnly = new Regex(@"^\d{4}-\d{2}-\d{2}$");
+        private static readonly Regex Number = new Regex(@"^[0-9]+(\.[0-9]+)?$");
+        private static readonly Regex TimeOfDay = new Regex(@"^([0-9]{2}):([0-9]{2}):([0-9]{2})(?:[.,]([0-9]+))?$");
+        private static readonly Regex DateOnly = new Regex(@"^[0-9]{4}-[0-9]{2}-[0-9]{2}$");
 
         public static TraceFormat BuiltIn { get; } = new BuiltInFormat();
 
@@ -962,9 +962,17 @@ namespace FsmEditor.Core
                 }
                 var hash = state.Submachine.IndexOf('#');
                 var file = hash >= 0 ? state.Submachine.Substring(0, hash) : state.Submachine;
-                var (subFile, id) = Hrefs.Resolve(machine.File, state.Submachine);
+                string subFile = null, id = "";
+                try
+                {
+                    (subFile, id) = Hrefs.Resolve(machine.File, state.Submachine);
+                }
+                catch (Exception e) when (e is ArgumentException || e is NotSupportedException || e is PathTooLongException)
+                {
+                    // Not a file path: a submachine that can't be read.
+                }
                 if (id.Length == 0) id = "sm";
-                var sub = Machine(subFile);
+                var sub = subFile != null ? Machine(subFile) : null;
                 if (sub == null || (string.IsNullOrEmpty(sub.Model.Id) ? "sm" : sub.Model.Id) != id)
                 {
                     problem($"The submachine of {machine.Model.Name}.{(state.Name.Length > 0 ? state.Name : seg)} ({file}) cannot be read ({path}).");

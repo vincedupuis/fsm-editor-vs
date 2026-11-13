@@ -204,6 +204,16 @@ namespace FsmEditor.Editor
             _echoText = xmi;
             _echoModel = model.Clone();
             if (xmi == old) return;
+            if (!CanEdit())
+            {
+                _control.Toast("The file is read-only; the change was not saved.");
+                _echoText = null;
+                ScheduleSync();
+                return;
+            }
+            // Checking the file out may have reloaded it.
+            old = _buffer.CurrentSnapshot.GetText();
+            if (xmi == old) return;
             // Replace only what changed, as one undo unit.
             int prefix = 0;
             var max = Math.Min(old.Length, xmi.Length);
@@ -228,6 +238,16 @@ namespace FsmEditor.Editor
                 _control.Toast($"The change could not be saved: {e.Message}");
                 ScheduleSync();
             }
+        }
+
+        /// <summary>Asks Visual Studio whether the file may be edited (checking it out or making it writable); false when refused.</summary>
+        private bool CanEdit()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (string.IsNullOrEmpty(FilePath) || !(GetService(typeof(Microsoft.VisualStudio.Shell.Interop.SVsQueryEditQuerySave)) is Microsoft.VisualStudio.Shell.Interop.IVsQueryEditQuerySave2 queryEdit)) return true;
+            // Flags 0: the default edit query, which may prompt to check the file out or make it writable.
+            var hr = queryEdit.QueryEditFiles(0, 1, new[] { FilePath }, null, null, out var result, out _);
+            return ErrorHandler.Succeeded(hr) && result == (uint)Microsoft.VisualStudio.Shell.Interop.tagVSQueryEditResult.QER_EditOK;
         }
 
         private Microsoft.VisualStudio.Text.Operations.ITextUndoHistory History =>
@@ -268,7 +288,15 @@ namespace FsmEditor.Editor
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (string.IsNullOrEmpty(href)) return;
-            var (file, _) = Hrefs.Resolve(FilePath, href);
+            string file = null;
+            try
+            {
+                (file, _) = Hrefs.Resolve(FilePath, href);
+            }
+            catch (Exception e) when (e is ArgumentException || e is NotSupportedException || e is PathTooLongException)
+            {
+                // Not a file path: a file that doesn't exist.
+            }
             if (!File.Exists(file))
             {
                 _control.Toast($"The referenced state machine file {href.Split('#')[0]} does not exist.");

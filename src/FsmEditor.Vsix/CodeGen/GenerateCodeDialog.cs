@@ -35,7 +35,7 @@ namespace FsmEditor.CodeGen
             browseTemplate.Margin = new Thickness(0, 6, 0, 0);
             browseTemplate.Click += (s, e) =>
             {
-                var file = Dialogs.PickFile("Template", "Template (*.hbs, *.jinja)|*.hbs;*.jinja|Handlebars template (*.hbs)|*.hbs|Jinja template (*.jinja)|*.jinja", Path.GetDirectoryName(lastTemplate ?? defaultOut));
+                var file = Dialogs.PickFile("Template", "Template (*.hbs, *.jinja)|*.hbs;*.jinja|Handlebars template (*.hbs)|*.hbs|Jinja template (*.jinja)|*.jinja", string.IsNullOrEmpty(lastTemplate) ? defaultOut : Path.GetDirectoryName(lastTemplate));
                 if (file == null) return;
                 var choice = new TemplateChoice { Path = file, Name = Path.GetFileNameWithoutExtension(file), Description = file };
                 list.Items.Add(choice);

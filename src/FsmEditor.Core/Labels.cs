@@ -18,12 +18,12 @@ namespace FsmEditor.Core
                 if (t.Precondition.Length > 0) s += $"[{t.Precondition}] ";
                 s += trig;
                 if (t.Postcondition.Length > 0) s += $" / [{t.Postcondition}]";
-                return s.Trim();
+                return JsWhitespace.Trim(s);
             }
             s = trig;
             if (t.Guard.Length > 0) s += $" [{t.Guard}]";
             if (t.Effect.Length > 0) s += $" / {t.Effect}";
-            return s.Trim();
+            return JsWhitespace.Trim(s);
         }
 
         /// <summary>The label as stacked lines: events, <c>[guard]</c>, <c>/ effect</c> (protocol: <c>[pre]</c>, event, <c>/ [post]</c>).</summary>
@@ -44,8 +44,10 @@ namespace FsmEditor.Core
         public static bool AllowsElse(Vertex source) =>
             source != null && (source.Type == VertexType.Choice || source.Type == VertexType.Junction);
 
-        private static readonly Regex ProtocolLabel = new Regex(@"^\s*(?:\[([^\]]*)\])?([^/]*?)\s*(?:/\s*\[([^\]]*)\])?\s*$");
-        private static readonly Regex TrailingGuard = new Regex(@"\[([^\]]*)\]\s*$");
+        // JavaScript's \s spelled out (see JsWhitespace), and \z for its $.
+        private const string Ws = JsWhitespace.Class;
+        private static readonly Regex ProtocolLabel = new Regex($@"^{Ws}*(?:\[([^\]]*)\])?([^/]*?){Ws}*(?:/{Ws}*\[([^\]]*)\])?{Ws}*\z");
+        private static readonly Regex TrailingGuard = new Regex($@"\[([^\]]*)\]{Ws}*\z");
 
         /// <summary>
         /// Parses a transition label into <paramref name="t"/>. Returns an error

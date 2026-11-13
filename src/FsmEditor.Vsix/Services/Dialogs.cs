@@ -78,7 +78,8 @@ namespace FsmEditor.Services
             ok.Click += (s, e) =>
             {
                 var name = input.Text.Trim();
-                if (!Regex.IsMatch(name, @"^[\w .-]+$"))
+                // \w as in the VS Code edition: ASCII letters, digits and _.
+                if (!Regex.IsMatch(name, @"^[\w .-]+$", RegexOptions.ECMAScript))
                 {
                     error.Text = "Use letters, digits, spaces, dots, dashes or underscores.";
                     error.Visibility = Visibility.Visible;

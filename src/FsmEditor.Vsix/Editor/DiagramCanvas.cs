@@ -31,6 +31,8 @@ namespace FsmEditor.Editor
         private readonly List<(Rect Rect, string Id)> _labels = new List<(Rect, string)>();
         private DragState _drag;
         private bool _space;
+        /// <summary>WPF's click count at the last press that ended double-click tracking (0: none in this click series).</summary>
+        private int _clickBase;
 
         public DiagramCanvas(EditorControl editor)
         {
@@ -715,6 +717,25 @@ namespace FsmEditor.Editor
                         }
                     }
                 }
+            }
+            // The lines between regions: dragged, they resize the region before them. Drawn over the
+            // diagram, so they come before the selected transition's ends and bend points. Not while a tool is armed:
+            // the press goes to what is underneath.
+            for (int k = Tool != null ? -1 : ix.Model.Vertices.Count - 1; k >= 0; k--)
+            {
+                var s = ix.Model.Vertices[k];
+                var rects = Geo.RegionRects(S.Model, s);
+                for (int i = 0; i < rects.Count - 1; i++)
+                {
+                    var r = rects[i].Rect;
+                    var near = s.RegionLayout == RegionLayout.Horizontal
+                        ? Math.Abs(p.X - r.Right) <= 3 + tolerance && p.Y >= r.Y && p.Y <= r.Bottom
+                        : Math.Abs(p.Y - r.Bottom) <= 3 + tolerance && p.X >= r.X && p.X <= r.Right;
+                    if (near) return new Hit { Kind = HitKind.Handle, Handle = "sep", Id = s.Id, Index = i };
+                }
+            }
+            if (S.Selection.Count == 1)
+            {
                 var selected = ix.Transition(S.Selection.First());
                 if (selected != null && Geo.IsDrawn(ix, selected) && Geo.Route(ix, selected) is List<PointD> route)
                 {
@@ -728,20 +749,6 @@ namespace FsmEditor.Editor
                     {
                         if (Geo.Dist(p, handles[i]) <= 4.5 + tolerance) return new Hit { Kind = HitKind.Waypoint, Id = selected.Id, Index = i };
                     }
-                }
-            }
-            // The lines between regions: dragged, they resize the region before them.
-            for (int k = ix.Model.Vertices.Count - 1; k >= 0; k--)
-            {
-                var s = ix.Model.Vertices[k];
-                var rects = Geo.RegionRects(S.Model, s);
-                for (int i = 0; i < rects.Count - 1; i++)
-                {
-                    var r = rects[i].Rect;
-                    var near = s.RegionLayout == RegionLayout.Horizontal
-                        ? Math.Abs(p.X - r.Right) <= 3 + tolerance && p.Y >= r.Y && p.Y <= r.Bottom
-                        : Math.Abs(p.Y - r.Bottom) <= 3 + tolerance && p.X >= r.X && p.X <= r.Right;
-                    if (near) return new Hit { Kind = HitKind.Handle, Handle = "sep", Id = s.Id, Index = i };
                 }
             }
             var item = ItemAt(p, true);
@@ -869,6 +876,11 @@ namespace FsmEditor.Editor
             var screen = e.GetPosition(this);
             var p = ToWorld(screen);
             e.Handled = true;
+            // Double-clicks counted from the last press that ended tracking, like the reference: a press with a
+            // tool, the middle or right button or Space, and a double-click itself.
+            if (e.ClickCount == 1) _clickBase = 0;
+            var clicks = e.ClickCount - _clickBase;
+            if (e.ChangedButton == MouseButton.Middle || e.ChangedButton == MouseButton.Right || _space || Tool != null) _clickBase = e.ClickCount;
 
             if (e.ChangedButton == MouseButton.Middle || e.ChangedButton == MouseButton.Right || _space)
             {
@@ -878,8 +890,10 @@ namespace FsmEditor.Editor
                 return;
             }
             if (e.ChangedButton != MouseButton.Left) return;
-            if (e.ClickCount == 2)
+            // With a tool, each click uses it (a sticky tool places an element per click).
+            if (clicks == 2 && Tool == null)
             {
+                _clickBase = e.ClickCount;
                 _drag = null;
                 DoubleClick(p);
                 return;

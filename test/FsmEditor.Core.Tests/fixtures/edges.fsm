@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="sm_model" name="Edges">
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="sm" name="Edges">
+      <region xmi:type="uml:Region" xmi:id="r_root">
+        <ownedComment xmi:type="uml:Comment" xmi:id="n1" annotatedElement="B">
+          <body>  indented
+note
+
+</body>
+        </ownedComment>
+        <subvertex xmi:type="uml:State" xmi:id="A" name="A"/>
+        <subvertex xmi:type="uml:State" xmi:id="B" name="B"/>
+        <subvertex xmi:type="uml:State" xmi:id="C" name="C"/>
+        <subvertex xmi:type="uml:State" xmi:id="D" name="D"/>
+        <subvertex xmi:type="uml:State" xmi:id="E" name="E"/>
+        <subvertex xmi:type="uml:State" xmi:id="F" name="F"/>
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="v1" kind="initial"/>
+        <transition xmi:type="uml:Transition" xmi:id="t2" kind="external" source="v1" target="A"/>
+        <transition xmi:type="uml:Transition" xmi:id="t3" kind="external" source="A" target="B">
+          <trigger xmi:type="uml:Trigger" xmi:id="t3_trigger1" name="after(1s)" event="ev_after_1s_"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t4" kind="external" source="B" target="A">
+          <trigger xmi:type="uml:Trigger" xmi:id="t4_trigger1" name="after_1s_" event="ev_after_1s__"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t5" kind="external" source="B" target="C">
+          <guard xmi:type="uml:Constraint" xmi:id="t5_guard">
+            <specification xmi:type="uml:OpaqueExpression" xmi:id="t5_guard_spec">
+              <language>FSM</language>
+              <body>ready()</body>
+            </specification>
+          </guard>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t6" kind="external" source="B" target="D"/>
+        <transition xmi:type="uml:Transition" xmi:id="t7" kind="external" source="D" target="E"/>
+        <transition xmi:type="uml:Transition" xmi:id="t8" kind="external" source="D" target="F"/>
+      </region>
+    </packagedElement>
+    <packagedElement xmi:type="uml:TimeEvent" xmi:id="ev_after_1s_" name="after(1s)" isRelative="true">
+      <when xmi:type="uml:TimeExpression" xmi:id="ev_after_1s__when">
+        <expr xmi:type="uml:LiteralString" xmi:id="ev_after_1s__expr" value="1s"/>
+      </when>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_after_1s__" name="after_1s_" signal="sig_after_1s__"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_after_1s__" name="after_1s_"/>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="Edges" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_A" modelElement="A">
+      <bounds xmi:type="dc:Bounds" x="140" y="40" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_B" modelElement="B">
+      <bounds xmi:type="dc:Bounds" x="340" y="40" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_C" modelElement="C">
+      <bounds xmi:type="dc:Bounds" x="340" y="160" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_D" modelElement="D">
+      <bounds xmi:type="dc:Bounds" x="140" y="280" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_E" modelElement="E">
+      <bounds xmi:type="dc:Bounds" x="340" y="280" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_F" modelElement="F">
+      <bounds xmi:type="dc:Bounds" x="540" y="280" width="120" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v1" modelElement="v1">
+      <bounds xmi:type="dc:Bounds" x="0" y="0" width="10" height="10"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_n1" modelElement="n1">
+      <bounds xmi:type="dc:Bounds" x="540" y="40" width="160" height="64"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t2" modelElement="t2" source="di_v1" target="di_A">
+      <waypoint xmi:type="dc:Point" x="5" y="5"/>
+      <waypoint xmi:type="dc:Point" x="200" y="65"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t3" modelElement="t3" source="di_A" target="di_B">
+      <waypoint xmi:type="dc:Point" x="200" y="65"/>
+      <waypoint xmi:type="dc:Point" x="400" y="65"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t4" modelElement="t4" source="di_B" target="di_A">
+      <waypoint xmi:type="dc:Point" x="400" y="65"/>
+      <waypoint xmi:type="dc:Point" x="200" y="65"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t5" modelElement="t5" source="di_B" target="di_C">
+      <waypoint xmi:type="dc:Point" x="400" y="65"/>
+      <waypoint xmi:type="dc:Point" x="400" y="185"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t6" modelElement="t6" source="di_B" target="di_D">
+      <waypoint xmi:type="dc:Point" x="400" y="65"/>
+      <waypoint xmi:type="dc:Point" x="200" y="305"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t7" modelElement="t7" source="di_D" target="di_E">
+      <waypoint xmi:type="dc:Point" x="200" y="305"/>
+      <waypoint xmi:type="dc:Point" x="400" y="305"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t8" modelElement="t8" source="di_D" target="di_F">
+      <waypoint xmi:type="dc:Point" x="200" y="305"/>
+      <waypoint xmi:type="dc:Point" x="600" y="305"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_n1_anchor1" modelElement="n1" source="di_n1" target="di_B"/>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>

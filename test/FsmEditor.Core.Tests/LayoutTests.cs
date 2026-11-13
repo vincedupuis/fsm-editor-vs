@@ -205,5 +205,13 @@ namespace FsmEditor.Core.Tests
             Assert.Contains("{\"id\":\"r1\",\"name\":\"\",\"size\":100}", json);
             Assert.Equal(100, ClipboardJson.TryRead(json).Vertices.Single(v => v.Id == "P").Regions[0].Size);
         }
+
+        [Fact]
+        public void ClipboardTextWithABadEscapeIsNotElements()
+        {
+            Assert.Null(ClipboardJson.TryRead("{\"fsmClipboard\":1,\"vertices\":[],\"text\":\"\\u-123\"}"));
+            Assert.Null(ClipboardJson.TryRead("{\"fsmClipboard\":1,\"vertices\":[],\"text\":\"\\u0x12\"}"));
+            Assert.NotNull(ClipboardJson.TryRead("{\"fsmClipboard\":1,\"vertices\":[],\"text\":\"\\u00e9\"}"));
+        }
     }
 }

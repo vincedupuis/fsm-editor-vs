@@ -71,6 +71,9 @@ namespace FsmEditor.Core
                 if (events.TryGetValue(trigger, out var id)) return id;
                 var time = Regex.Match(trigger, @"^after\((.+)\)$");
                 var safe = Regex.Replace(trigger, "[^A-Za-z0-9_]", "_");
+                // after(1s) and an event named after_1s_ would share an id: the later one gets another _.
+                var taken = new HashSet<string>(events.Values);
+                while (taken.Contains("ev_" + safe)) safe += "_";
                 id = "ev_" + safe;
                 if (time.Success)
                 {
@@ -347,7 +350,7 @@ namespace FsmEditor.Core
         /// <summary>A reference property, written as an attribute (<c>a="id1 id2"</c>) or as child elements (<c>&lt;a xmi:idref|href&gt;</c>).</summary>
         private static List<string> Refs(XmlElem el, string name)
         {
-            var output = (el.Attr(name) ?? "").Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            var output = JsWhitespace.Split(el.Attr(name));
             foreach (var c in Kids(el, name))
             {
                 var r = c.Attr("xmi:idref") ?? c.Attr("href");
@@ -366,13 +369,13 @@ namespace FsmEditor.Core
         }
 
         /// <summary>Text of an opaque behavior or constraint (its first body).</summary>
-        private static string BodyOf(XmlElem el)
+        private static string BodyOf(XmlElem el, bool trim = true)
         {
             if (el == null) return "";
             var spec = Kid(el, "specification") ?? el;
             var b = Kid(spec, "body");
-            if (b != null) return b.Text.Trim();
-            return (spec.Attr("body") ?? spec.Attr("value") ?? "").Trim();
+            var text = b != null ? b.Text : spec.Attr("body") ?? spec.Attr("value") ?? "";
+            return trim ? JsWhitespace.Trim(text) : text;
         }
 
         private static IEnumerable<XmlElem> Walk(XmlElem el)
@@ -526,7 +529,7 @@ namespace FsmEditor.Core
                     else if (c.Name == "ownedComment")
                     {
                         var comment = VertexBase(c, VertexType.Comment, id);
-                        comment.Text = BodyOf(c);
+                        comment.Text = BodyOf(c, false);
                         comment.Anchors = Refs(c, "annotatedElement");
                         model.Vertices.Add(comment);
                     }
@@ -588,7 +591,7 @@ namespace FsmEditor.Core
                     {
                         var id = g.Attr("id") ?? "";
                         if (id.Length == 0) continue;
-                        foreach (var member in (g.Attr("members") ?? "").Split((char[])null, StringSplitOptions.RemoveEmptyEntries))
+                        foreach (var member in JsWhitespace.Split(g.Attr("members")))
                         {
                             if (byId.TryGetValue(member, out var gv) && gv.Group.Length == 0) gv.Group = id;
                         }

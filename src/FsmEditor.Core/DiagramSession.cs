@@ -97,7 +97,7 @@ namespace FsmEditor.Core
             if (Submachines.TryGetValue(href ?? "", out var info) && !string.IsNullOrEmpty(info.Name)) return info.Name;
             var known = Machines.FirstOrDefault(m => m.Href == href);
             if (known != null && known.Name.Length > 0) return known.Name;
-            var file = Uri.UnescapeDataString((href ?? "").Split('#')[0]);
+            var file = Hrefs.DecodeUri((href ?? "").Split('#')[0]);
             file = file.Substring(file.LastIndexOf('/') + 1);
             return file.EndsWith(".fsm", StringComparison.Ordinal) ? file.Substring(0, file.Length - 4) : file;
         }
@@ -494,7 +494,8 @@ namespace FsmEditor.Core
         {
             var s = Index.Vertex(t.Source);
             var g = Index.Vertex(t.Target);
-            if (g == null || g.Type == VertexType.Initial || (s != null && (s.Type == VertexType.Final || s.Type == VertexType.Terminate)))
+            // Reversed, the target becomes the source: refused as drawing it that way would be.
+            if (g == null || s == null || ConnectProblem(g, s) != null)
             {
                 Say("This transition cannot be reversed.");
                 return;
@@ -1315,17 +1316,30 @@ namespace FsmEditor.Core
         {
             if (data == null || data.Vertices.Count == 0) return;
             Reindex();
+            // A connection point reference whose state is neither copied nor in this diagram is left out, with its transitions.
+            var copied = new HashSet<string>(data.Vertices.Select(v => v.Id));
+            var vertices = data.Vertices
+                .Where(v => v.Type != VertexType.ConnectionPointRef || copied.Contains(v.Parent) || Index.Vertex(v.Parent) != null)
+                .ToList();
+            if (vertices.Count == 0) return;
             var map = new Dictionary<string, string>();
-            foreach (var v in data.Vertices)
+            foreach (var v in vertices)
             {
                 map[v.Id] = NewId("v");
                 foreach (var r in v.Regions) map[r.Id] = NewId("r");
+            }
+            // Parents copied in a cycle (crafted clipboard text): nothing would be a root.
+            if (!vertices.Any(v => !map.ContainsKey(v.Parent))) return;
+            // Before the comments, whose anchors may be copied transitions.
+            foreach (var t in data.Transitions)
+            {
+                if (map.ContainsKey(t.Source) && map.ContainsKey(t.Target)) map[t.Id] = NewId("t");
             }
             double offX, offY;
             RegionRect target = null;
             if (at is PointD point)
             {
-                var roots = data.Vertices.Where(v => !map.ContainsKey(v.Parent)).ToList();
+                var roots = vertices.Where(v => !map.ContainsKey(v.Parent)).ToList();
                 offX = Geometry.Snap(point.X) - roots.Min(v => v.X);
                 offY = Geometry.Snap(point.Y) - roots.Min(v => v.Y);
                 target = Geometry.RegionAt(Index, point, new HashSet<string>());
@@ -1337,7 +1351,7 @@ namespace FsmEditor.Core
             }
             var added = new List<Vertex>();
             var groups = new Dictionary<string, string>();
-            foreach (var src in data.Vertices)
+            foreach (var src in vertices)
             {
                 var v = src.Clone();
                 v.Id = map[src.Id];
@@ -1377,7 +1391,7 @@ namespace FsmEditor.Core
             {
                 if (!map.ContainsKey(src.Source) || !map.ContainsKey(src.Target)) continue;
                 var t = src.Clone();
-                t.Id = NewId("t");
+                t.Id = map[src.Id];
                 t.Source = map[src.Source];
                 t.Target = map[src.Target];
                 t.Points = t.Points.Select(p => new PointD(p.X + offX, p.Y + offY)).ToList();

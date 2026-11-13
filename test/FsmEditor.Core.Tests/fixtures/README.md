@@ -18,7 +18,9 @@ validates state machines exactly the same way:
   don't fit their state), and `groups.fsm`, whose groups were edited by hand
   (members out of file order, a member on a state's border, members in another
   region, a vertex in two groups, a missing member, a group without an id and
-  groups of one) to check which groups reading keeps;
+  groups of one) to check which groups reading keeps, and `edges.fsm`
+  (completion transitions with and without guards, a comment text with spaces
+  and line breaks around it, a time trigger and an event whose ids would collide);
 - `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`.
 
 Regenerate them when the reference implementation changes its rules or format,

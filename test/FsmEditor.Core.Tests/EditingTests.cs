@@ -284,6 +284,36 @@ namespace FsmEditor.Core.Tests
             Assert.Equal(0.3, Num.R1(0.25));
             Assert.Equal(-2, Num.Round(-2.5));
         }
+
+        [Theory]
+        [InlineData(0.0, "0")]
+        [InlineData(1.0, "1")]
+        [InlineData(0.1, "0.1")]
+        [InlineData(0.1 + 0.2, "0.30000000000000004")]
+        [InlineData(123.456, "123.456")]
+        [InlineData(1e-7, "1e-7")]
+        [InlineData(1.5e-7, "1.5e-7")]
+        [InlineData(-1.5e-7, "-1.5e-7")]
+        [InlineData(0.000001, "0.000001")]
+        [InlineData(1.23e-18, "1.23e-18")]
+        [InlineData(1e15, "1000000000000000")]
+        [InlineData(1e15 + 0.5, "1000000000000000.5")]
+        [InlineData(18014398509481984.0, "18014398509481984")]
+        [InlineData(1e21, "1e+21")]
+        [InlineData(1.5e21, "1.5e+21")]
+        [InlineData(1180591620717411303424.0, "1.1805916207174113e+21")]
+        [InlineData(1e23, "1e+23")]
+        [InlineData(123456789012345680000.0, "123456789012345680000")]
+        [InlineData(5e-324, "5e-324")]
+        [InlineData(1.5e-323, "1.5e-323")]
+        [InlineData(2.2250738585072014e-308, "2.2250738585072014e-308")]
+        [InlineData(1.7976931348623157e308, "1.7976931348623157e+308")]
+        [InlineData(9.5367431640625e-7, "9.5367431640625e-7")]
+        [InlineData(-2.5, "-2.5")]
+        public void NumbersPrintLikeJavaScript(double n, string text)
+        {
+            Assert.Equal(text, Num.Format(n));
+        }
         private static Vertex AddState(DiagramSession s, string id, string parent, double x, double y, double w = 140, double h = 60, int regions = 0, RegionLayout layout = RegionLayout.Vertical)
         {
             var v = new Vertex { Id = id, Type = VertexType.State, Name = id, Parent = parent, X = x, Y = y, W = w, H = h, RegionLayout = layout };

@@ -24,6 +24,50 @@ namespace FsmEditor.Core
         public static Check<T> Fail(string error) => new Check<T>(false, default, error);
     }
 
+    /// <summary>
+    /// White space as JavaScript's <c>trim()</c> and regex <c>\s</c> see it (the reference
+    /// edition's grammar): U+0009–U+000D, U+0020, U+00A0, U+1680, U+2000–U+200A, U+2028,
+    /// U+2029, U+202F, U+205F, U+3000 and U+FEFF. <see cref="char.IsWhiteSpace(char)"/>
+    /// differs (U+0085 in, U+FEFF out).
+    /// </summary>
+    public static class JsWhitespace
+    {
+        /// <summary>The set as a regex character class, in place of <c>\s</c>.</summary>
+        public const string Class = @"[\u0009-\u000D\u0020\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]";
+
+        /// <summary>Is <paramref name="c"/> white space for JavaScript?</summary>
+        public static bool Contains(char c) =>
+            (c >= '\u0009' && c <= '\u000D') || c == ' ' || c == '\u00A0' || c == '\u1680' || (c >= '\u2000' && c <= '\u200A')
+            || c == '\u2028' || c == '\u2029' || c == '\u202F' || c == '\u205F' || c == '\u3000' || c == '\uFEFF';
+
+        /// <summary>Like JavaScript's <c>String.prototype.trim()</c>; null gives "".</summary>
+        public static string Trim(string text)
+        {
+            if (text == null) return "";
+            int start = 0, end = text.Length;
+            while (start < end && Contains(text[start])) start++;
+            while (end > start && Contains(text[end - 1])) end--;
+            return start == 0 && end == text.Length ? text : text.Substring(start, end - start);
+        }
+
+        /// <summary>Splits on runs of white space, dropping empty items, like <c>split(/\s+/).filter(Boolean)</c>.</summary>
+        public static List<string> Split(string text)
+        {
+            var output = new List<string>();
+            text = text ?? "";
+            int i = 0;
+            while (i < text.Length)
+            {
+                while (i < text.Length && Contains(text[i])) i++;
+                int j = i;
+                while (j < text.Length && !Contains(text[j])) j++;
+                if (j > i) output.Add(text.Substring(i, j - i));
+                i = j;
+            }
+            return output;
+        }
+    }
+
     public enum ConditionOp { Call, Not, And, Or }
 
     /// <summary>A condition tree: a call, a negation, or a conjunction/disjunction.</summary>
@@ -60,10 +104,14 @@ namespace FsmEditor.Core
     /// </summary>
     public static class Expressions
     {
-        private static readonly Regex NameRe = new Regex(@"^[A-Za-z_][A-Za-z0-9_]*$");
-        private static readonly Regex TimeRe = new Regex(@"^after\s*\(\s*([0-9]+(?:\.[0-9]+)?)\s*(ms|s|m|h)\s*\)$");
-        private static readonly Regex AfterWord = new Regex(@"^after\b");
-        private static readonly Regex WhenWord = new Regex(@"^when\b");
+        // JavaScript's \s, \b and . spelled out (see JsWhitespace), and \z for its $: .NET's $ also matches before a final \n.
+        private const string Ws = JsWhitespace.Class;
+        private static readonly Regex NameRe = new Regex(@"^[A-Za-z_][A-Za-z0-9_]*\z");
+        private static readonly Regex TimeRe = new Regex($@"^after{Ws}*\({Ws}*([0-9]+(?:\.[0-9]+)?){Ws}*(ms|s|m|h){Ws}*\)\z");
+        private static readonly Regex AfterWord = new Regex(@"^after(?![A-Za-z0-9_])");
+        private static readonly Regex WhenWord = new Regex(@"^when(?![A-Za-z0-9_])");
+        private static readonly Regex TrailingSemicolon = new Regex($@";{Ws}*\z");
+        private static readonly Regex CallTail = new Regex($@"{Ws}*\([^\n\r\u2028\u2029]*\z");
 
         private sealed class SyntaxProblem : Exception
         {
@@ -87,7 +135,7 @@ namespace FsmEditor.Core
             while (i < text.Length)
             {
                 char c = text[i];
-                if (char.IsWhiteSpace(c))
+                if (JsWhitespace.Contains(c))
                 {
                     i++;
                 }
@@ -228,7 +276,7 @@ namespace FsmEditor.Core
             return new string('(', c.Parens) + s + new string(')', c.Parens);
         }
 
-        private static string Trim(string text) => (text ?? "").Trim();
+        private static string Trim(string text) => JsWhitespace.Trim(text);
 
         /// <summary>Condition built from calls, !, &amp;&amp; and ||. Empty text is allowed (no condition).</summary>
         public static Check<string> CheckCondition(string text)
@@ -275,7 +323,7 @@ namespace FsmEditor.Core
         /// <summary>Names of the functions a behavior calls, in order.</summary>
         public static Check<List<string>> ParseActions(string text)
         {
-            var s = Regex.Replace(Trim(text), @";\s*$", "");
+            var s = TrailingSemicolon.Replace(Trim(text), "");
             if (s.Length == 0) return Check<List<string>>.Success(new List<string>());
             return Guarded(() =>
             {
@@ -348,7 +396,7 @@ namespace FsmEditor.Core
             var output = new List<string>();
             foreach (var raw in (text ?? "").Split(','))
             {
-                var item = raw.Trim();
+                var item = JsWhitespace.Trim(raw);
                 if (item.Length == 0) continue;
                 var r = check(item);
                 if (!r.Ok) return Check<List<string>>.Fail(r.Error);
@@ -373,6 +421,6 @@ namespace FsmEditor.Core
             return double.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) * factor;
         }
 
-        private static string StripCall(string s) => Regex.Replace(s, @"\s*\(.*$", "");
+        private static string StripCall(string s) => CallTail.Replace(s, "");
     }
 }

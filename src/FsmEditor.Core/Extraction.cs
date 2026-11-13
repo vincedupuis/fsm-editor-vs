@@ -48,7 +48,7 @@ namespace FsmEditor.Core
         public static string ProposedName(FsmModel model, IEnumerable<string> selected)
         {
             var states = ExtractedRoots(model, selected).Where(v => v.Type == VertexType.State).ToList();
-            var name = states.Count == 1 ? states[0].Name.Trim() : "";
+            var name = states.Count == 1 ? JsWhitespace.Trim(states[0].Name) : "";
             return name.Length > 0 ? name : "Submachine";
         }
 
@@ -266,7 +266,7 @@ namespace FsmEditor.Core
             // Default entry: the target of the new machine's initial transition, when it has no guard or effect.
             var initial = machineVertices.FirstOrDefault(v => v.Type == VertexType.Initial && v.Parent == region.Id);
             var initialOut = initial != null ? machineTransitions.Where(t => t.Source == initial.Id).ToList() : new List<Transition>();
-            var defaultTarget = initialOut.Count == 1 && initialOut[0].Guard.Trim().Length == 0 && initialOut[0].Effect.Trim().Length == 0
+            var defaultTarget = initialOut.Count == 1 && JsWhitespace.Trim(initialOut[0].Guard).Length == 0 && JsWhitespace.Trim(initialOut[0].Effect).Length == 0
                 ? initialOut[0].Target : null;
 
             // By inner target: the reference on the submachine state that incoming transitions go to.

@@ -116,6 +116,9 @@ namespace FsmEditor.Core.Tests
             Assert.Equal(1762855323500, TraceFormats.ParseTime("1762855323.5"));
             Assert.Equal(1762855323500, TraceFormats.ParseTime("1762855323500"));
             Assert.Null(TraceFormats.ParseTime("soon"));
+            // Digits are ASCII digits, as in JavaScript: others don't make a time (nor an exception).
+            Assert.Null(TraceFormats.ParseTime("１０:０２:０３"));
+            Assert.Null(TraceFormats.ParseTime("١٧٦٢٨٥٥٣٢٣"));
         }
 
         [Fact]
@@ -394,6 +397,25 @@ namespace FsmEditor.Core.Tests
                 "No state machine named 'Gate' in the workspace (Gate).",
                 "Order has no submachine state 'Nope' (Order.Nope).",
                 "2 records designate nothing in their state machine (shown crossed out).",
+            }, s.Problems);
+            Directory.Delete(dir, true);
+        }
+
+        [Fact]
+        public void ReportsASubmachineHrefThatIsNotAPath()
+        {
+            var dir = TempDir();
+            var gate = new FsmModel { Id = "sm", Name = "Gate", Regions = { new Region { Id = "r_root" } } };
+            gate.Vertices.Add(new Vertex { Id = "s", Type = VertexType.State, Name = "Sub", Parent = "r_root", W = 10, H = 10, Submachine = "a%00b.fsm#sm" });
+            var path = Path.Combine(dir, "x.log");
+            File.WriteAllText(path, "fsm Gate.Sub enter a A\n");
+            var s = new TraceSession();
+            s.SetMachines(new[] { TraceMachine.Of(Path.Combine(dir, "Gate.fsm"), gate) }, _ => null);
+            s.ReadNew(s.Open(path));
+            Assert.Equal(new[]
+            {
+                "The submachine of Gate.Sub (a%00b.fsm) cannot be read (Gate.Sub).",
+                "1 record designates nothing in their state machine (shown crossed out).",
             }, s.Problems);
             Directory.Delete(dir, true);
         }
