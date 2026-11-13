@@ -448,7 +448,9 @@ namespace FsmEditor.Core
             foreach (var para in text.Split('\n'))
             {
                 var line = "";
-                foreach (var word in para.TrimEnd('\r').Split(' '))
+                // One \r, as replace(/\r$/, '') does in the other editions.
+                var p = para.EndsWith("\r", StringComparison.Ordinal) ? para.Substring(0, para.Length - 1) : para;
+                foreach (var word in p.Split(' '))
                 {
                     var candidate = line.Length > 0 ? line + " " + word : word;
                     if (line.Length == 0 || measure(candidate) <= width)

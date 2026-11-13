@@ -1263,11 +1263,18 @@ namespace FsmEditor.Editor
         protected override void OnLostMouseCapture(MouseEventArgs e)
         {
             base.OnLostMouseCapture(e);
-            if (_drag?.Kind == DragKind.Pan)
+            if (_drag == null || S == null) return;
+            if (_drag.Kind == DragKind.Pan)
             {
                 _drag = null;
                 Cursor = null;
+                return;
             }
+            // Capture taken away mid-drag (another window activated): the button release won't come here, and the
+            // drag would go on following the pointer. It is cancelled, as Esc does.
+            CancelDrag();
+            InvalidateVisual();
+            _editor.RenderStatus();
         }
 
         private void DoubleClick(PointD p)

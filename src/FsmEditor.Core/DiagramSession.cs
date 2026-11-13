@@ -501,7 +501,8 @@ namespace FsmEditor.Core
                 return;
             }
             (t.Source, t.Target) = (t.Target, t.Source);
-            t.Points.Reverse();
+            // A self-transition loop's bend points are its corners, in drawing order: reversed, they would reshape it.
+            if (!Geometry.IsLoop(Index, t)) t.Points.Reverse();
             Commit();
         }
 

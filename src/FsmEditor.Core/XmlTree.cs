@@ -71,7 +71,9 @@ namespace FsmEditor.Core
         /// and accepts any name the diagram editors may write.
         /// </summary>
         public static XmlElem Parse(string text, IReadOnlyDictionary<string, string> canonical) =>
-            Resolve(new Reader(text).Document(), new Dictionary<string, string>(), canonical);
+            // Line ends as XML 1.0 (2.11) has them read: \r\n and a lone \r become \n (a &#13; reference still gives \r).
+            // Kept, a file with CRLF line ends would gain a \r in multi-line text on each save.
+            Resolve(new Reader(text.Replace("\r\n", "\n").Replace('\r', '\n')).Document(), new Dictionary<string, string>(), canonical);
 
         private sealed class Raw
         {

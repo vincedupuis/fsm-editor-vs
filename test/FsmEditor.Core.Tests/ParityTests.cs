@@ -174,6 +174,17 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
+        public void InfiniteShapeBoundsCountAsSizesThenReadAsZero()
+        {
+            // +"1e400" || 0 is Infinity in xmi.ts, so the state keeps its width instead of getting the default size;
+            // the JSON the other editions then go through makes the infinite height 0.
+            var xmi = Xmi.ToXmi(FsmModel.CreateDefault("M"))
+                .Replace("x=\"160\" y=\"60\" width=\"140\" height=\"60\"", "x=\"160\" y=\"60\" width=\"100\" height=\"1e400\"");
+            var idle = Xmi.FromXmi(xmi).Vertices.Single(v => v.Id == "v_idle");
+            Assert.Equal((100.0, 0.0), (idle.W, idle.H));
+        }
+
+        [Fact]
         public void ItemTemplateIsTheDefaultMachine()
         {
             var template = Read(Path.Combine(AppContext.BaseDirectory, "templates", "StateMachine.fsm"));

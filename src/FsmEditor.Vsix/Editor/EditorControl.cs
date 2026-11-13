@@ -405,6 +405,8 @@ namespace FsmEditor.Editor
             try
             {
                 xmi = Xmi.ToXmi(result.Machine);
+                // The edited machine must be writable too, before the new file is created (as in the VS Code edition).
+                Xmi.ToXmi(result.Parent);
             }
             catch (XmiException e)
             {

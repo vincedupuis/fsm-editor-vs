@@ -630,7 +630,7 @@ namespace FsmEditor.Core
                     var b = Kid(el, "bounds");
                     if (type == "umldi:UMLShape" && b != null)
                     {
-                        var box = new RectD(Num.Parse(b.Attr("x")), Num.Parse(b.Attr("y")), Num.Parse(b.Attr("width")), Num.Parse(b.Attr("height")));
+                        var box = new RectD(Bound(b.Attr("x")), Bound(b.Attr("y")), Bound(b.Attr("width")), Bound(b.Attr("height")));
                         if (byId.TryGetValue(target, out var v))
                         {
                             v.X = box.X;
@@ -667,10 +667,12 @@ namespace FsmEditor.Core
                 {
                     v.RegionLayout = Math.Abs(b.X - a.X) > Math.Abs(b.Y - a.Y) ? RegionLayout.Horizontal : RegionLayout.Vertical;
                 }
-                // Each region's own size, along the layout.
+                // Each region's own size, along the layout (an infinite one, none, as the other editions' JSON makes it).
                 foreach (var r in v.Regions)
                 {
-                    if (regionShapes.TryGetValue(r.Id, out var box)) r.Size = v.RegionLayout == RegionLayout.Horizontal ? box.W : box.H;
+                    if (!regionShapes.TryGetValue(r.Id, out var box)) continue;
+                    var size = v.RegionLayout == RegionLayout.Horizontal ? box.W : box.H;
+                    r.Size = double.IsInfinity(size) ? (double?)null : size;
                 }
             }
 
@@ -685,8 +687,22 @@ namespace FsmEditor.Core
                     v.Y = 40 + slot / 5 * 120;
                     slot++;
                 }
+                // Infinite bounds count as sizes above, then become 0 as the other editions' JSON makes them.
+                v.X = Finite(v.X);
+                v.Y = Finite(v.Y);
+                v.W = Finite(v.W);
+                v.H = Finite(v.H);
             }
             return model.Normalize();
         }
+
+        /// <summary>A bound of a shape as JavaScript's <c>+s || 0</c> reads it: missing or invalid gives 0, infinite stays infinite.</summary>
+        private static double Bound(string s)
+        {
+            var d = Num.ParseJs(s);
+            return double.IsNaN(d) ? 0 : d;
+        }
+
+        private static double Finite(double n) => double.IsInfinity(n) ? 0 : n;
     }
 }

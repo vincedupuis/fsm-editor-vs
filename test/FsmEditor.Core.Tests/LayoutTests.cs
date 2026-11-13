@@ -239,5 +239,14 @@ namespace FsmEditor.Core.Tests
             Assert.NotNull(s.CreateVertex("state", new PointD(500, 500)));
             Assert.Throws<XmiException>(() => Xmi.ToXmi(s.Model));
         }
+
+        [Fact]
+        public void WrappingDropsOneCarriageReturnPerLineAsTheOtherEditions()
+        {
+            // replace(/\r$/, '') in the other editions: a second \r stays, and counts in the width.
+            Assert.Equal(new[] { "a b", "c" }, Geometry.CommentLines("a b\r\nc", 100));
+            Assert.Equal(new[] { "x()\r", "y()" }, Geometry.CommentLines("x()\r\r\ny()", 100));
+            Assert.Equal(new[] { "entry /", "x()\r", "y()" }, Geometry.CommentLines("entry / x()\r\r\ny()", 74));
+        }
     }
 }

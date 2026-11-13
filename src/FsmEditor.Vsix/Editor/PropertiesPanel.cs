@@ -190,9 +190,19 @@ namespace FsmEditor.Editor
             var error = new TextBlock { Foreground = T.BrushOf(T.Error), FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0), Visibility = Visibility.Collapsed };
             var normalBorder = tb.BorderBrush;
             var committed = tb.Text;
+            void ClearError()
+            {
+                tb.ClearValue(Control.BorderBrushProperty);
+                error.Visibility = Visibility.Collapsed;
+            }
             void Apply()
             {
-                if (tb.Text == committed) return;
+                if (tb.Text == committed)
+                {
+                    // Back to the applied text after a refused one: no longer marked.
+                    ClearError();
+                    return;
+                }
                 var r = check(tb.Text);
                 if (!r.Ok)
                 {
@@ -201,8 +211,7 @@ namespace FsmEditor.Editor
                     error.Visibility = Visibility.Visible;
                     return;
                 }
-                tb.ClearValue(Control.BorderBrushProperty);
-                error.Visibility = Visibility.Collapsed;
+                ClearError();
                 committed = display(r.Value);
                 if (tb.Text != committed) tb.Text = committed;
                 onChange(r.Value);
@@ -639,7 +648,13 @@ namespace FsmEditor.Editor
                 var committed = tb.Text;
                 void Apply()
                 {
-                    if (tb.Text == committed) return;
+                    if (tb.Text == committed)
+                    {
+                        // Back to the applied label after a refused one: no longer marked.
+                        tb.ClearValue(Control.BorderBrushProperty);
+                        tb.ToolTip = null;
+                        return;
+                    }
                     var err = Labels.ApplyLabel(S.Model, t.Clone(), tb.Text, v);
                     tb.BorderBrush = err != null ? T.BrushOf(T.Error) : null;
                     if (err == null) tb.ClearValue(Control.BorderBrushProperty);

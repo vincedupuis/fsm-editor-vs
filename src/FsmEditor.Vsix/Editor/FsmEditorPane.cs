@@ -165,6 +165,13 @@ namespace FsmEditor.Editor
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             }
             if (generation != _generation || _control == null) return; // a newer sync is on its way
+            // The document changed meanwhile (a diagram edit written during validation): showing this older text would
+            // take the diagram back to it, and make the edit look like a change from outside. The change syncs again.
+            if (_buffer.CurrentSnapshot.GetText() != text)
+            {
+                ScheduleSync();
+                return;
+            }
             if (model == null) _echoText = null;
             else if (!echo)
             {
