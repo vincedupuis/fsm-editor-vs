@@ -130,7 +130,7 @@ Coordinates are rounded to 0.1 px when saved.
 Beyond the [text syntax](#text-syntax), the validator checks the following. ✕ is an error, ⚠ a warning, ℹ a hint. Rules marked *(tool)* aren't UML constraints: they come from the tool's own design or are quality checks.
 
 **Structure**
-- ✕ Ids are unique. Every vertex is in a known region, or on the border of a state when it's a connection point.
+- ✕ Ids are unique (vertices, transitions and regions). Every vertex is in a known region, or on the border of a state when it's a connection point.
 - ✕ A region contains at most one initial pseudostate, one shallow history and one deep history.
 - ⚠ History pseudostates belong inside a composite state.
 - ⚠ A composite state entered by default has an initial pseudostate in each region that contains states.
@@ -167,8 +167,8 @@ Beyond the [text syntax](#text-syntax), the validator checks the following. ✕ 
 - ⚠ Guards should be preconditions. Pre/postconditions on a behavioral machine are ignored.
 
 **Reachability** *(tool)*
-- ⚠ The top-level region has an initial pseudostate (unless the machine is entered through its own entry points).
-- ⚠ Every state can be entered, starting from the initial pseudostate and the machine's own entry points.
+- ⚠ Each top-level region that contains states has an initial pseudostate (unless the machine is entered through its own entry points).
+- ⚠ Every state can be entered, starting from the initial pseudostates of the top-level regions and the machine's own entry points.
 
 **Layout** *(tool, diagram editor only)*
 - ⚠ Elements don't overlap, except a state and what it contains. Comments, transitions and labels don't count, nor a point on its own state's border. The diagram editor shows this warning; the Error List and code generation don't.

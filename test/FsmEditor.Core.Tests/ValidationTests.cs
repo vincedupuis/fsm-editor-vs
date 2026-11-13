@@ -220,5 +220,46 @@ namespace FsmEditor.Core.Tests
             b.T(c2, "B", guard: "else");
             Assert.Empty(Cycles(b));
         }
+
+        [Fact]
+        public void ReportsARegionIdUsedAgainOnTheRegionId()
+        {
+            var b = Machine();
+            var s = b.State("S", regions: 1);
+            b.State("T", "S_r0");
+            b.Model.Vertices.First(v => v.Id == s).Regions[0].Id = "r_root";
+            var u = b.State("U", regions: 1);
+            b.Model.Vertices.First(v => v.Id == u).Regions[0].Id = "A";
+            var dup = Validation.Validate(b.Model).Where(i => i.Message.StartsWith("Duplicate id")).Select(i => $"{i.Id}|{i.Severity.ToString().ToLowerInvariant()}|{i.Message}");
+            Assert.Equal(new[] { "r_root|error|Duplicate id 'r_root'.", "A|error|Duplicate id 'A'." }, dup);
+        }
+
+        [Fact]
+        public void EntersTheInitialOfEveryTopLevelRegionAndWarnsAboutEachOneWithout()
+        {
+            var b = new ModelBuilder("M");
+            b.Model.Regions.AddRange(new[] { new Region { Id = "r2" }, new Region { Id = "r3" }, new Region { Id = "r4" } });
+            b.State("A");
+            b.Init("A");
+            b.State("B", "r2");
+            b.Init("B", "r2");
+            b.State("C", "r3");
+            b.Vertex(VertexType.Final, "r4");
+            Assert.Equal(
+                new[] { "|warning|The top-level region has no initial pseudostate.", "C|warning|State 'C' can never be entered." },
+                Validation.Validate(b.Model).Select(i => $"{i.Id}|{i.Severity.ToString().ToLowerInvariant()}|{i.Message}"));
+        }
+
+        [Fact]
+        public void WarnsOncePerTopLevelRegionWithStatesButNoInitialPseudostate()
+        {
+            var b = new ModelBuilder("M");
+            b.Model.Regions.Add(new Region { Id = "r2" });
+            b.State("A");
+            b.State("B", "r2");
+            Assert.Equal(
+                new[] { "The top-level region has no initial pseudostate.", "The top-level region has no initial pseudostate." },
+                Validation.Validate(b.Model).Select(i => i.Message));
+        }
     }
 }

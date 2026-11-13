@@ -853,12 +853,16 @@ namespace FsmEditor.Editor
             public int Index;
             public bool AtSource;
             public PointD Offset0;
+            /// <summary>Label: whether the transition had a label offset at the start.</summary>
+            public bool Had;
             public bool Additive;
             public HashSet<string> Base;
             /// <summary>A right-button pan, which opens the context menu when the pointer doesn't move.</summary>
             public bool RightButton;
             /// <summary>Move, resize and region drags: the layout at the start, restored at each step.</summary>
             public DiagramSession.LayoutSnapshot Snapshot;
+            /// <summary>Resize, region and bend point drags: the layout before the drag changed anything, restored by Esc.</summary>
+            public DiagramSession.LayoutSnapshot Undo;
             /// <summary>Move: the boxes of the roots at the start.</summary>
             public Dictionary<string, RectD> Boxes;
         }
@@ -936,9 +940,7 @@ namespace FsmEditor.Editor
                 return;
             }
 
-            // A composite state moves by its title bar: its regions are empty canvas, for a selection band.
-            if (hit.Kind == HitKind.Vertex && Geo.RegionRects(S.Model, S.Index.Vertex(hit.Id)).Any(r => r.Rect.Contains(p))) hit = new Hit { Kind = HitKind.Empty };
-
+            hit = InRegionAsEmpty(hit, p);
             switch (hit.Kind)
             {
                 case HitKind.Handle:
@@ -946,17 +948,22 @@ namespace FsmEditor.Editor
                     if (hit.Handle == "sep")
                     {
                         var s = S.Index.Vertex(hit.Id);
-                        _drag = new DragState { Kind = DragKind.Region, Vertex = s, Index = hit.Index, Start = p, Snapshot = S.BeginLayoutDrag(s) };
+                        var undo = S.Snapshot();
+                        _drag = new DragState { Kind = DragKind.Region, Vertex = s, Index = hit.Index, Start = p, Snapshot = S.BeginLayoutDrag(s), Undo = undo };
                         break;
                     }
                     var v = S.Index.Vertex(S.Selection.First());
                     if (v == null) break;
-                    if (hit.Handle.StartsWith("resize-")) _drag = new DragState { Kind = DragKind.Resize, Corner = hit.Handle.Substring(7), Vertex = v, Start = p, X0 = v.X, Y0 = v.Y, W0 = v.W, H0 = v.H, Snapshot = S.BeginLayoutDrag(v) };
+                    if (hit.Handle.StartsWith("resize-"))
+                    {
+                        var undo = S.Snapshot();
+                        _drag = new DragState { Kind = DragKind.Resize, Corner = hit.Handle.Substring(7), Vertex = v, Start = p, X0 = v.X, Y0 = v.Y, W0 = v.W, H0 = v.H, Snapshot = S.BeginLayoutDrag(v), Undo = undo };
+                    }
                     else StartConnect(v, p);
                     break;
                 }
                 case HitKind.Waypoint:
-                    _drag = new DragState { Kind = DragKind.Waypoint, Transition = S.Index.Transition(hit.Id), Index = hit.Index };
+                    _drag = new DragState { Kind = DragKind.Waypoint, Transition = S.Index.Transition(hit.Id), Index = hit.Index, Undo = S.Snapshot() };
                     break;
                 case HitKind.End:
                     _drag = new DragState { Kind = DragKind.Reconnect, Transition = S.Index.Transition(hit.Id), AtSource = hit.AtSource, Cur = p };
@@ -965,7 +972,7 @@ namespace FsmEditor.Editor
                 {
                     var t = S.Index.Transition(hit.Id);
                     S.Selection = new HashSet<string> { t.Id };
-                    _drag = new DragState { Kind = DragKind.Label, Transition = t, Start = p, Offset0 = t.LabelOffset ?? new PointD(0, 0) };
+                    _drag = new DragState { Kind = DragKind.Label, Transition = t, Start = p, Offset0 = t.LabelOffset ?? new PointD(0, 0), Had = t.LabelOffset != null };
                     _editor.RenderProps();
                     break;
                 }
@@ -999,6 +1006,37 @@ namespace FsmEditor.Editor
             if (_drag != null) CaptureMouse();
             InvalidateVisual();
             _editor.RenderStatus();
+        }
+
+        /// <summary>
+        /// A composite state moves by its title bar: its regions are empty canvas, for a selection band and for a
+        /// double-click adding a state.
+        /// </summary>
+        private Hit InRegionAsEmpty(Hit hit, PointD p) =>
+            hit.Kind == HitKind.Vertex && Geo.RegionRects(S.Model, S.Index.Vertex(hit.Id)).Any(r => r.Rect.Contains(p)) ? new Hit { Kind = HitKind.Empty } : hit;
+
+        /// <summary>Ends the drag without committing it: what it changed goes back to how it was when it started.</summary>
+        private void CancelDrag()
+        {
+            var d = _drag;
+            _drag = null;
+            if (IsMouseCaptured) ReleaseMouseCapture();
+            Cursor = Tool != null ? Cursors.Cross : null;
+            var layout = d.Undo ?? d.Snapshot;
+            if (layout != null) S.Restore(layout);
+            switch (d.Kind)
+            {
+                case DragKind.Label:
+                    d.Transition.LabelOffset = d.Had ? d.Offset0 : (PointD?)null;
+                    break;
+                case DragKind.Pan:
+                    SetView(d.ViewX0, d.ViewY0, Zoom);
+                    break;
+                case DragKind.Band:
+                    S.Selection = new HashSet<string>(d.Base);
+                    _editor.RenderProps();
+                    break;
+            }
         }
 
         private void StartConnect(Vertex source, PointD p) =>
@@ -1236,7 +1274,8 @@ namespace FsmEditor.Editor
         {
             if (Tool != null) return;
             S.Reindex();
-            var hit = HitTest(p);
+            // Inside a composite state's region: a new state in that region (its title bar still edits its name).
+            var hit = InRegionAsEmpty(HitTest(p), p);
             switch (hit.Kind)
             {
                 case HitKind.Waypoint:
@@ -1488,9 +1527,7 @@ namespace FsmEditor.Editor
                 case Key.Escape:
                     if (_drag != null)
                     {
-                        if (_drag.Snapshot != null) S.Restore(_drag.Snapshot);
-                        _drag = null;
-                        if (IsMouseCaptured) ReleaseMouseCapture();
+                        CancelDrag();
                         InvalidateVisual();
                     }
                     else if (Tool != null)

@@ -534,7 +534,7 @@ namespace FsmEditor.Editor
             {
                 Add(TextField("Name", v.Name, value =>
                 {
-                    v.Name = value.Trim();
+                    v.Name = JsWhitespace.Trim(value);
                     Commit();
                 }));
             }
@@ -602,8 +602,8 @@ namespace FsmEditor.Editor
                     var committed = region.Name;
                     void Apply()
                     {
-                        if (tb.Text.Trim() == committed) return;
-                        committed = region.Name = tb.Text.Trim();
+                        if (JsWhitespace.Trim(tb.Text) == committed) return;
+                        committed = region.Name = JsWhitespace.Trim(tb.Text);
                         Commit();
                     }
                     tb.LostKeyboardFocus += (s, e) => Apply();
@@ -702,7 +702,7 @@ namespace FsmEditor.Editor
                 if (why.Length > 0) Add(Muted(why));
                 Add(TextField("Referenced point id", v.Ref, value =>
                     {
-                        v.Ref = value.Trim();
+                        v.Ref = JsWhitespace.Trim(value);
                         Commit();
                     }),
                     SelectField("Direction", KindText(v.PointKind), new[] { ("entry", "Entry point"), ("exit", "Exit point") }, value =>

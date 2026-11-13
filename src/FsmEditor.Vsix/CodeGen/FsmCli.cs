@@ -118,6 +118,9 @@ namespace FsmEditor.CodeGen
 
         public static string CommandLine(string cli, IEnumerable<string> args) => string.Join(" ", new[] { Quote(cli) }.Concat(args.Select(Quote)));
 
+        /// <summary>How long a run may take before its process is killed (as in the other editions).</summary>
+        private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(5);
+
         public static async Task<CliResult> RunAsync(string cli, IReadOnlyList<string> args, string workingDirectory)
         {
             var result = new CliResult();
@@ -140,11 +143,25 @@ namespace FsmEditor.CodeGen
                 process.Start();
                 var stdout = process.StandardOutput.ReadToEndAsync();
                 var stderr = process.StandardError.ReadToEndAsync();
-                await Task.WhenAll(stdout, stderr, exited.Task).ConfigureAwait(false);
+                var finished = Task.WhenAll(stdout, stderr, exited.Task);
+                var timedOut = await Task.WhenAny(finished, Task.Delay(Timeout)).ConfigureAwait(false) != finished;
+                if (timedOut)
+                {
+                    try
+                    {
+                        process.Kill();
+                    }
+                    catch (Exception e) when (e is InvalidOperationException || e is System.ComponentModel.Win32Exception)
+                    {
+                        // exited meanwhile
+                    }
+                }
+                await finished.ConfigureAwait(false);
                 process.WaitForExit();
-                result.ExitCode = process.ExitCode;
+                result.ExitCode = timedOut ? -1 : process.ExitCode;
                 result.Output.AddRange(Lines(await stdout.ConfigureAwait(false)));
                 result.Errors.AddRange(Lines(await stderr.ConfigureAwait(false)));
+                if (timedOut) result.Errors.Add($"{Path.GetFileNameWithoutExtension(cli)} did not finish within 5 minutes.");
             }
             foreach (var line in result.Output)
             {

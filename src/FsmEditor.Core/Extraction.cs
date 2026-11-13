@@ -273,12 +273,16 @@ namespace FsmEditor.Core
             var entryRefFor = new Dictionary<string, string>();
             // By outer target: the new machine's exit point that outgoing transitions go to.
             var exitFor = new Dictionary<string, string>();
+            var naming = new HashSet<Vertex>();
             string TargetName(Vertex v)
             {
                 if (v == null) return "";
                 if (v.Type == VertexType.ConnectionPointRef)
                 {
+                    // A reference whose parent id is its own (ids used twice in a file edited by hand) would recurse forever.
+                    if (!naming.Add(v)) return "";
                     var owner = TargetName(ix.Vertex(v.Parent));
+                    naming.Remove(v);
                     return owner.Length > 0 ? owner : "Point";
                 }
                 var id = Identifier(v.Name);

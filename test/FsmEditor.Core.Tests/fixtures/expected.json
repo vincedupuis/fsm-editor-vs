@@ -533,6 +533,35 @@
           "message": "'D' has several completion transitions without triggers or guards."
         }
       ]
+    },
+    "regionids": {
+      "issues": [
+        {
+          "id": "rx",
+          "severity": "error",
+          "message": "Duplicate id 'rx'."
+        },
+        {
+          "id": "B",
+          "severity": "error",
+          "message": "Duplicate id 'B'."
+        },
+        {
+          "id": "t1",
+          "severity": "error",
+          "message": "Duplicate id 't1'."
+        },
+        {
+          "id": "",
+          "severity": "warning",
+          "message": "The top-level region has no initial pseudostate."
+        },
+        {
+          "id": "C",
+          "severity": "warning",
+          "message": "State 'C' can never be entered."
+        }
+      ]
     }
   },
   "grammar": [

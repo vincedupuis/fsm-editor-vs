@@ -198,7 +198,19 @@ namespace FsmEditor.Editor
             if (_buffer == null) return;
             var snapshot = _buffer.CurrentSnapshot;
             var old = snapshot.GetText();
-            var xmi = Xmi.ToXmi(model);
+            string xmi;
+            try
+            {
+                xmi = Xmi.ToXmi(model);
+            }
+            catch (XmiException e)
+            {
+                _control.Toast($"The change could not be saved: {e.Message}");
+                // Back to what the document holds.
+                _echoText = null;
+                ScheduleSync();
+                return;
+            }
             // Keep the file's line ends (Git may check files out with CRLF).
             if (old.Contains("\r\n")) xmi = xmi.Replace("\n", "\r\n");
             _echoText = xmi;

@@ -797,7 +797,8 @@ namespace FsmEditor.Core
         {
             if (Index.IsBorderVertex(v)) return;
             var s = RegionOwnerOf(v.Parent);
-            if (s == null) return;
+            // A state in its own regions (a region id used twice in a file edited by hand) would grow forever.
+            if (s == null || s == v || Index.IsInside(s, v.Id)) return;
             var i = s.Regions.FindIndex(r => r.Id == v.Parent);
             var R = RectsOf(s)[i].Rect;
             double Gap(double g) => old.HasValue ? Math.Min(FitMargin, g) : FitMargin;
@@ -1340,6 +1341,8 @@ namespace FsmEditor.Core
             if (at is PointD point)
             {
                 var roots = vertices.Where(v => !map.ContainsKey(v.Parent)).ToList();
+                // Parents that are the ids of copied transitions (crafted clipboard text): no root to place.
+                if (roots.Count == 0) return;
                 offX = Geometry.Snap(point.X) - roots.Min(v => v.X);
                 offY = Geometry.Snap(point.Y) - roots.Min(v => v.Y);
                 target = Geometry.RegionAt(Index, point, new HashSet<string>());
@@ -1373,7 +1376,7 @@ namespace FsmEditor.Core
                     // Pasted without its state: on that state's border when it still exists.
                     var state = Index.Vertex(v.Parent);
                     if (state == null) continue;
-                    if (at.HasValue) Geometry.SnapToBorder(v, state, v.Center);
+                    Geometry.SnapToBorder(v, state, v.Center);
                 }
                 else if (at.HasValue && v.Type != VertexType.EntryPoint && v.Type != VertexType.ExitPoint)
                 {

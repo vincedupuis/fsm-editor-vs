@@ -380,6 +380,30 @@ namespace FsmEditor.Core
         public static double R1(double n) => Math.Floor(n * 10 + 0.5) / 10;
 
         /// <summary>
+        /// JavaScript's <c>Math.hypot(a, b)</c> as V8 computes it (scaled by the larger value, with Kahan summation),
+        /// which differs from <c>Math.Sqrt(a * a + b * b)</c> in the last bit for many values.
+        /// </summary>
+        public static double Hypot(double a, double b)
+        {
+            a = Math.Abs(a);
+            b = Math.Abs(b);
+            if (double.IsInfinity(a) || double.IsInfinity(b)) return double.PositiveInfinity;
+            if (double.IsNaN(a) || double.IsNaN(b)) return double.NaN;
+            var max = Math.Max(a, b);
+            if (max == 0) return 0;
+            double sum = 0, compensation = 0;
+            foreach (var x in new[] { a, b })
+            {
+                var r = x / max;
+                var summand = r * r - compensation;
+                var preliminary = sum + summand;
+                compensation = preliminary - sum - summand;
+                sum = preliminary;
+            }
+            return Math.Sqrt(sum) * max;
+        }
+
+        /// <summary>
         /// The text JavaScript's <c>String(n)</c> gives: the shortest digits that read back
         /// as <paramref name="n"/>, <c>60</c>, <c>12.5</c>, <c>1e-7</c>, <c>1.5e+21</c>; <c>-0</c> gives <c>0</c>.
         /// NaN and infinities give <c>0</c>. Computed exactly, so it doesn't depend on the
@@ -472,8 +496,48 @@ namespace FsmEditor.Core
             return k == 1 ? d + tail : d.Substring(0, 1) + "." + d.Substring(1) + tail;
         }
 
-        /// <summary>Parses a number like JavaScript's unary plus would for XMI attributes (invalid gives 0).</summary>
-        public static double Parse(string s) =>
-            double.TryParse(JsWhitespace.Trim(s), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && !double.IsNaN(d) ? d : 0;
+        /// <summary>
+        /// Parses a number like JavaScript's <c>+s || 0</c> does for XMI attributes (missing or invalid gives 0), infinite
+        /// ones giving 0 too, as they do once the other editions' JSON has made them null.
+        /// </summary>
+        public static double Parse(string s)
+        {
+            var d = ParseJs(s);
+            return double.IsNaN(d) || double.IsInfinity(d) ? 0 : d;
+        }
+
+        /// <summary>
+        /// JavaScript's unary plus (<c>+s</c>): the number in <paramref name="s"/> once trimmed, 0 when that is empty,
+        /// NaN when <paramref name="s"/> is null (a missing attribute) or isn't a number.
+        /// </summary>
+        public static double ParseJs(string s)
+        {
+            if (s == null) return double.NaN;
+            var t = JsWhitespace.Trim(s);
+            if (t.Length == 0) return 0;
+            if (t.Length > 2 && t[0] == '0')
+            {
+                var radix = t[1] == 'x' || t[1] == 'X' ? 16 : t[1] == 'o' || t[1] == 'O' ? 8 : t[1] == 'b' || t[1] == 'B' ? 2 : 0;
+                if (radix > 0)
+                {
+                    double n = 0;
+                    for (var i = 2; i < t.Length; i++)
+                    {
+                        var c = t[i];
+                        var digit = c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'z' ? c - 'a' + 10 : c >= 'A' && c <= 'Z' ? c - 'A' + 10 : 99;
+                        if (digit >= radix) return double.NaN;
+                        n = n * radix + digit;
+                    }
+                    return n;
+                }
+            }
+            var body = t[0] == '+' || t[0] == '-' ? t.Substring(1) : t;
+            if (body == "Infinity") return t[0] == '-' ? double.NegativeInfinity : double.PositiveInfinity;
+            // A decimal literal: digits with an optional point and exponent (not the other forms .NET would accept).
+            if (!Regex.IsMatch(body, @"^(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$")) return double.NaN;
+            // .NET Framework refuses numbers too large for a double, which JavaScript reads as infinite.
+            return double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d
+                : t[0] == '-' ? double.NegativeInfinity : double.PositiveInfinity;
+        }
     }
 }

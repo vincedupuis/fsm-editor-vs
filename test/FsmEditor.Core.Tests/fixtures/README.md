@@ -20,7 +20,11 @@ validates state machines exactly the same way:
   region, a vertex in two groups, a missing member, a group without an id and
   groups of one) to check which groups reading keeps, and `edges.fsm`
   (completion transitions with and without guards, a comment text with spaces
-  and line breaks around it, a time trigger and an event whose ids would collide);
+  and line breaks around it, a time trigger and an event whose ids would collide),
+  and `regionids.fsm`, a copy of the umbrella's
+  `parity/models/handmade/RegionIds/RegionIds.fsm` (region ids used again by
+  another region, a vertex and a transition, and several top-level regions, one
+  without an initial pseudostate);
 - `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`.
 
 Regenerate them when the reference implementation changes its rules or format,

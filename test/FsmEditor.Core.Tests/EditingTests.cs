@@ -84,6 +84,22 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
+        public void ABorderPointPastedWithoutItsStateStaysOnTheBorder()
+        {
+            var s = NewSession();
+            var a = AddState(s, "a", s.RootRegion, 1000, 1100);
+            var ep = new Vertex { Id = "ep", Type = VertexType.EntryPoint, Name = "ep", Parent = a.Id, X = 993, Y = 1150, W = 14, H = 14 };
+            s.Model.Vertices.Add(ep);
+            s.Reindex();
+            s.Selection = new HashSet<string> { ep.Id };
+            // Without a paste position (duplicate, keyboard paste): offset, then back onto the border.
+            s.Paste(s.CollectSelection());
+            var copy = s.Index.Vertex(s.Selection.Single());
+            Assert.Equal(a.Id, copy.Parent);
+            Assert.Equal(new PointD(1020, 1160), copy.Center);
+        }
+
+        [Fact]
         public void PasteCopiesWithNewIdsAndOffset()
         {
             var s = Example("MediaPlayer.fsm");
@@ -273,6 +289,25 @@ namespace FsmEditor.Core.Tests
             Assert.Equal(Path.GetFullPath(other), file);
             Assert.Equal("sm", id);
             Assert.Equal("../Order.fsm#sm", Hrefs.For(other, doc, "sm"));
+        }
+
+        [Fact]
+        public void HrefsAcrossDrivesAndSharesAreThoseOfVsCode()
+        {
+            // As VS Code's relative() of the file URIs' paths (/d:/models, /e:/sub/Payment.fsm).
+            Assert.Equal("../../e:/sub/Payment.fsm", Hrefs.RelativeOfFull(@"D:\models", @"E:\sub\Payment.fsm"));
+            Assert.Equal("sub/Payment.fsm", Hrefs.RelativeOfFull(@"D:\models", @"d:\Models\sub\Payment.fsm"));
+            Assert.Equal("../../../e:/Payment.fsm", Hrefs.RelativeOfFull(@"D:\a\b", @"E:\Payment.fsm"));
+            Assert.Equal("../e:/Payment.fsm", Hrefs.RelativeOfFull(@"D:\", @"E:\Payment.fsm"));
+            // UNC: the server is the URI's authority, not a path segment.
+            Assert.Equal("../../other/Payment.fsm", Hrefs.RelativeOfFull(@"\\srv\share\models", @"\\srv\other\Payment.fsm"));
+            Assert.Equal("../../share/Payment.fsm", Hrefs.RelativeOfFull(@"D:\models", @"\\srv\share\Payment.fsm"));
+
+            Assert.Equal(@"E:\sub\Payment.fsm", Hrefs.JoinFull(@"D:\models", "../../e:/sub/Payment.fsm"));
+            Assert.Equal(@"D:\models\sub\Payment.fsm", Hrefs.JoinFull(@"D:\models", "sub/Payment.fsm"));
+            Assert.Equal(@"D:\Payment.fsm", Hrefs.JoinFull(@"D:\models", "../Payment.fsm"));
+            Assert.Equal(@"\\srv\other\Payment.fsm", Hrefs.JoinFull(@"\\srv\share\models", "../../other/Payment.fsm"));
+            Assert.Equal("/tmp/Payment.fsm", Hrefs.JoinFull("/tmp/models", "../../../tmp/Payment.fsm"));
         }
 
         [Fact]

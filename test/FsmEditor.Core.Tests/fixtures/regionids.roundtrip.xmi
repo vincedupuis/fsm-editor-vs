@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="sm_model" name="RegionIds">
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="sm" name="RegionIds">
+      <region xmi:type="uml:Region" xmi:id="r1" name="one">
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="i1" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="A" name="A"/>
+        <subvertex xmi:type="uml:State" xmi:id="D" name="D">
+          <region xmi:type="uml:Region" xmi:id="rx"/>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="E" name="E">
+          <region xmi:type="uml:Region" xmi:id="rx"/>
+        </subvertex>
+        <transition xmi:type="uml:Transition" xmi:id="t1" kind="external" source="i1" target="A"/>
+        <transition xmi:type="uml:Transition" xmi:id="t3" kind="external" source="A" target="D">
+          <trigger xmi:type="uml:Trigger" xmi:id="t3_trigger1" name="e" event="ev_e"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t4" kind="external" source="D" target="E">
+          <trigger xmi:type="uml:Trigger" xmi:id="t4_trigger1" name="e" event="ev_e"/>
+        </transition>
+      </region>
+      <region xmi:type="uml:Region" xmi:id="r2" name="two">
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="i2" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="B" name="B"/>
+        <subvertex xmi:type="uml:State" xmi:id="F" name="F">
+          <region xmi:type="uml:Region" xmi:id="B"/>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="G" name="G">
+          <region xmi:type="uml:Region" xmi:id="t1"/>
+        </subvertex>
+        <transition xmi:type="uml:Transition" xmi:id="t2" kind="external" source="i2" target="B"/>
+        <transition xmi:type="uml:Transition" xmi:id="t5" kind="external" source="B" target="F">
+          <trigger xmi:type="uml:Trigger" xmi:id="t5_trigger1" name="e" event="ev_e"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="t6" kind="external" source="F" target="G">
+          <trigger xmi:type="uml:Trigger" xmi:id="t6_trigger1" name="e" event="ev_e"/>
+        </transition>
+      </region>
+      <region xmi:type="uml:Region" xmi:id="r3" name="three">
+        <subvertex xmi:type="uml:State" xmi:id="C" name="C"/>
+      </region>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_e" name="e" signal="sig_e"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_e" name="e"/>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="RegionIds" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_i1" modelElement="i1">
+      <bounds xmi:type="dc:Bounds" x="20" y="20" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_A" modelElement="A">
+      <bounds xmi:type="dc:Bounds" x="80" y="0" width="120" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_D" modelElement="D">
+      <bounds xmi:type="dc:Bounds" x="260" y="0" width="160" height="120"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_rx" modelElement="rx">
+      <bounds xmi:type="dc:Bounds" x="260" y="24" width="160" height="96"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_E" modelElement="E">
+      <bounds xmi:type="dc:Bounds" x="460" y="0" width="160" height="120"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_rx" modelElement="rx">
+      <bounds xmi:type="dc:Bounds" x="460" y="24" width="160" height="96"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_i2" modelElement="i2">
+      <bounds xmi:type="dc:Bounds" x="20" y="220" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_B" modelElement="B">
+      <bounds xmi:type="dc:Bounds" x="260" y="224" width="160" height="96"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_F" modelElement="F">
+      <bounds xmi:type="dc:Bounds" x="260" y="200" width="160" height="120"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_B" modelElement="B">
+      <bounds xmi:type="dc:Bounds" x="260" y="224" width="160" height="96"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_G" modelElement="G">
+      <bounds xmi:type="dc:Bounds" x="460" y="200" width="160" height="120"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_t1" modelElement="t1">
+      <bounds xmi:type="dc:Bounds" x="460" y="224" width="160" height="96"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_C" modelElement="C">
+      <bounds xmi:type="dc:Bounds" x="80" y="400" width="120" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t1" modelElement="t1" source="di_i1" target="di_A">
+      <waypoint xmi:type="dc:Point" x="30" y="30"/>
+      <waypoint xmi:type="dc:Point" x="140" y="30"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t3" modelElement="t3" source="di_A" target="di_D">
+      <waypoint xmi:type="dc:Point" x="140" y="30"/>
+      <waypoint xmi:type="dc:Point" x="340" y="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t4" modelElement="t4" source="di_D" target="di_E">
+      <waypoint xmi:type="dc:Point" x="340" y="60"/>
+      <waypoint xmi:type="dc:Point" x="540" y="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t2" modelElement="t2" source="di_i2" target="di_B">
+      <waypoint xmi:type="dc:Point" x="30" y="230"/>
+      <waypoint xmi:type="dc:Point" x="340" y="272"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t5" modelElement="t5" source="di_B" target="di_F">
+      <waypoint xmi:type="dc:Point" x="340" y="272"/>
+      <waypoint xmi:type="dc:Point" x="340" y="260"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t6" modelElement="t6" source="di_F" target="di_G">
+      <waypoint xmi:type="dc:Point" x="340" y="260"/>
+      <waypoint xmi:type="dc:Point" x="540" y="260"/>
+    </ownedElement>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>

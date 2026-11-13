@@ -146,7 +146,9 @@ namespace FsmEditor.Core
         public static bool RegionWithin(ModelIndex ix, string id, string outer)
         {
             if (id == outer) return true;
-            for (var o = ix.RegionOwner.TryGetValue(id ?? "", out var s) ? s : null; o != null; o = ix.RegionOwner.TryGetValue(o.Parent ?? "", out var p) ? p : null)
+            // Each state once: a region id used twice (a file edited by hand) can make a state its own ancestor.
+            var seen = new HashSet<Vertex>();
+            for (var o = ix.RegionOwner.TryGetValue(id ?? "", out var s) ? s : null; o != null && seen.Add(o); o = ix.RegionOwner.TryGetValue(o.Parent ?? "", out var p) ? p : null)
             {
                 if (o.Parent == outer) return true;
             }

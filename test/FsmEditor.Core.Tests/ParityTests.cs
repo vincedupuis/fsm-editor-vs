@@ -22,7 +22,7 @@ namespace FsmEditor.Core.Tests
         public static IEnumerable<object[]> ExampleFiles() =>
             new[] { "MediaPlayer.fsm", "Order.fsm", "Payment.fsm" }.Select(f => new object[] { f });
 
-        public static IEnumerable<object[]> CaseNames() => new[] { "grammar", "structure", "protocol", "cycles", "colors", "loops", "regions", "groups", "edges" }.Select(c => new object[] { c });
+        public static IEnumerable<object[]> CaseNames() => new[] { "grammar", "structure", "protocol", "cycles", "colors", "loops", "regions", "groups", "edges", "regionids" }.Select(c => new object[] { c });
 
         private static string Read(string path) => File.ReadAllText(path).Replace("\r\n", "\n");
 
@@ -102,12 +102,24 @@ namespace FsmEditor.Core.Tests
         {
             Assert.Equal("My Machine.fsm", Hrefs.DecodeUri("My%20Machine.fsm"));
             Assert.Equal("café.fsm", Hrefs.DecodeUri("caf%C3%A9.fsm"));
-            Assert.Equal("a%23b%2Fc", Hrefs.DecodeUri("a%23b%2Fc"));
+            Assert.Equal("a#b%2Fc?", Hrefs.DecodeUri("a%23b%2Fc%3F"));
             Assert.Equal("café%zz", Hrefs.DecodeUri("caf%C3%A9%zz"));
             Assert.Equal("a%E0.fsm", Hrefs.DecodeUri("a%E0.fsm"));
             Assert.Equal("a%E0A.fsm", Hrefs.DecodeUri("a%E0%41.fsm"));
             Assert.Equal("a%C0%80%", Hrefs.DecodeUri("a%C0%80%"));
             Assert.Equal("sm", Hrefs.Resolve(Path.Combine(Examples, "M.fsm"), "a.fsm#sm#x").Id);
+        }
+
+        [Fact]
+        public void HrefsEncodeHashAndQuestionMarkInFileNamesAndDecodeThemBack()
+        {
+            foreach (var path in new[] { "sub/a#b?c.fsm", "My Machine.fsm", "café 50%.fsm", "a&b;c.fsm" })
+            {
+                var href = $"{Hrefs.EncodeUri(path)}#sm";
+                Assert.Equal(2, href.Split('#').Length);
+                Assert.Equal(path, Hrefs.DecodeUri(href.Split('#')[0]));
+            }
+            Assert.Equal("a%23b%3F.fsm", Hrefs.EncodeUri("a#b?.fsm"));
         }
 
         [Fact]
@@ -129,6 +141,36 @@ namespace FsmEditor.Core.Tests
             Assert.Equal(new[] { "", "after(1s)", "after_1s_" }, Xmi.FromXmi(xmi).Transitions.Select(t => string.Join(",", t.Triggers)));
             var ids = System.Text.RegularExpressions.Regex.Matches(xmi, "xmi:id=\"([^\"]*)\"").Cast<System.Text.RegularExpressions.Match>().Select(m => m.Groups[1].Value).ToList();
             Assert.Equal(ids.Count, ids.Distinct().Count());
+        }
+
+        [Fact]
+        public void LabelBoundsUseTheArithmeticOfTheOtherEditions()
+        {
+            // Halfway between (170, 130) and (43.3, 70), xmi.ts computes x = 106.64999999999999 (Math.hypot), so the
+            // label 123.5 to its right, 100 wide, starts at 180.1, not 180.2.
+            var model = FsmModel.CreateDefault("M");
+            model.Vertices[0].X = 33.3;
+            model.Vertices[0].Y = 60;
+            model.Vertices[1].X = 100;
+            model.Vertices[1].Y = 100;
+            model.Transitions[0].Source = "v_idle";
+            model.Transitions[0].Target = "v_init";
+            model.Transitions[0].LabelOffset = new PointD(123.5, 0);
+            var xmi = Xmi.ToXmi(model);
+            Assert.Contains("<bounds xmi:type=\"dc:Bounds\" x=\"180.1\" y=\"92\" width=\"100\" height=\"16\"/>", xmi);
+            Assert.Equal(new PointD(123.5, 0), Xmi.FromXmi(xmi).Transitions[0].LabelOffset);
+            Assert.Equal(5, Num.Hypot(3, -4));
+            // Math.hypot(1.5, 2.5) in JavaScript; Math.Sqrt(1.5 * 1.5 + 2.5 * 2.5) is 2.9154759474226504.
+            Assert.Equal(2.91547594742265, Num.Hypot(1.5, 2.5));
+
+            // Read as JavaScript reads them: a bound that is missing or not a number puts the label on the line along
+            // that axis (NaN, which the other editions' JSON turns into 0), and attributes are read like +x || 0.
+            var noWidth = xmi.Replace("x=\"180.1\" y=\"92\" width=\"100\"", "x=\"180.1\" y=\"92\"");
+            Assert.Equal(new PointD(0, 0), Xmi.FromXmi(noWidth).Transitions[0].LabelOffset);
+            Assert.Equal(16, Num.Parse("0x10"));
+            Assert.Equal(5, Num.Parse(" 5 "));
+            Assert.Equal(0, Num.Parse("5px"));
+            Assert.Equal(0, Num.Parse(null));
         }
 
         [Fact]

@@ -218,6 +218,7 @@ namespace FsmEditor.Core
         {
             private readonly string _s;
             private int _i;
+            private int _depth;
 
             public JsonReader(string s) => _s = s;
 
@@ -250,8 +251,14 @@ namespace FsmEditor.Core
             private object Value()
             {
                 var c = Peek();
-                if (c == '{') return Object();
-                if (c == '[') return Array();
+                if (c == '{' || c == '[')
+                {
+                    // Any text can be on the clipboard: deep nesting must not overflow the stack, which ends the process.
+                    if (++_depth > 256) throw new FormatException("Too deeply nested.");
+                    var nested = c == '{' ? (object)Object() : Array();
+                    _depth--;
+                    return nested;
+                }
                 if (c == '"') return String();
                 if (Word("true")) return true;
                 if (Word("false")) return false;

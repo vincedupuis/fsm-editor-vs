@@ -82,6 +82,8 @@ namespace FsmEditor.Editor
         private Border _window;
         private PropertiesPanel _windowProps;
         private string _windowId;
+        /// <summary>The theme the toolbar, toolbox and panels were built with.</summary>
+        private Theme _chromeTheme;
 
         public EditorControl(IEditorHost host)
         {
@@ -140,9 +142,22 @@ namespace FsmEditor.Editor
                 _toastTimer.Stop();
                 _toast.Visibility = Visibility.Collapsed;
             };
-            Theme.Changed += OnThemeChanged;
+            // Visual Studio unloads the content of a document tab that isn't shown, and loads it again when it is.
+            Loaded += (s, e) =>
+            {
+                Theme.Changed -= OnThemeChanged;
+                Theme.Changed += OnThemeChanged;
+                // The theme changed while the tab wasn't shown.
+                if (_chromeTheme != Theme.Current) OnThemeChanged(this, EventArgs.Empty);
+            };
             Unloaded += (s, e) => Theme.Changed -= OnThemeChanged;
-            Loaded += (s, e) => PanesChanged += OnOtherPanesChanged;
+            Loaded += (s, e) =>
+            {
+                PanesChanged -= OnOtherPanesChanged;
+                PanesChanged += OnOtherPanesChanged;
+                // Panels changed in another editor while this one wasn't shown.
+                OnOtherPanesChanged(null, EventArgs.Empty);
+            };
             Unloaded += (s, e) => PanesChanged -= OnOtherPanesChanged;
             foreach (var pane in new[] { _toolboxPane, _propsPane })
             {
@@ -386,7 +401,17 @@ namespace FsmEditor.Editor
             var name = _host.AskSubmachineName(Extraction.ProposedName(Session.Model, ids));
             if (name == null) return;
             var result = Extraction.Extract(Session.Model, ids, name, Hrefs.EncodeUri(name + ".fsm") + "#sm");
-            if (!_host.CreateMachineFile(name, Xmi.ToXmi(result.Machine))) return;
+            string xmi;
+            try
+            {
+                xmi = Xmi.ToXmi(result.Machine);
+            }
+            catch (XmiException e)
+            {
+                Toast(e.Message);
+                return;
+            }
+            if (!_host.CreateMachineFile(name, xmi)) return;
             Session.ReplaceModel(result.Parent);
             Session.Selection = new HashSet<string> { result.StateId };
             Session.Commit();
@@ -621,7 +646,7 @@ namespace FsmEditor.Editor
             var ix = Session?.Index;
             var v = ix?.Vertex(edit.Id);
             var t = ix?.Transition(edit.Id);
-            if (t != null && !edit.Cancelled && Labels.TransitionLabel(Session.Model, t) != text.Trim())
+            if (t != null && !edit.Cancelled && Labels.TransitionLabel(Session.Model, t) != JsWhitespace.Trim(text))
             {
                 var probe = t.Clone();
                 var err = Labels.ApplyLabel(Session.Model, probe, text, ix.Vertex(t.Source));
@@ -654,8 +679,8 @@ namespace FsmEditor.Editor
             }
             else
             {
-                if (v.Name == text.Trim()) return true;
-                v.Name = text.Trim();
+                if (v.Name == JsWhitespace.Trim(text)) return true;
+                v.Name = JsWhitespace.Trim(text);
             }
             Session.Commit();
             RenderProps();
@@ -821,6 +846,7 @@ namespace FsmEditor.Editor
         private void BuildChrome()
         {
             var th = Theme.Current;
+            _chromeTheme = th;
             Background = th.BrushOf(th.Background);
             TextElement.SetForeground(this, th.BrushOf(th.Foreground));
             BuildToolbar();

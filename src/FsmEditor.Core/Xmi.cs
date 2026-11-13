@@ -50,6 +50,26 @@ namespace FsmEditor.Core
 
         private static bool IsPseudoKind(VertexType t) => t.IsPseudostate();
 
+        /// <summary>
+        /// Point halfway along the polyline, for transition labels, computed as polylineMid of xmi.ts does (its own
+        /// formula and JavaScript's Math.hypot, not <see cref="Geometry.PolylineMid"/>), so the file stays byte-identical.
+        /// </summary>
+        private static PointD LabelMid(IReadOnlyList<PointD> pts)
+        {
+            double total = 0;
+            for (int i = 1; i < pts.Count; i++) total += Num.Hypot(pts[i].X - pts[i - 1].X, pts[i].Y - pts[i - 1].Y);
+            var half = total / 2;
+            for (int i = 1; i < pts.Count; i++)
+            {
+                var a = pts[i - 1];
+                var b = pts[i];
+                var len = Num.Hypot(b.X - a.X, b.Y - a.Y);
+                if (len >= half && len > 0) return new PointD(a.X + (b.X - a.X) * half / len, a.Y + (b.Y - a.Y) * half / len);
+                half -= len;
+            }
+            return pts[0];
+        }
+
         // ------------------------------------------------------------------ writing
 
         public static string ToXmi(FsmModel source)
@@ -169,6 +189,8 @@ namespace FsmEditor.Core
                     .Add((transitionsByRegion.TryGetValue(r.Id, out var ts) ? ts : new List<Transition>()).Select(TransitionNode).ToList());
             }
 
+            // States on the way down: a region id used again (a file edited by hand) can make a state its own descendant.
+            var writing = new HashSet<Vertex>();
             XNode VertexNode(Vertex v)
             {
                 if (v.Type == VertexType.Final) return new XNode("subvertex", ("xmi:type", "uml:FinalState"), ("xmi:id", v.Id), ("name", v.Name));
@@ -190,7 +212,10 @@ namespace FsmEditor.Core
                             new XNode(cp.PointKind == PointKind.Exit ? "exit" : "entry", ("href", $"{file}#{cp.Ref}"))));
                     }
                 }
+                // Failing like the VS Code edition (which runs out of stack), instead of overflowing it, which ends the process.
+                if (!writing.Add(v)) throw new XmiException($"State '{v.Id}' is inside one of its own regions.");
                 foreach (var r in v.Regions) node.Add(RegionNode(r));
+                writing.Remove(v);
                 if (v.Submachine.Length > 0) node.Add(new XNode("submachine", ("href", v.Submachine)));
                 return node;
             }
@@ -276,7 +301,7 @@ namespace FsmEditor.Core
                     .Add(pts.Select(p => new XNode("waypoint", ("xmi:type", "dc:Point"), ("x", Num.R1(p.X)), ("y", Num.R1(p.Y)))).ToList());
                 if (t.LabelOffset is PointD off)
                 {
-                    var (mid, _, _) = Geometry.PolylineMid(pts);
+                    var mid = LabelMid(pts);
                     var cx = mid.X + off.X;
                     var cy = mid.Y + off.Y;
                     edge.Add(new XNode("ownedElement", ("xmi:type", "umldi:UMLLabel"), ("xmi:id", $"di_{t.Id}_label"), ("modelElement", t.Id))
@@ -626,10 +651,12 @@ namespace FsmEditor.Core
                         var lb = Kid(label, "bounds");
                         if (lb != null && pts.Count >= 2)
                         {
-                            var (mid, _, _) = Geometry.PolylineMid(pts);
+                            var mid = LabelMid(pts);
+                            // A missing or invalid bound gives NaN, which the other editions' JSON turns into 0.
+                            double Offset(double n) => double.IsNaN(n) || double.IsInfinity(n) ? 0 : n;
                             t.LabelOffset = new PointD(
-                                Num.R1(Num.Parse(lb.Attr("x")) + Num.Parse(lb.Attr("width")) / 2 - mid.X),
-                                Num.R1(Num.Parse(lb.Attr("y")) + Num.Parse(lb.Attr("height")) / 2 - mid.Y));
+                                Offset(Num.R1(Num.ParseJs(lb.Attr("x")) + Num.ParseJs(lb.Attr("width")) / 2 - mid.X)),
+                                Offset(Num.R1(Num.ParseJs(lb.Attr("y")) + Num.ParseJs(lb.Attr("height")) / 2 - mid.Y)));
                         }
                     }
                 }

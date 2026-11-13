@@ -213,5 +213,31 @@ namespace FsmEditor.Core.Tests
             Assert.Null(ClipboardJson.TryRead("{\"fsmClipboard\":1,\"vertices\":[],\"text\":\"\\u0x12\"}"));
             Assert.NotNull(ClipboardJson.TryRead("{\"fsmClipboard\":1,\"vertices\":[],\"text\":\"\\u00e9\"}"));
         }
+
+        [Fact]
+        public void DeeplyNestedClipboardTextIsNotElements()
+        {
+            var deep = new string('[', 100000) + new string(']', 100000);
+            Assert.Null(ClipboardJson.TryRead("{\"fsmClipboard\":1,\"vertices\":" + deep + "}"));
+            // Crafted: the only vertex's parent is the id of a copied transition, so no copied vertex is a root.
+            var s = Nested();
+            var count = s.Model.Vertices.Count;
+            var data = ClipboardJson.TryRead("{\"fsmClipboard\":1,\"vertices\":[{\"id\":\"a\",\"type\":\"state\",\"parent\":\"t\"}],"
+                + "\"transitions\":[{\"id\":\"t\",\"source\":\"a\",\"target\":\"a\"}]}");
+            s.Paste(data, new PointD(10, 10));
+            Assert.Equal(count, s.Model.Vertices.Count);
+        }
+
+        [Fact]
+        public void AStateInItsOwnRegionNeitherGrowsForeverNorOverflowsTheWriter()
+        {
+            // A file edited by hand: state S reuses the id of the top-level region for its own region.
+            var m = new FsmModel { Id = "sm", Name = "T", Regions = { new Region { Id = "r0" } } };
+            m.Vertices.Add(State("S", "r0", 50, 50, 200, 100, "r0"));
+            m.Vertices.Add(State("A", "r0", 60, 90));
+            var s = new DiagramSession(m);
+            Assert.NotNull(s.CreateVertex("state", new PointD(500, 500)));
+            Assert.Throws<XmiException>(() => Xmi.ToXmi(s.Model));
+        }
     }
 }

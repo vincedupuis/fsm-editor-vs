@@ -42,9 +42,10 @@ namespace FsmEditor.Core
                 return !string.IsNullOrEmpty(n) ? $"'{n}'" : $"'{href}'";
             }
 
-            // Identity
+            // Identity (a region id used again can also put a state inside its own region)
+            var allRegions = model.Regions.Concat(model.Vertices.SelectMany(v => v.Regions)).ToList();
             var seen = new HashSet<string>();
-            foreach (var id in model.Vertices.Select(v => v.Id).Concat(model.Transitions.Select(t => t.Id)))
+            foreach (var id in model.Vertices.Select(v => v.Id).Concat(model.Transitions.Select(t => t.Id)).Concat(allRegions.Select(r => r.Id)))
             {
                 if (!seen.Add(id)) Add(id, Severity.Error, $"Duplicate id '{id}'.");
             }
@@ -89,7 +90,6 @@ namespace FsmEditor.Core
             }
 
             // Regions
-            var allRegions = model.Regions.Concat(model.Vertices.SelectMany(v => v.Regions)).ToList();
             foreach (var r in allRegions)
             {
                 var kids = ix.ChildrenOf(r.Id).ToList();
@@ -496,19 +496,23 @@ namespace FsmEditor.Core
 
         private static void CheckReachability(FsmModel model, ModelIndex ix, Action<string, Severity, string> add)
         {
-            var rootInitial = ix.InitialOf(model.Regions.Count > 0 ? model.Regions[0].Id : "");
+            // Every top-level region is entered when the machine starts.
+            var rootInitials = model.Regions.Select(r => ix.InitialOf(r.Id)).ToList();
             // The machine can also be entered through its own entry points (from a referencing submachine state).
             var machineEntries = model.Vertices
                 .Where(v => v.Type == VertexType.EntryPoint && model.Regions.Any(r => r.Id == v.Parent))
                 .ToList();
-            if (rootInitial == null && machineEntries.Count == 0)
+            if (machineEntries.Count == 0)
             {
-                if (model.Vertices.Any(v => v.Type == VertexType.State))
+                for (int i = 0; i < model.Regions.Count; i++)
                 {
-                    add("", Severity.Warning, "The top-level region has no initial pseudostate.");
+                    if (rootInitials[i] == null && ix.ChildrenOf(model.Regions[i].Id).Any(v => v.Type == VertexType.State))
+                    {
+                        add("", Severity.Warning, "The top-level region has no initial pseudostate.");
+                    }
                 }
-                return;
             }
+            if (rootInitials.All(v => v == null) && machineEntries.Count == 0) return;
             var reached = new HashSet<string>();
             var queue = new Queue<Vertex>();
             void Visit(Vertex v)
@@ -516,7 +520,7 @@ namespace FsmEditor.Core
                 if (v == null || !reached.Add(v.Id)) return;
                 queue.Enqueue(v);
             }
-            Visit(rootInitial);
+            rootInitials.ForEach(Visit);
             machineEntries.ForEach(Visit);
             while (queue.Count > 0)
             {
