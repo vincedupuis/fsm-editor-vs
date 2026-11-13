@@ -13,7 +13,7 @@ env:
   # Release of FSM Editor for VS Code whose `fsm` code generator the VSIX bundles.
   FSM_CLI_VERSION: 0.4.6
   # Release of fsm-generator (github.com/vincedupuis/fsm-generator), which runs the Jinja templates, the VSIX bundles.
-  FSM_GENERATOR_VERSION: 0.6.1
+  FSM_GENERATOR_VERSION: 0.6.2
 
 jobs:
   release:
