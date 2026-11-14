@@ -34,11 +34,12 @@ validates state machines exactly the same way:
 
 Regenerate them when the reference implementation changes its rules or format,
 from the umbrella repo: `node parity/fixtures.mjs` (needs `npm install` done in
-fsm-editor-vscode; `--vscode`, `--vs` and `--jb` point it at other checkouts).
-It bundles `src/xmi.ts`, `src/validation.ts` and `media/expressions.js` of the
-VS Code extension, rewrites `expected.json` and the `.roundtrip.xmi` files in
-both the Visual Studio and JetBrains fixtures, and copies the `<case>.fsm` files
-from the Visual Studio fixtures to the JetBrains ones. The grammar texts and the
+fsm-editor-vscode; `--vscode`, `--vs`, `--jb` and `--cli` point it at other
+checkouts). It bundles `src/xmi.ts`, `src/validation.ts` and
+`media/expressions.js` of the VS Code extension, rewrites `expected.json` and the
+`.roundtrip.xmi` files in the Visual Studio and JetBrains fixtures and in
+fsm-cli's (`tests/fixtures`, which also gets the VS Code examples), and copies
+the `<case>.fsm` files from the Visual Studio fixtures to the other two. The grammar texts and the
 case list are in the script; a new case is a `<case>.fsm` added to the Visual
 Studio fixtures and to the script's list, then to `ParityTests.cs` and
 `ParityTest.kt`.
