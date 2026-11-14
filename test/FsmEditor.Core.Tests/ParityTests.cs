@@ -22,7 +22,7 @@ namespace FsmEditor.Core.Tests
         public static IEnumerable<object[]> ExampleFiles() =>
             new[] { "MediaPlayer.fsm", "Order.fsm", "Payment.fsm" }.Select(f => new object[] { f });
 
-        public static IEnumerable<object[]> CaseNames() => new[] { "grammar", "structure", "protocol", "cycles", "colors", "loops", "regions", "groups", "edges", "regionids" }.Select(c => new object[] { c });
+        public static IEnumerable<object[]> CaseNames() => new[] { "grammar", "structure", "protocol", "cycles", "colors", "loops", "regions", "groups", "edges", "regionids", "settle" }.Select(c => new object[] { c });
 
         private static string Read(string path) => File.ReadAllText(path).Replace("\r\n", "\n");
 
@@ -46,6 +46,14 @@ namespace FsmEditor.Core.Tests
         {
             var text = Read(Path.Combine(Fixtures, name + ".fsm"));
             Assert.Equal(Read(Path.Combine(Fixtures, name + ".roundtrip.xmi")), Xmi.ToXmi(Xmi.FromXmi(text)));
+        }
+
+        [Theory]
+        [MemberData(nameof(CaseNames))]
+        public void OneSaveSettles(string name)
+        {
+            var saved = Read(Path.Combine(Fixtures, name + ".roundtrip.xmi"));
+            Assert.Equal(saved, Xmi.ToXmi(Xmi.FromXmi(saved)));
         }
 
         [Theory]
@@ -158,7 +166,9 @@ namespace FsmEditor.Core.Tests
             model.Transitions[0].LabelOffset = new PointD(123.5, 0);
             var xmi = Xmi.ToXmi(model);
             Assert.Contains("<bounds xmi:type=\"dc:Bounds\" x=\"180.1\" y=\"92\" width=\"100\" height=\"16\"/>", xmi);
-            Assert.Equal(new PointD(123.5, 0), Xmi.FromXmi(xmi).Transitions[0].LabelOffset);
+            // Read back without rounding (123.45 in xmi.ts too), so that it gives the same box again.
+            Assert.Equal(new PointD(123.45, 0), Xmi.FromXmi(xmi).Transitions[0].LabelOffset);
+            Assert.Equal(xmi, Xmi.ToXmi(Xmi.FromXmi(xmi)));
             Assert.Equal(5, Num.Hypot(3, -4));
             // Math.hypot(1.5, 2.5) in JavaScript; Math.Sqrt(1.5 * 1.5 + 2.5 * 2.5) is 2.9154759474226504.
             Assert.Equal(2.91547594742265, Num.Hypot(1.5, 2.5));

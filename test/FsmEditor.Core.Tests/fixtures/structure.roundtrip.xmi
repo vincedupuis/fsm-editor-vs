@@ -35,10 +35,7 @@ world</body>
         <subvertex xmi:type="uml:FinalState" xmi:id="fin"/>
         <subvertex xmi:type="uml:Pseudostate" xmi:id="term" kind="terminate"/>
         <subvertex xmi:type="uml:Pseudostate" xmi:id="j2" kind="junction"/>
-        <subvertex xmi:type="uml:State" xmi:id="s1" name="Dup">
-          <connectionPoint xmi:type="uml:Pseudostate" xmi:id="ep" kind="entryPoint"/>
-          <connectionPoint xmi:type="uml:Pseudostate" xmi:id="ep" kind="entryPoint"/>
-        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="s1" name="Dup"/>
         <transition xmi:type="uml:Transition" xmi:id="t1" kind="external" source="i1" target="s1">
           <guard xmi:type="uml:Constraint" xmi:id="t1_guard">
             <specification xmi:type="uml:OpaqueExpression" xmi:id="t1_guard_spec">
@@ -116,6 +113,9 @@ world</body>
     <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_ep" modelElement="ep">
       <bounds xmi:type="dc:Bounds" x="220" y="40" width="16" height="16"/>
     </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_ep" modelElement="ep">
+      <bounds xmi:type="dc:Bounds" x="0" y="0" width="16" height="16"/>
+    </ownedElement>
     <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_s2" modelElement="s2">
       <bounds xmi:type="dc:Bounds" x="200" y="10" width="140" height="60"/>
     </ownedElement>
@@ -157,9 +157,6 @@ world</body>
     </ownedElement>
     <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_s1" modelElement="s1">
       <bounds xmi:type="dc:Bounds" x="0" y="0" width="140" height="60"/>
-    </ownedElement>
-    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_ep" modelElement="ep">
-      <bounds xmi:type="dc:Bounds" x="0" y="0" width="16" height="16"/>
     </ownedElement>
     <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_mp" modelElement="mp">
       <bounds xmi:type="dc:Bounds" x="0" y="0" width="16" height="16"/>

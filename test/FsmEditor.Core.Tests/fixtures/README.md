@@ -24,8 +24,13 @@ validates state machines exactly the same way:
   and the model hash line that files saved by earlier versions end with, which
   reading ignores and writing leaves out), and `regionids.fsm` (region ids used
   again by another region, a vertex and a transition, and several top-level
-  regions, one without an initial pseudostate);
-- `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`.
+  regions, one without an initial pseudostate), and `settle.fsm`, written by an
+  earlier version and then edited by hand (a composite state without its region
+  shapes, a transition in an outer region, a coordinate off the 0.1 px grid, an
+  infinite width, and a label that the earlier writer moved by 0.1 px on each
+  save), whose round trip must save to itself, as every case's must;
+- `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`, which saves to itself:
+  `toXmi(fromXmi(<case>.roundtrip.xmi))` gives it back unchanged.
 
 Regenerate them when the reference implementation changes its rules or format,
 from the umbrella repo: `node parity/fixtures.mjs` (needs `npm install` done in

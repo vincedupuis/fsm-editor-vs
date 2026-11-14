@@ -562,6 +562,30 @@
           "message": "State 'C' can never be entered."
         }
       ]
+    },
+    "settle": {
+      "issues": [
+        {
+          "id": "Stacked",
+          "severity": "warning",
+          "message": "State 'Stacked' can never be entered."
+        },
+        {
+          "id": "Wide",
+          "severity": "warning",
+          "message": "State 'Wide' can never be entered."
+        },
+        {
+          "id": "C",
+          "severity": "warning",
+          "message": "State 'C' can never be entered."
+        },
+        {
+          "id": "In",
+          "severity": "warning",
+          "message": "State 'In' can never be entered."
+        }
+      ]
     }
   },
   "grammar": [

@@ -21,6 +21,12 @@ namespace FsmEditor.Core
     ///   UMLLabel whose center is the middle of those waypoints moved by the
     ///   label offset;
     /// - the region layout of an orthogonal state follows from its region shapes;
+    /// - coordinates are rounded to 0.1 px, and what is derived from them (centers,
+    ///   region shapes, the middle of an edge) is computed from the rounded values,
+    ///   the region sizes as the file holds them: reading a written file and writing
+    ///   it again gives the same text;
+    /// - the diagram lists the shapes, edges and styles in the order reading the
+    ///   model gives its elements (document order), each element written once;
     /// - colors and groups are kept in one xmi:Extension at the end of the diagram,
     ///   with a &lt;style element="id" color="#rrggbb" entry="#rrggbb" …/&gt; per colored
     ///   vertex or transition (UML DI has no color), then a
@@ -74,11 +80,94 @@ namespace FsmEditor.Core
             return pts[0];
         }
 
+        /// <summary>
+        /// The region sizes a file holds: <see cref="Geometry.RegionSizes"/> with the sizes rounded to 0.1 px as they are
+        /// written, so that the sizes read back from the region shapes give the same regions (equal parts of 10 px in three
+        /// would otherwise be read back as 3.3, 3.3 and the rest, and move on the next save).
+        /// </summary>
+        private static List<double> FileRegionSizes(IReadOnlyList<Region> regs, double total)
+        {
+            List<double> Rounded(List<double> sizes) => Geometry.RegionSizes(sizes.Select(x => new Region { Size = Num.R1(x) }).ToList(), total);
+            return Rounded(Rounded(Geometry.RegionSizes(regs, total)));
+        }
+
+        /// <summary>The region shapes of a state: <see cref="Geometry.RegionRects"/> with the estimated text width and the region sizes a file holds.</summary>
+        private static List<RegionRect> RegionShapes(FsmModel model, Vertex v)
+        {
+            var regs = v.Regions;
+            var output = new List<RegionRect>();
+            if (regs.Count == 0) return output;
+            var top = v.Y + Math.Min(Geometry.HeaderHeight(model, v, Geometry.EstimateLabelWidth), v.H - 20);
+            var bh = v.Y + v.H - top;
+            var horizontal = v.RegionLayout == RegionLayout.Horizontal;
+            var sizes = FileRegionSizes(regs, horizontal ? v.W : bh);
+            var at = horizontal ? v.X : top;
+            for (int i = 0; i < regs.Count; i++)
+            {
+                var rect = horizontal ? new RectD(at, top, sizes[i], bh) : new RectD(v.X, at, v.W, sizes[i]);
+                at += sizes[i];
+                output.Add(new RegionRect { Id = regs[i].Id, Name = regs[i].Name, Rect = rect });
+            }
+            return output;
+        }
+
         // ------------------------------------------------------------------ writing
 
+        /// <summary>
+        /// Writes a state machine file. Reading it back and writing it again gives the same text. When ids are used
+        /// twice (files edited by hand), reading gives a shape, bend points or a color to the last element with that id
+        /// and default places to the others, so what reading gives is written again, until the text no longer changes.
+        /// </summary>
         public static string ToXmi(FsmModel source)
         {
+            var text = WriteModel(source);
+            if (!SharesIds(source)) return text;
+            for (int i = 0; i < 10; i++)
+            {
+                var again = WriteModel(FromXmi(text));
+                if (again == text) break;
+                text = again;
+            }
+            return text;
+        }
+
+        /// <summary>Whether vertices, transitions and regions use some id more than once.</summary>
+        private static bool SharesIds(FsmModel model)
+        {
+            var ids = new HashSet<string>();
+            int n = 0;
+            void Add(string id)
+            {
+                ids.Add(id ?? "");
+                n++;
+            }
+            foreach (var r in model.Regions ?? new List<Region>()) Add(r.Id);
+            foreach (var v in model.Vertices ?? new List<Vertex>())
+            {
+                Add(v.Id);
+                foreach (var r in v.Regions ?? new List<Region>()) Add(r.Id);
+            }
+            foreach (var t in model.Transitions ?? new List<Transition>()) Add(t.Id);
+            return ids.Count != n;
+        }
+
+        /// <summary>Zero, or NaN (JavaScript's falsy numbers).</summary>
+        private static bool Falsy(double n) => n == 0 || double.IsNaN(n);
+
+        private static string WriteModel(FsmModel source)
+        {
             var m = source.Clone().Normalize();
+            // Bounds as the file holds them, so that what is derived from them (centers, header lines, region shapes)
+            // comes out the same when the file is read back and written again. A size of 0 is read back as the
+            // default size: it is written as that.
+            foreach (var v in m.Vertices)
+            {
+                v.X = Num.R1(v.X);
+                v.Y = Num.R1(v.Y);
+                v.W = Num.R1(v.W);
+                v.H = Num.R1(v.H);
+                if (Falsy(v.W) || Falsy(v.H)) (v.W, v.H) = v.Type.DefaultSize();
+            }
             var ix = new ModelIndex(m);
             var topRegions = new HashSet<string>(m.Regions.Select(r => r.Id));
             var protocol = m.Kind == MachineKind.Protocol;
@@ -184,19 +273,49 @@ namespace FsmEditor.Core
             XNode PointNode(string tag, Vertex v) =>
                 new XNode(tag, ("xmi:type", "uml:Pseudostate"), ("xmi:id", v.Id), ("name", v.Name), ("kind", v.Type.Key()));
 
+            // Each vertex and transition is written once, in the first place that holds it (two states with one id,
+            // or a region id used again, would otherwise write it twice, and the file would grow on each save).
+            // docVertices and docTransitions are what the document holds, in the order reading it gives them.
+            var writtenVertices = new HashSet<Vertex>();
+            var writtenTransitions = new HashSet<Transition>();
+            var docVertices = new List<Vertex>();
+            var docTransitions = new List<Transition>();
+            // States on the way down: a region id used again (a file edited by hand) can make a state its own descendant.
+            var writing = new HashSet<Vertex>();
+
             XNode RegionNode(Region r)
             {
                 var kids = m.Vertices.Where(v => v.Parent == r.Id && !IsMachinePoint(v)).ToList();
+                var comments = kids.Where(v => v.Type == VertexType.Comment && !writtenVertices.Contains(v)).ToList();
+                foreach (var c in comments)
+                {
+                    writtenVertices.Add(c);
+                    docVertices.Add(c);
+                }
+                var vertices = new List<XNode>();
+                foreach (var v in kids)
+                {
+                    if (v.Type == VertexType.Comment) continue;
+                    // Failing like the VS Code edition (which runs out of stack), instead of overflowing it, which ends the process.
+                    if (writing.Contains(v)) throw new XmiException($"State '{v.Id}' is inside one of its own regions.");
+                    if (!writtenVertices.Contains(v)) vertices.Add(VertexNode(v));
+                }
+                var transitions = (transitionsByRegion.TryGetValue(r.Id, out var ts) ? ts : new List<Transition>()).Where(t => !writtenTransitions.Contains(t)).ToList();
+                foreach (var t in transitions)
+                {
+                    writtenTransitions.Add(t);
+                    docTransitions.Add(t);
+                }
                 return new XNode("region", ("xmi:type", "uml:Region"), ("xmi:id", r.Id), ("name", r.Name))
-                    .Add(kids.Where(v => v.Type == VertexType.Comment).Select(CommentNode).ToList())
-                    .Add(kids.Where(v => v.Type != VertexType.Comment).Select(VertexNode).ToList())
-                    .Add((transitionsByRegion.TryGetValue(r.Id, out var ts) ? ts : new List<Transition>()).Select(TransitionNode).ToList());
+                    .Add(comments.Select(CommentNode).ToList())
+                    .Add(vertices)
+                    .Add(transitions.Select(TransitionNode).ToList());
             }
 
-            // States on the way down: a region id used again (a file edited by hand) can make a state its own descendant.
-            var writing = new HashSet<Vertex>();
             XNode VertexNode(Vertex v)
             {
+                writtenVertices.Add(v);
+                docVertices.Add(v);
                 if (v.Type == VertexType.Final) return new XNode("subvertex", ("xmi:type", "uml:FinalState"), ("xmi:id", v.Id), ("name", v.Name));
                 if (IsPseudoKind(v.Type)) return PointNode("subvertex", v);
                 var node = new XNode("subvertex", ("xmi:type", "uml:State"), ("xmi:id", v.Id), ("name", v.Name))
@@ -205,19 +324,30 @@ namespace FsmEditor.Core
                     .Add(Behavior("doActivity", v.Id + "_do", v.DoActivity))
                     .Add(Constraint("stateInvariant", v.Id + "_inv", v.Invariant))
                     .Add(Triggers("deferrableTrigger", v.Id, v.Deferrable));
+                // Read back: the connection points, then the connection point references.
+                var points = new List<Vertex>();
+                var references = new List<Vertex>();
                 foreach (var cp in m.Vertices)
                 {
-                    if (cp.Parent != v.Id) continue;
-                    if (cp.Type == VertexType.EntryPoint || cp.Type == VertexType.ExitPoint) node.Add(PointNode("connectionPoint", cp));
+                    if (cp.Parent != v.Id || writtenVertices.Contains(cp)) continue;
+                    if (cp.Type == VertexType.EntryPoint || cp.Type == VertexType.ExitPoint)
+                    {
+                        writtenVertices.Add(cp);
+                        points.Add(cp);
+                        node.Add(PointNode("connectionPoint", cp));
+                    }
                     if (cp.Type == VertexType.ConnectionPointRef)
                     {
+                        writtenVertices.Add(cp);
+                        references.Add(cp);
                         var file = v.Submachine.Split('#')[0];
                         node.Add(new XNode("connection", ("xmi:type", "uml:ConnectionPointReference"), ("xmi:id", cp.Id)).Add(
                             new XNode(cp.PointKind == PointKind.Exit ? "exit" : "entry", ("href", $"{file}#{cp.Ref}"))));
                     }
                 }
-                // Failing like the VS Code edition (which runs out of stack), instead of overflowing it, which ends the process.
-                if (!writing.Add(v)) throw new XmiException($"State '{v.Id}' is inside one of its own regions.");
+                docVertices.AddRange(points);
+                docVertices.AddRange(references);
+                writing.Add(v);
                 foreach (var r in v.Regions) node.Add(RegionNode(r));
                 writing.Remove(v);
                 if (v.Submachine.Length > 0) node.Add(new XNode("submachine", ("href", v.Submachine)));
@@ -231,8 +361,16 @@ namespace FsmEditor.Core
                 machine.Add(new XNode("ownedComment", ("xmi:type", "uml:Comment"), ("xmi:id", smId + "_doc"), ("annotatedElement", smId))
                     .Add(new XNode("body").Add(m.Documentation)));
             }
-            machine.Add(m.Vertices.Where(IsMachinePoint).Select(v => PointNode("connectionPoint", v)).ToList());
-            machine.Add(m.Regions.Select(RegionNode).ToList());
+            // The machine's own connection points come first in the file, but are read after its regions.
+            var regionNodes = m.Regions.Select(RegionNode).ToList();
+            var machinePoints = m.Vertices.Where(v => IsMachinePoint(v) && !writtenVertices.Contains(v)).ToList();
+            foreach (var v in machinePoints)
+            {
+                writtenVertices.Add(v);
+                docVertices.Add(v);
+            }
+            machine.Add(machinePoints.Select(v => PointNode("connectionPoint", v)).ToList());
+            machine.Add(regionNodes);
 
             var packaged = new List<XNode>();
             if (m.Context.Length > 0)
@@ -249,7 +387,7 @@ namespace FsmEditor.Core
             packaged.AddRange(eventElements);
 
             // Stereotypes: an embedded profile with one stereotype per name, extending UML::State.
-            var stereotyped = m.Vertices.Where(v => v.Type == VertexType.State && v.Stereotype.Length > 0).ToList();
+            var stereotyped = docVertices.Where(v => v.Type == VertexType.State && v.Stereotype.Length > 0).ToList();
             var stereoNames = stereotyped.Select(v => v.Stereotype).Distinct().ToList();
             var profileApplication = new List<XNode>();
             var applications = new List<XNode>();
@@ -275,16 +413,21 @@ namespace FsmEditor.Core
                 }
             }
 
-            // Diagram
+            // Diagram: what the document holds, in the order reading it gives (a model in another order, or holding
+            // elements the document doesn't, would otherwise be written differently once read back).
+            var held = new FsmModel { Id = m.Id, Name = m.Name, Kind = m.Kind, Context = m.Context, Documentation = m.Documentation, Regions = m.Regions, Vertices = docVertices, Transitions = docTransitions };
+            var docById = new Dictionary<string, Vertex>();
+            foreach (var v in docVertices) docById[v.Id] = v;
+            var docIds = new HashSet<string>(docVertices.Select(v => v.Id).Concat(docTransitions.Select(t => t.Id)));
             XNode Bounds(double x, double y, double w, double h) =>
                 new XNode("bounds", ("xmi:type", "dc:Bounds"), ("x", Num.R1(x)), ("y", Num.R1(y)), ("width", Num.R1(w)), ("height", Num.R1(h)));
             var shapes = new List<XNode>();
-            foreach (var v in m.Vertices)
+            foreach (var v in docVertices)
             {
                 shapes.Add(new XNode("ownedElement", ("xmi:type", "umldi:UMLShape"), ("xmi:id", "di_" + v.Id), ("modelElement", v.Id)).Add(Bounds(v.X, v.Y, v.W, v.H)));
                 if (v.Type == VertexType.State)
                 {
-                    foreach (var rb in Geometry.RegionRects(m, v, Geometry.EstimateLabelWidth))
+                    foreach (var rb in RegionShapes(held, v))
                     {
                         shapes.Add(new XNode("ownedElement", ("xmi:type", "umldi:UMLShape"), ("xmi:id", "di_" + rb.Id), ("modelElement", rb.Id))
                             .Add(Bounds(rb.Rect.X, rb.Rect.Y, rb.Rect.W, rb.Rect.H)));
@@ -292,17 +435,19 @@ namespace FsmEditor.Core
                 }
             }
             var edges = new List<XNode>();
-            foreach (var t in m.Transitions)
+            foreach (var t in docTransitions)
             {
-                var s = ix.Vertex(t.Source);
-                var g = ix.Vertex(t.Target);
+                var s = docById.TryGetValue(t.Source ?? "", out var sv) ? sv : null;
+                var g = docById.TryGetValue(t.Target ?? "", out var gv) ? gv : null;
                 if (s == null || g == null) continue;
                 if (t.Kind == TransitionKind.Internal && s == g && s.Type == VertexType.State) continue; // drawn in the state's compartment
+                // The waypoints as written: the label's middle is measured on them, as reading does.
                 var pts = new List<PointD> { s.Center };
                 pts.AddRange(t.Points);
                 pts.Add(g.Center);
+                pts = pts.Select(p => new PointD(Num.R1(p.X), Num.R1(p.Y))).ToList();
                 var edge = new XNode("ownedElement", ("xmi:type", "umldi:UMLEdge"), ("xmi:id", "di_" + t.Id), ("modelElement", t.Id), ("source", "di_" + s.Id), ("target", "di_" + g.Id))
-                    .Add(pts.Select(p => new XNode("waypoint", ("xmi:type", "dc:Point"), ("x", Num.R1(p.X)), ("y", Num.R1(p.Y)))).ToList());
+                    .Add(pts.Select(p => new XNode("waypoint", ("xmi:type", "dc:Point"), ("x", p.X), ("y", p.Y))).ToList());
                 if (t.LabelOffset is PointD off)
                 {
                     var mid = LabelMid(pts);
@@ -313,12 +458,12 @@ namespace FsmEditor.Core
                 }
                 edges.Add(edge);
             }
-            foreach (var c in m.Vertices.Where(v => v.Type == VertexType.Comment))
+            foreach (var c in docVertices.Where(v => v.Type == VertexType.Comment))
             {
                 for (int i = 0; i < c.Anchors.Count; i++)
                 {
                     var a = c.Anchors[i];
-                    if (ix.Vertex(a) == null && ix.Transition(a) == null) continue;
+                    if (a == null || !docIds.Contains(a)) continue;
                     edges.Add(new XNode("ownedElement", ("xmi:type", "umldi:UMLEdge"), ("xmi:id", $"di_{c.Id}_anchor{i + 1}"), ("modelElement", c.Id), ("source", "di_" + c.Id), ("target", "di_" + a)));
                 }
             }
@@ -333,10 +478,10 @@ namespace FsmEditor.Core
                 }
                 if (style.Attrs.Count > 1) styles.Add(style);
             }
-            foreach (var v in m.Vertices) AddStyle(v.Id, v.Color, v.ItemColors);
-            foreach (var t in m.Transitions) AddStyle(t.Id, t.Color, t.ItemColors);
+            foreach (var v in docVertices) AddStyle(v.Id, v.Color, v.ItemColors);
+            foreach (var t in docTransitions) AddStyle(t.Id, t.Color, t.ItemColors);
             var groups = new List<(string Id, List<string> Members)>();
-            foreach (var v in m.Vertices)
+            foreach (var v in docVertices)
             {
                 if (v.Group.Length == 0) continue;
                 var g = groups.FindIndex(gr => gr.Id == v.Group);
@@ -658,9 +803,11 @@ namespace FsmEditor.Core
                             var mid = LabelMid(pts);
                             // A missing or invalid bound gives NaN, which the other editions' JSON turns into 0.
                             double Offset(double n) => double.IsNaN(n) || double.IsInfinity(n) ? 0 : n;
+                            // Not rounded: the middle is off the 0.1 px grid, and an offset rounded to 0.1 px could move the
+                            // label by 0.1 px on each save. Written again from the same waypoints, it gives the same label box.
                             t.LabelOffset = new PointD(
-                                Offset(Num.R1(Num.ParseJs(lb.Attr("x")) + Num.ParseJs(lb.Attr("width")) / 2 - mid.X)),
-                                Offset(Num.R1(Num.ParseJs(lb.Attr("y")) + Num.ParseJs(lb.Attr("height")) / 2 - mid.Y)));
+                                Offset(Num.ParseJs(lb.Attr("x")) + Num.ParseJs(lb.Attr("width")) / 2 - mid.X),
+                                Offset(Num.ParseJs(lb.Attr("y")) + Num.ParseJs(lb.Attr("height")) / 2 - mid.Y));
                         }
                     }
                 }
