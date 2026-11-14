@@ -10,7 +10,7 @@ using FsmEditor.Core;
 
 namespace FsmEditor.CodeGen
 {
-    /// <summary>A problem the generator reported (<c>file:line: severity: message</c> on stderr).</summary>
+    /// <summary>A problem fsm reported (<c>file:line: severity: message</c> on stderr).</summary>
     internal sealed class CliIssue
     {
         public string File { get; set; } = "";
@@ -26,19 +26,27 @@ namespace FsmEditor.CodeGen
         public List<string> Output { get; } = new List<string>();
         public List<string> Errors { get; } = new List<string>();
         public List<CliIssue> Issues { get; } = new List<CliIssue>();
-        /// <summary>Files the generator wrote (full paths).</summary>
+        /// <summary>Files fsm wrote (full paths).</summary>
         public List<string> Written { get; } = new List<string>();
+
+        /// <summary>
+        /// fsm's own message about the run, without its <c>fsm: </c> prefix (the last such line on stderr,
+        /// such as "2 errors in the state machine; nothing was generated."), or null.
+        /// </summary>
+        public string Message =>
+            Errors.LastOrDefault(l => l.StartsWith(FsmCli.Prefix, StringComparison.Ordinal))?.Substring(FsmCli.Prefix.Length);
     }
 
     /// <summary>
-    /// Runs the <c>fsm</c> command-line code generator of FSM Editor (the same
-    /// program as in VS Code and CI): <c>fsm &lt;file&gt; --template &lt;hbs&gt; --out &lt;folder&gt;</c>,
-    /// or, for Jinja templates, fsm-generator (the same generator in Rust), which takes the same
-    /// arguments and prints the same lines. The extension bundles them in cli/ and generator/,
-    /// each with its templates in a templates/ folder next to it.
+    /// Runs <c>fsm</c>, the command-line tool of FSM Editor (github.com/vincedupuis/fsm-cli, the same
+    /// program as in VS Code and CI), to generate code: <c>fsm write &lt;file&gt; --template &lt;jinja&gt; --out &lt;folder&gt;</c>.
+    /// The extension bundles it in cli/, with its templates in cli/templates.
     /// </summary>
     internal static class FsmCli
     {
+        /// <summary>The prefix of fsm's own messages on stderr.</summary>
+        public const string Prefix = "fsm: ";
+
         private static readonly Regex IssueLine = new Regex(@"^(.+?):(\d+): (error|warning|info): (.*)$");
 
         private static string ExtensionDir => Path.GetDirectoryName(typeof(FsmCli).Assembly.Location) ?? "";
@@ -46,54 +54,44 @@ namespace FsmEditor.CodeGen
         /// <summary>The bundled executable, next to the extension's assembly.</summary>
         public static string BundledPath => Path.Combine(ExtensionDir, "cli", "fsm.exe");
 
-        /// <summary>The bundled fsm-generator, which runs the Jinja templates.</summary>
-        public static string BundledGeneratorPath => Path.Combine(ExtensionDir, "generator", "fsm-generator.exe");
-
-        /// <summary>Whether a template is a Jinja one, run by fsm-generator rather than fsm.</summary>
-        public static bool IsJinja(string template) => template.EndsWith(".jinja", StringComparison.OrdinalIgnoreCase);
-
         /// <summary>The fsm executable to run: the configured one, the bundled one, or one on the PATH. Null when none is found.</summary>
-        public static string Locate(string configured) => Locate(configured, BundledPath, "fsm.exe", "fsm.cmd");
-
-        /// <summary>The fsm-generator executable to run, found like <see cref="Locate(string)"/>.</summary>
-        public static string LocateGenerator(string configured) => Locate(configured, BundledGeneratorPath, "fsm-generator.exe");
-
-        private static string Locate(string configured, string bundled, params string[] names)
+        public static string Locate(string configured)
         {
             if (!string.IsNullOrWhiteSpace(configured))
             {
                 var p = Environment.ExpandEnvironmentVariables(configured.Trim().Trim('"'));
                 return File.Exists(p) ? p : null;
             }
-            if (File.Exists(bundled)) return bundled;
+            if (File.Exists(BundledPath)) return BundledPath;
             foreach (var dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
             {
-                foreach (var name in names)
+                try
                 {
-                    try
-                    {
-                        var candidate = Path.Combine(dir.Trim('"'), name);
-                        if (File.Exists(candidate)) return candidate;
-                    }
-                    catch (ArgumentException)
-                    {
-                        // malformed PATH entry
-                    }
+                    var candidate = Path.Combine(dir.Trim('"'), "fsm.exe");
+                    if (File.Exists(candidate)) return candidate;
+                }
+                catch (ArgumentException)
+                {
+                    // malformed PATH entry
                 }
             }
             return null;
         }
 
         /// <summary>
-        /// Templates shipped with an executable (templates/*.hbs next to fsm, templates/*.jinja next to
-        /// fsm-generator), where <c>-t &lt;name&gt;</c> finds them. Empty when <paramref name="cli"/> is null.
+        /// Templates shipped with fsm (templates/*.jinja next to it), where <c>-t &lt;name&gt;</c> finds them.
+        /// Empty when <paramref name="cli"/> is null.
         /// </summary>
-        public static List<string> BundledTemplates(string cli, string pattern = "*.hbs")
+        public static List<string> BundledTemplates(string cli)
         {
             if (cli == null) return new List<string>();
             var dir = Path.Combine(Path.GetDirectoryName(cli) ?? "", "templates");
-            return Directory.Exists(dir) ? Directory.GetFiles(dir, pattern).OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList() : new List<string>();
+            return Directory.Exists(dir) ? Directory.GetFiles(dir, "*.jinja").OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList() : new List<string>();
         }
+
+        /// <summary>The arguments that generate code for <paramref name="source"/>.</summary>
+        public static string[] WriteArgs(string source, string template, string output) =>
+            new[] { "write", source, "--template", template, "--out", output };
 
         /// <summary>Quotes one argument for the Windows command line.</summary>
         public static string Quote(string arg)

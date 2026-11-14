@@ -15,15 +15,9 @@ namespace FsmEditor
     {
         [Category("Code generation")]
         [DisplayName("fsm executable")]
-        [Description("Path of the fsm code generator (fsm.exe). Leave empty to use the one bundled with the extension, or else an fsm found on the PATH.")]
+        [Description("Path of the fsm code generator (fsm.exe, from github.com/vincedupuis/fsm-cli). Leave empty to use the one bundled with the extension, or else an fsm.exe found on the PATH.")]
         [DefaultValue("")]
         public string CliPath { get; set; } = "";
-
-        [Category("Code generation")]
-        [DisplayName("fsm-generator executable")]
-        [Description("Path of fsm-generator (fsm-generator.exe), the code generator that runs Jinja templates (.jinja). Leave empty to use the one bundled with the extension, or else one found on the PATH.")]
-        [DefaultValue("")]
-        public string GeneratorPath { get; set; } = "";
 
         [Category("Code generation")]
         [DisplayName("Save .fsm documents before generating")]

@@ -4,7 +4,5 @@ obj/
 *.user
 *.suo
 TestResults/
-# Copied by scripts/fetch-cli.* (the fsm code generator, ~85 MB)
+# Copied by scripts/fetch-cli.* (the fsm code generator from fsm-cli, ~3 MB)
 src/FsmEditor.Vsix/cli/
-# fsm-generator, unpacked from its GitHub Release (Jinja templates)
-src/FsmEditor.Vsix/generator/
