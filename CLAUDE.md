@@ -1,13 +1,13 @@
 # FSM Editor for Visual Studio
 
-Visual Studio 2022+ extension (VSIX): a visual editor for UML 2.5.1 state machines. `*.fsm` files are XMI 2.5.1 documents holding the UML model plus a UML DI diagram with the layout. It is the Visual Studio edition of FSM Editor for VS Code (`../fsm-editor-vscode`): same concepts, file format, rules and messages, reimplemented in C# (no JavaScript is reused). Code generation runs that project's `fsm` CLI, or fsm-generator for Jinja templates.
+Visual Studio 2022+ extension (VSIX): a visual editor for UML 2.5.1 state machines. `*.fsm` files are XMI 2.5.1 documents holding the UML model plus a UML DI diagram with the layout. It is the Visual Studio edition of FSM Editor for VS Code (`../fsm-editor-vscode`): same concepts, file format, rules and messages, reimplemented in C# (no JavaScript is reused). Code generation runs `fsm write`, the Rust command-line tool of `../fsm-cli`, with Jinja templates.
 
 ## Commands
 
 ```sh
 dotnet build                 # all projects; VSIX packaging (VSSDK, vsct) only on Windows
 dotnet test                  # test/FsmEditor.Core.Tests
-scripts/fetch-cli.sh         # or scripts\fetch-cli.ps1: copy fsm.exe + templates into src/FsmEditor.Vsix/cli (gitignored)
+scripts/fetch-cli.sh         # or scripts\fetch-cli.ps1: copy fsm.exe + templates (from ../fsm-cli, or an unpacked windows-x64 release archive) into src/FsmEditor.Vsix/cli (gitignored)
 ```
 
 F5 in Visual Studio (startup project FsmEditor.Vsix) starts the experimental instance; try `examples/MediaPlayer.fsm` and `examples/Order.fsm` (uses `Payment.fsm` as a submachine).
@@ -25,13 +25,14 @@ On macOS or Linux, `dotnet test` covers `FsmEditor.Core`, and `dotnet build` in 
   - `Editor/`: WPF built in code (no XAML). `DiagramCanvas` renders in `OnRender` and hit-tests geometrically; `PropertiesPanel` rebuilds itself per selection; `Theme` maps VS theme colors.
   - Edit commands (Undo/Redo/Cut/Copy/Paste/Delete/Select All) arrive as VS commands in `FsmEditorPane`'s `IOleCommandTarget`; a focused text box gets them instead of the diagram.
   - `TracePlayer/`: `TracePlayerService` runs a `TraceSession` (file watchers on the logs, play timer, machines of the solution and open documents) and hands each open diagram its `TraceView`, drawn by `DiagramCanvas`; `TracePlayerWindow` is the tool window.
-  - `CodeGen/FsmCli.cs` runs `fsm <file> --template <hbs> --out <dir>`, or `fsm-generator` (`../fsm-generator`, same arguments and output) for a `.jinja` template, and parses `wrote …` lines and `file:line: severity: message` problems. The release workflow bundles fsm-generator in `src/FsmEditor.Vsix/generator/` (pinned by `FSM_GENERATOR_VERSION`). `FsmEditorPackage.GenerateCodeAsync` is the whole flow.
+  - `CodeGen/FsmCli.cs` runs `fsm write <file> --template <jinja> --out <dir>` and parses `wrote …` lines, `file:line: severity: message` problems and fsm's own `fsm: …` messages (shown when it fails, such as a template it refuses). The release workflow bundles `fsm.exe` and its templates in `src/FsmEditor.Vsix/cli/`, from the windows-x64 archive of the fsm-cli release pinned by `FSM_CLI_VERSION`. `FsmEditorPackage.GenerateCodeAsync` is the whole flow.
 
 ## Project rules
 
 - Keep parity with the VS Code extension: text grammar, validation rules and messages, XMI output, clipboard JSON. `test/FsmEditor.Core.Tests/fixtures` holds reference results from it, shared with the JetBrains edition. Regenerate them from the umbrella repo with `node parity/fixtures.mjs` when the reference changes (see fixtures/README.md), and add a parity case for any format or rule change. `Geometry.cs` mirrors `media/editor.js` of the VS Code edition, and only its UML DI region shapes are covered by the fixtures: compare the rest by hand. `../fsm-editor-jb` ports this Core to Kotlin file for file, so a Core change goes there next.
 - **Text grammar:** behaviors are argument-less calls separated by `;`; conditions combine calls with `!`, `&&`, `||` and parentheses; `else` only on choice/junction branches; triggers are event names or `after(<number><ms|s|m|h>)`. The editor refuses invalid text, and the validator reports it.
 - **Out of scope:** state machine extension/inheritance and the transition-oriented notation.
-- Don't reimplement code generation: templates and the code model belong to the `fsm` CLI.
+- Don't reimplement code generation: templates and the code model belong to fsm-cli.
+- `.fsm` files hold no model hash: `Xmi.cs` doesn't write the `<modelHash>` extension of older files, and reading ignores it. fsm-cli computes the hash from the file.
 - Core must not reference Visual Studio assemblies. VS code must respect the threading analyzers (the build has no warnings).
 - User-facing docs: `README.md`, `docs/UML-CONFORMANCE.md` (update when behavior or rules change), `docs/CODEGEN.md`.

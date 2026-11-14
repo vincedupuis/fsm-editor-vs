@@ -93,13 +93,13 @@ The layout is a `umldi:UMLStateMachineDiagram`:
 
 Coordinates are rounded to 0.1 px when saved.
 
-The file ends with the model hash, in its own `xmi:Extension` (extender `FSM Editor`): `<modelHash value="…"/>`, written on every save. It identifies the state machine model without its layout, so moving, resizing or coloring elements doesn't change it, while any change to the model does (names, behaviors, triggers, guards, stereotypes, comments, documentation, `xmi:id`s). The value is the first 16 hex digits of the SHA-256 of the UTF-8 canonical form of the document element, where:
+The file holds no hash or other derived data. Files saved by FSM Editor 0.6.2 end with a model hash, in its own `xmi:Extension` (extender `FSM Editor`): `<modelHash value="…"/>`. It is ignored when reading, and left out at the next save.
+
+The code generator computes a **model hash** from the file, and the bundled templates write it in the header of every generated file of a machine, which is how `fsm write --check` finds generated files that are out of date. It identifies the state machine model without its layout, so moving, resizing or coloring elements doesn't change it, while any change to the model does (names, behaviors, triggers, guards, stereotypes, comments, documentation, `xmi:id`s). The value is the first 16 hex digits of the SHA-256 of the UTF-8 canonical form of the document element, where:
 
 - each element is written `<name a="v" …>text children</name>`, with namespace prefixes `xmi`, `uml`, `umldi`, `dc` and `di` for their namespaces (prefixes in the file don't matter), its attributes sorted by name without the namespace declarations, and its own text unless that is only white space (space, tab, line feed, carriage return);
 - `&`, `<`, `>` and `"` are written `&amp;`, `&lt;`, `&gt;` and `&quot;` in attribute values and text;
-- UML DI elements (the diagram) and `xmi:Extension`s of `FSM Editor` (the hash itself) are left out.
-
-The code generator computes the hash again from the file, and the bundled templates write it in the header of every generated file of a machine.
+- UML DI elements (the diagram) and `xmi:Extension`s of `FSM Editor` (colors, groups, and the stored hash of older files) are left out.
 
 ## Deviations from UML 2.5.1
 
@@ -187,7 +187,7 @@ Beyond the [text syntax](#text-syntax), the validator checks the following. ✕ 
 
 ## Code generation
 
-*Generate Code…* and the `fsm` command-line tool generate source code from Handlebars templates, and FSM Editor bundles a TypeScript template. Generation stops when the validator reports an error. The generated code follows UML's run-to-completion semantics, with these choices where UML leaves room or the tool simplifies:
+*Generate Code…* and the `fsm write` command generate source code from Jinja templates (see [CODEGEN.md](CODEGEN.md)), and FSM Editor bundles a TypeScript template and a C++ template for Boost.SML. Generation stops when the validator reports an error. The generated code follows UML's run-to-completion semantics, with these choices where UML leaves room or the tool simplifies:
 
 | UML | Generated code |
 | --- | --- |

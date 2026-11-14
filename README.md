@@ -10,10 +10,10 @@ This is the Visual Studio edition of [FSM Editor for VS Code](https://github.com
 
 ## Code generation
 
-*Generate Code...* turns a machine into source code with a [Handlebars](https://handlebarsjs.com/) template, running the `fsm` command-line generator of FSM Editor, or with a [Jinja](https://jinja.palletsprojects.com/) template, running [fsm-generator](https://github.com/vincedupuis/fsm-generator), the same generator in Rust. The extension bundles both. One template can write several files per machine. Two templates are bundled in both languages, TypeScript (`ts`) and C++17 for [Boost.SML](https://github.com/boost-ext/sml) (`sml`), and any `*.hbs` or `*.jinja` template of your solution can be used. The same generator runs from a terminal or a build:
+*Generate Code...* turns a machine into source code with a [Jinja](https://jinja.palletsprojects.com/) template, running `fsm`, the command-line generator of FSM Editor ([fsm-cli](https://github.com/vincedupuis/fsm-cli)), which the extension bundles. One template can write several files per machine. Two templates are bundled, TypeScript (`ts`) and C++17 for [Boost.SML](https://github.com/boost-ext/sml) (`sml`), and any `*.jinja` template of your solution can be used. The same generator runs from a terminal or a build:
 
 ```sh
-fsm "models/**/*.fsm" --template ts --out src/generated
+fsm write "models/**/*.fsm" --template ts --out src/generated
 ```
 
 See **[docs/CODEGEN.md](https://github.com/vincedupuis/fsm-editor-vs/blob/main/docs/CODEGEN.md)** for the dialog, the Command Window arguments, builds, and where templates and the code model are documented.
@@ -89,11 +89,11 @@ Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Sol
 
 ## Development
 
-Requirements: Windows with Visual Studio 2022 (17.0 or later) and the *Visual Studio extension development* workload.
+Requirements: Windows with Visual Studio 2022 (17.0 or later) and the *Visual Studio extension development* workload; [Rust](https://rustup.rs/) to build `fsm` from a clone of fsm-cli, or else an `fsm-<version>-windows-x64.zip` from the [fsm-cli releases](https://github.com/vincedupuis/fsm-cli/releases).
 
 ```powershell
-scripts\fetch-cli.ps1        # copies fsm.exe and its templates from ..\fsm-editor-vscode\dist into src\FsmEditor.Vsix\cli
-                             # (-Build builds them there first: npm run build:bin -- --target bun-windows-x64)
+scripts\fetch-cli.ps1        # copies fsm.exe and its templates from a clone of fsm-cli (..\fsm-cli) into src\FsmEditor.Vsix\cli
+                             # (-Build builds it there first with cargo; -Source takes an unpacked fsm-<version>-windows-x64.zip instead)
 dotnet test                  # model, file format, validation and editing tests
 ```
 
@@ -108,7 +108,7 @@ To publish, build in Release (it fails if `fsm.exe` hasn't been fetched), then u
 
 Bump the version in `source.extension.vsixmanifest`, `FsmEditor.Vsix.csproj` and `InstalledProductRegistration` in `FsmEditorPackage.cs` first.
 
-Pushing a version tag (`git tag v0.3.3 && git push origin v0.3.3`) also builds the `.vsix` on GitHub Actions (`.github/workflows/release.yml`, which bundles the `fsm` generator of the FSM Editor for VS Code release set in `FSM_CLI_VERSION`) and attaches it to the GitHub Release of that tag. The tag must match the manifest version.
+Pushing a version tag (`git tag v0.3.3 && git push origin v0.3.3`) also builds the `.vsix` on GitHub Actions (`.github/workflows/release.yml`, which bundles the `fsm` generator of the fsm-cli release set in `FSM_CLI_VERSION`) and attaches it to the GitHub Release of that tag. The tag must match the manifest version.
 
 On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging steps only run on Windows) and `dotnet test` runs the tests.
 
@@ -124,6 +124,6 @@ On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging ste
   - `TracePlayer/`: the Trace Player tool window and the service following the logs
   - `Commands/`, `VSCommandTable.vsct`: menu commands
 - `test/FsmEditor.Core.Tests/`: tests, including parity tests against reference results of the VS Code extension (`fixtures/`)
-- `scripts/fetch-cli.*`: copies the code generator into the VSIX; fsm-generator goes in `src/FsmEditor.Vsix/generator/`, unpacked from its GitHub Release
+- `scripts/fetch-cli.*`: copies the code generator into the VSIX
 - `vs-publish.json`: the Marketplace listing; `images/`: the README's screenshots
 - `docs/`: UML conformance and code generation
