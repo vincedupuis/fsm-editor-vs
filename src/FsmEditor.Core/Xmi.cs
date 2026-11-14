@@ -23,8 +23,8 @@ namespace FsmEditor.Core
     /// - the region layout of an orthogonal state follows from its region shapes;
     /// - coordinates are rounded to 0.1 px, and what is derived from them (centers,
     ///   region shapes, the middle of an edge) is computed from the rounded values,
-    ///   the region sizes as the file holds them: reading a written file and writing
-    ///   it again gives the same text;
+    ///   the region sizes as the file holds them: reading a written file whose ids
+    ///   are unique and writing it again gives the same text;
     /// - the diagram lists the shapes, edges and styles in the order reading the
     ///   model gives its elements (document order), each element written once;
     /// - colors and groups are kept in one xmi:Extension at the end of the diagram,
@@ -113,48 +113,16 @@ namespace FsmEditor.Core
 
         // ------------------------------------------------------------------ writing
 
-        /// <summary>
-        /// Writes a state machine file. Reading it back and writing it again gives the same text. When ids are used
-        /// twice (files edited by hand), reading gives a shape, bend points or a color to the last element with that id
-        /// and default places to the others, so what reading gives is written again, until the text no longer changes.
-        /// </summary>
-        public static string ToXmi(FsmModel source)
-        {
-            var text = WriteModel(source);
-            if (!SharesIds(source)) return text;
-            for (int i = 0; i < 10; i++)
-            {
-                var again = WriteModel(FromXmi(text));
-                if (again == text) break;
-                text = again;
-            }
-            return text;
-        }
-
-        /// <summary>Whether vertices, transitions and regions use some id more than once.</summary>
-        private static bool SharesIds(FsmModel model)
-        {
-            var ids = new HashSet<string>();
-            int n = 0;
-            void Add(string id)
-            {
-                ids.Add(id ?? "");
-                n++;
-            }
-            foreach (var r in model.Regions ?? new List<Region>()) Add(r.Id);
-            foreach (var v in model.Vertices ?? new List<Vertex>())
-            {
-                Add(v.Id);
-                foreach (var r in v.Regions ?? new List<Region>()) Add(r.Id);
-            }
-            foreach (var t in model.Transitions ?? new List<Transition>()) Add(t.Id);
-            return ids.Count != n;
-        }
-
         /// <summary>Zero, or NaN (JavaScript's falsy numbers).</summary>
         private static bool Falsy(double n) => n == 0 || double.IsNaN(n);
 
-        private static string WriteModel(FsmModel source)
+        /// <summary>
+        /// Writes a state machine file. When its ids are unique (the validator reports those that aren't), reading it
+        /// back and writing it again gives the same text. With ids used twice (files edited by hand), reading gives a
+        /// shape, bend points or a color to the last element with that id and default places to the others, so such a
+        /// file can still change on the next save; it doesn't grow, as each element is written once.
+        /// </summary>
+        public static string ToXmi(FsmModel source)
         {
             var m = source.Clone().Normalize();
             // Bounds as the file holds them, so that what is derived from them (centers, header lines, region shapes)

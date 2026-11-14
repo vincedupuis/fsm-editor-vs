@@ -28,13 +28,16 @@ validates state machines exactly the same way:
   earlier version and then edited by hand (a composite state without its region
   shapes, a transition in an outer region, a coordinate off the 0.1 px grid, an
   infinite width, and a label that the earlier writer moved by 0.1 px on each
-  save), whose round trip must save to itself, as every case's must, and
+  save), whose round trip must save to itself, as the round trip of every case
+  whose ids are unique must, and
   `infinite.fsm`, edited by hand to hold infinite coordinates (`Infinity`,
   `-Infinity`, `1e400`) in bend points and in a label box, read as JavaScript
   reads them (`+x || 0`: the label's middle becomes NaN, so its offset is 0,
   and the bend points become 0);
-- `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`, which saves to itself:
-  `toXmi(fromXmi(<case>.roundtrip.xmi))` gives it back unchanged.
+- `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`, which saves to itself when
+  the case's ids are unique: `toXmi(fromXmi(<case>.roundtrip.xmi))` gives it back
+  unchanged (`structure`, `cycles` and `regionids` use ids twice: saving them
+  again must keep the same elements).
 
 Regenerate them when the reference implementation changes its rules or format,
 from the umbrella repo: `node parity/fixtures.mjs` (needs `npm install` done in
