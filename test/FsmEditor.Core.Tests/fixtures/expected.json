@@ -586,6 +586,9 @@
           "message": "State 'In' can never be entered."
         }
       ]
+    },
+    "infinite": {
+      "issues": []
     }
   },
   "grammar": [

@@ -794,8 +794,11 @@ namespace FsmEditor.Core
                     }
                     else if (type == "umldi:UMLEdge" && transitions.TryGetValue(target, out var t))
                     {
-                        var pts = Kids(el, "waypoint").Select(w => new PointD(Num.Parse(w.Attr("x")), Num.Parse(w.Attr("y")))).ToList();
-                        if (pts.Count > 2) t.Points = pts.GetRange(1, pts.Count - 2);
+                        // Read as JavaScript reads them (+x || 0): an infinite coordinate stays infinite for the label's
+                        // middle (which it makes NaN, so the offset is 0), and the bend points become 0, as the other
+                        // editions' JSON makes them.
+                        var pts = Kids(el, "waypoint").Select(w => new PointD(Bound(w.Attr("x")), Bound(w.Attr("y")))).ToList();
+                        if (pts.Count > 2) t.Points = pts.GetRange(1, pts.Count - 2).Select(p => new PointD(Finite(p.X), Finite(p.Y))).ToList();
                         var label = el.Children.FirstOrDefault(c => TypeOf(c) == "umldi:UMLLabel");
                         var lb = Kid(label, "bounds");
                         if (lb != null && pts.Count >= 2)
