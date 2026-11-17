@@ -12,7 +12,7 @@ on:
 env:
   # Release of fsm-cli (github.com/vincedupuis/fsm-cli) whose `fsm` code generator (fsm-<version>-windows-x64.zip)
   # and fsm-schemas-<version>.tar.gz the VSIX bundles, and whose fsm-cases-<version>.tar.gz the tests use.
-  FSM_CLI_VERSION: 0.6.3
+  FSM_CLI_VERSION: 0.7.0
 
 jobs:
   release:
