@@ -28,7 +28,7 @@ namespace FsmEditor.Core
             o.Str("id", v.Id).Str("type", v.Type.Key()).Str("name", v.Name).Str("parent", v.Parent)
                 .Num("x", v.X).Num("y", v.Y).Num("w", v.W).Num("h", v.H);
             o.Raw("regions", "[" + string.Join(",", v.Regions.Select(WriteRegion)) + "]");
-            if (v.Regions.Count > 1) o.Str("regionLayout", v.RegionLayout == RegionLayout.Horizontal ? "horizontal" : "vertical");
+            if (v.RegionLayout != null) o.Str("regionLayout", v.RegionLayout == RegionLayout.Horizontal ? "horizontal" : "vertical");
             o.Opt("entry", v.Entry).Opt("exit", v.Exit).Opt("doActivity", v.DoActivity).Opt("invariant", v.Invariant)
                 .Opt("submachine", v.Submachine).Opt("stereotype", v.Stereotype);
             if (v.Deferrable.Count > 0) o.Raw("deferrable", StringArray(v.Deferrable));
@@ -50,7 +50,7 @@ namespace FsmEditor.Core
         {
             var o = new JsonObjectWriter();
             o.Str("id", t.Id).Str("source", t.Source).Str("target", t.Target).Str("kind", t.Kind.ToString().ToLowerInvariant())
-                .Raw("triggers", StringArray(t.Triggers)).Str("guard", t.Guard).Str("effect", t.Effect)
+                .Raw("triggers", StringArray(t.Triggers)).Str("guard", t.Guard).Str("action", t.Action)
                 .Opt("precondition", t.Precondition).Opt("postcondition", t.Postcondition);
             if (t.Points.Count > 0)
             {
@@ -164,7 +164,7 @@ namespace FsmEditor.Core
                     W = Dbl(item, "w", 40),
                     H = Dbl(item, "h", 40),
                     Regions = List(item, "regions").OfType<Dictionary<string, object>>().Select(r => new Region { Id = Str(r, "id"), Name = Str(r, "name"), Size = r.TryGetValue("size", out var size) && size is double d ? d : (double?)null }).ToList(),
-                    RegionLayout = Str(item, "regionLayout") == "horizontal" ? RegionLayout.Horizontal : RegionLayout.Vertical,
+                    RegionLayout = Str(item, "regionLayout") == "horizontal" ? RegionLayout.Horizontal : Str(item, "regionLayout") == "vertical" ? RegionLayout.Vertical : (RegionLayout?)null,
                     Entry = Str(item, "entry"),
                     Exit = Str(item, "exit"),
                     DoActivity = Str(item, "doActivity"),
@@ -192,7 +192,8 @@ namespace FsmEditor.Core
                     Kind = kind == "internal" ? TransitionKind.Internal : kind == "local" ? TransitionKind.Local : TransitionKind.External,
                     Triggers = List(item, "triggers").OfType<string>().ToList(),
                     Guard = Str(item, "guard"),
-                    Effect = Str(item, "effect"),
+                    // Copied by an earlier version: its action was called effect.
+                    Action = item.ContainsKey("action") ? Str(item, "action") : Str(item, "effect"),
                     Precondition = Str(item, "precondition"),
                     Postcondition = Str(item, "postcondition"),
                     Points = List(item, "points").OfType<Dictionary<string, object>>().Select(p => new PointD(Dbl(p, "x"), Dbl(p, "y"))).ToList(),

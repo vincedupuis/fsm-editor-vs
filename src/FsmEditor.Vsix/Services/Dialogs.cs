@@ -78,10 +78,10 @@ namespace FsmEditor.Services
             ok.Click += (s, e) =>
             {
                 var name = input.Text.Trim();
-                // \w as in the VS Code edition: ASCII letters, digits and _.
-                if (!Regex.IsMatch(name, @"^[\w .-]+$", RegexOptions.ECMAScript))
+                // \w as in the VS Code edition: ASCII letters, digits and _ (a name has no spaces or dots).
+                if (!Regex.IsMatch(name, @"^[\w-]+$", RegexOptions.ECMAScript))
                 {
-                    error.Text = "Use letters, digits, spaces, dots, dashes or underscores.";
+                    error.Text = "Use letters, digits, dashes or underscores.";
                     error.Visibility = Visibility.Visible;
                     return;
                 }
@@ -102,6 +102,46 @@ namespace FsmEditor.Services
             };
             w.ShowModal();
             return result;
+        }
+
+        /// <summary>
+        /// A modal question with its answers (the first is the default); the index of the one chosen, or -1 when
+        /// cancelled (Esc or the Cancel button, which is added).
+        /// </summary>
+        public static int Choose(string title, string message, params string[] answers)
+        {
+            var w = Window(title, 460);
+            var panel = new StackPanel { Margin = new Thickness(16) };
+            panel.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap });
+            var result = -1;
+            var buttons = new List<Button>();
+            for (var i = 0; i < answers.Length; i++)
+            {
+                var b = Button(answers[i], isDefault: i == 0);
+                var index = i;
+                b.Click += (s, e) =>
+                {
+                    result = index;
+                    w.DialogResult = true;
+                };
+                buttons.Add(b);
+            }
+            buttons.Add(Button("Cancel", isCancel: true));
+            panel.Children.Add(Buttons(buttons.ToArray()));
+            w.Content = panel;
+            w.ShowModal();
+            return result;
+        }
+
+        /// <summary>
+        /// The layout file couldn't be read when the diagram was opened: replace it with the diagram's layout (true), keep
+        /// it and save the model only (false), or cancel the save (null).
+        /// </summary>
+        public static bool? AskUnreadableLayout(string file, string problem)
+        {
+            var answer = Choose("Save", $"{file} could not be read when the diagram was opened ({problem}), so its elements were placed automatically. Replace it with the diagram's layout?",
+                "Overwrite It", "Save the Model Only");
+            return answer < 0 ? (bool?)null : answer == 0;
         }
 
         /// <summary>Visual Studio's folder picker; null when cancelled.</summary>

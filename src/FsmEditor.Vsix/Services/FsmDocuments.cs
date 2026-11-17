@@ -12,7 +12,7 @@ namespace FsmEditor.Services
     /// <summary>Opening, finding and saving state machine documents.</summary>
     internal static class FsmDocuments
     {
-        /// <summary>The XML editor, which gives the XMI text colorization and folding.</summary>
+        /// <summary>The XML editor, for old files (XMI): colorization and folding.</summary>
         private static readonly Guid XmlEditorFactory = new Guid("FA3CD31E-987B-443A-9B81-186104E8DAC1");
 
         public static bool IsFsm(string path) => path != null && path.EndsWith(".fsm", StringComparison.OrdinalIgnoreCase);
@@ -23,10 +23,38 @@ namespace FsmEditor.Services
             OpenWith(path, PackageGuids.EditorFactory);
         }
 
+        /// <summary>
+        /// Opens a model file in a text editor: the JSON editor's (the .fsm extension is mapped to JSON, so its schema
+        /// applies), or the XML editor for an old file (XMI).
+        /// </summary>
         public static void OpenAsText(string path)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (!OpenWith(path, XmlEditorFactory)) OpenWith(path, VSConstants.VsEditorFactoryGuid.TextEditor_guid);
+            string text = null;
+            try
+            {
+                text = File.ReadAllText(path);
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                // opened as text all the same
+            }
+            if (text != null && Core.Format.IsOldFormat(text) && OpenWith(path, XmlEditorFactory)) return;
+            OpenWith(path, VSConstants.VsEditorFactoryGuid.TextEditor_guid);
+        }
+
+        /// <summary>Moves the active document to a new tab group, to the right of its own (Window > New Vertical Tab Group).</summary>
+        public static void NewVerticalTabGroup()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            try
+            {
+                if (Package.GetGlobalService(typeof(DTE)) is DTE2 dte) dte.ExecuteCommand("Window.NewVerticalTabGroup");
+            }
+            catch (COMException)
+            {
+                // a single document, or a layout that has no room: the tab stays where it is
+            }
         }
 
         private static bool OpenWith(string path, Guid editor)
@@ -96,14 +124,21 @@ namespace FsmEditor.Services
         public static void SaveOpenMachines()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (!(Package.GetGlobalService(typeof(DTE)) is DTE2 dte)) return;
-            foreach (Document doc in dte.Documents)
+            foreach (var info in new RunningDocumentTable(ServiceProvider.GlobalProvider))
             {
+                if (!IsFsm(info.Moniker)) continue;
                 try
                 {
-                    if (IsFsm(doc.FullName) && !doc.Saved) doc.Save();
+                    if (info.DocData is Editor.FsmDocument doc)
+                    {
+                        if (doc.Dirty && !doc.ReadOnly) doc.Save();
+                    }
+                    else if (info.DocData is IVsPersistDocData data && ErrorHandler.Succeeded(data.IsDocDataDirty(out var dirty)) && dirty != 0)
+                    {
+                        data.SaveDocData(VSSAVEFLAGS.VSSAVE_SilentSave, out _, out _);
+                    }
                 }
-                catch (COMException)
+                catch (Exception e) when (e is COMException || e is IOException || e is UnauthorizedAccessException)
                 {
                     // read-only or being closed: the file on disk is used
                 }

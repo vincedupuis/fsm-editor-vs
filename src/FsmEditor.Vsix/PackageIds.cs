@@ -25,5 +25,6 @@ namespace FsmEditor
         public const int ExportPng = 0x0105;
         public const int OpenTrace = 0x0106;
         public const int ShowTracePlayer = 0x0107;
+        public const int CompareAsDiagrams = 0x0108;
     }
 }

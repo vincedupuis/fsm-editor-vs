@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -10,52 +11,41 @@ using System.Windows.Threading;
 using FsmEditor.Core;
 using FsmEditor.Services;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.ComponentModelHost;
-using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.Text.Operations;
-using Microsoft.VisualStudio.TextManager.Interop;
+using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
 
 namespace FsmEditor.Editor
 {
     /// <summary>
-    /// The document window of a state machine. The text buffer holds the XMI;
-    /// the diagram works on the parsed model. Diagram edits are written back as
-    /// one undoable text edit, and text changes (undo, the XMI text view, a
-    /// reload) are parsed and shown on the diagram. After each change the
-    /// machine is validated against the other machines of the solution and the
-    /// results go to the diagram and the Error List.
+    /// The document window of a state machine: the diagram of an <see cref="FsmDocument"/>. Diagram edits go to the
+    /// document as new states (undoable), and every new state of the document (an undo, a reload, a change on disk) is
+    /// shown on the diagram; the diagram's own edits aren't shown again, so its focus, typing and drags stay. After each
+    /// change the machine is validated against the other machines of the solution and the results go to the diagram and
+    /// the Error List. A pane can be a side of a diagram diff or merge (<see cref="IDiffPane"/>), which the package links.
     /// </summary>
-    internal sealed class FsmEditorPane : WindowPane, IEditorHost, IOleCommandTarget, IVsTextBufferDataEvents
+    internal sealed class FsmEditorPane : WindowPane, IEditorHost, IOleCommandTarget, IDiffPane
     {
         private readonly FsmEditorPackage _package;
-        private readonly IVsTextLines _textLines;
-        private readonly IVsEditorAdaptersFactoryService _adapters;
-        private readonly ITextBufferUndoManagerProvider _undoProvider;
         private readonly DispatcherTimer _syncTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
         private EditorControl _control;
-        private ITextBuffer _buffer;
-        private ITextDocument _document;
-        private IConnectionPoint _dataEvents;
-        private uint _dataEventsCookie;
         private IDisposable _resyncSubscription;
         private int _generation;
-        /// <summary>The XMI the diagram shows (the last one this editor wrote or loaded), with its model.</summary>
-        private string _echoText;
-        private FsmModel _echoModel;
+        /// <summary>The state the diagram shows (the last one shown, or made by its own edit).</summary>
+        private MachineState _shown;
+        private FsmModel _shownDisplay;
         private string _pendingReveal;
+        private readonly List<string> _notices = new List<string>();
+        private Dictionary<string, string> _traceIds;
+        private MachineState _traceIdsOf;
+        private TraceView _trace;
 
-        public FsmEditorPane(FsmEditorPackage package, string path, IVsTextLines textLines, IVsEditorAdaptersFactoryService adapters, IComponentModel componentModel)
+        public FsmEditorPane(FsmEditorPackage package, FsmDocument document)
             : base(package)
         {
             _package = package;
-            FilePath = path;
-            _textLines = textLines;
-            _adapters = adapters;
-            _undoProvider = componentModel.GetService<ITextBufferUndoManagerProvider>();
+            Document = document;
             _syncTimer.Tick += (s, e) =>
             {
                 _syncTimer.Stop();
@@ -63,7 +53,16 @@ namespace FsmEditor.Editor
             };
         }
 
-        public string FilePath { get; private set; }
+        public FsmDocument Document { get; }
+
+        public string FilePath => Document.Path;
+
+        /// <summary>The diagram diff or merge this pane is a side of, or null.</summary>
+        public object Session { get; set; }
+
+        public EditorControl Control => _control;
+
+        public bool IsReadOnly => Document.ReadOnly;
 
         protected override void Initialize()
         {
@@ -71,50 +70,50 @@ namespace FsmEditor.Editor
             ThreadHelper.ThrowIfNotOnUIThread();
             _control = new EditorControl(this);
             Content = _control;
-            if (_textLines is IConnectionPointContainer container)
-            {
-                var iid = typeof(IVsTextBufferDataEvents).GUID;
-                container.FindConnectionPoint(ref iid, out _dataEvents);
-                _dataEvents?.Advise(this, out _dataEventsCookie);
-            }
+            Document.Changed += OnDocumentChanged;
+            Document.SavedWithMessage += OnSaved;
             _resyncSubscription = FsmWorkspace.Instance.OnAnyMachineChanged(ScheduleSync);
             _package.RegisterPane(this);
-            AttachBuffer();
+            if (Document.IsLoaded) AfterLoad();
+            else Document.Loaded += OnLoaded;
         }
 
-        /// <summary>Hooks the text buffer once the document is loaded.</summary>
-        private void AttachBuffer()
-        {
-            if (_buffer != null) return;
-            _buffer = _adapters.GetDocumentBuffer(_textLines);
-            if (_buffer == null) return;
-            _buffer.Changed += OnBufferChanged;
-            if (_buffer.Properties.TryGetProperty(typeof(ITextDocument), out ITextDocument document))
-            {
-                _document = document;
-                FilePath = document.FilePath;
-                _document.FileActionOccurred += OnFileAction;
-            }
-            ScheduleSync();
-        }
-
-        private void OnFileAction(object sender, TextDocumentFileActionEventArgs e)
+        private void OnLoaded(object sender, EventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (e.FileActionType == FileActionTypes.DocumentRenamed)
-            {
-                _package.Validation.Remove(FilePath);
-                _package.UnregisterPane(this);
-                FilePath = e.FilePath;
-                _package.RegisterPane(this);
-                ScheduleSync();
-            }
+            Document.Loaded -= OnLoaded;
+            AfterLoad();
         }
 
-        private void OnBufferChanged(object sender, TextContentChangedEventArgs e)
+        /// <summary>Once the files are read: what opening found, said; a file with merge conflicts opens as a merge.</summary>
+        private void AfterLoad()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            // Notices to show once the diagram is up: what opening found. Opening changes nothing on disk.
+            var placed = Document.State.Placed;
+            if (placed > 0) _notices.Add($"{placed} element{(placed == 1 ? " was" : "s were")} placed automatically: the layout file had no place for {(placed == 1 ? "it" : "them")}.");
+            if (Document.UnreadableLayout != null) _notices.Add($"The layout file could not be read ({Document.UnreadableLayout.Problem}): the elements were placed automatically. It is replaced only if you confirm when saving.");
+            if (Document.Old != null && !Document.ReadOnly) _notices.Add("This file is in the old format (XMI): saving it writes the new format, a .fsm model file and a .fsm.layout layout file, and converts the files linked to it by submachines.");
+            if (Document.LayoutConflict && !Document.ReadOnly) _notices.Add("The layout file has merge conflicts: the diagram uses the current positions, and saving writes a clean layout file.");
             ScheduleSync();
-            // Other diagrams may use this machine as a submachine.
+            // A file with merge conflicts opens as the result of the diagram merge, its two sides beside it.
+            if (Document.Merge != null && !Document.ReadOnly) OpenMergeSoonAsync().FileAndForget("FsmEditor/OpenMerge");
+            else _package.Sessions.Opened(this);
+        }
+
+        /// <summary>The merge opens once the window is up: its sides open beside it.</summary>
+        private async Task OpenMergeSoonAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(alwaysYield: true);
+            if (_control != null) _package.Sessions.OpenMerge(this);
+        }
+
+        private void OnDocumentChanged(object sender, EventArgs e) => ScheduleSync();
+
+        private void OnSaved(object sender, string message)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (message != null) VsShellUtilities.ShowMessageBox(this, message, "FSM Editor", OLEMSGICON.OLEMSGICON_INFO, OLEMSGBUTTON.OLEMSGBUTTON_OK, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
             FsmWorkspace.Instance.ResyncAll();
         }
 
@@ -129,35 +128,28 @@ namespace FsmEditor.Editor
         private async Task SyncAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            if (_buffer == null || _control == null) return;
+            if (_control == null) return;
             var generation = ++_generation;
-            var text = _buffer.CurrentSnapshot.GetText();
-            FsmModel model = null;
+            var state = Document.State;
+            var display = Document.DisplayModel;
+            var model = display ?? state.Model;
             string error = null;
-            var echo = _echoText != null && _echoText == text;
-            try
+            var issues = new List<Issue>();
+            IReadOnlyDictionary<string, SubmachineInfo> submachines = null;
+            IReadOnlyList<MachineInfo> machines = null;
+            if (state.Problems != null || model == null)
             {
-                // Our own edit coming back: keep the model the diagram already has.
-                model = echo ? _echoModel.Clone()
-                    : text.Trim().Length == 0 ? FsmModel.CreateDefault(Path.GetFileNameWithoutExtension(FilePath))
-                    : Xmi.FromXmi(text);
+                error = state.Problems != null && state.Problems.Count > 0
+                    ? string.Join("\n", state.Problems.Select(p => $"Line {p.Line}: {p.Message}"))
+                    : "This file cannot be read.";
             }
-            catch (Exception e) when (e is XmlParseException || e is XmiException)
-            {
-                error = e.Message;
-            }
-
-            var issues = new System.Collections.Generic.List<Issue>();
-            System.Collections.Generic.IReadOnlyDictionary<string, SubmachineInfo> submachines = null;
-            System.Collections.Generic.IReadOnlyList<MachineInfo> machines = null;
-            if (model != null)
+            else
             {
                 var workspace = FsmWorkspace.Instance;
                 var root = workspace.RootFor(FilePath);
                 workspace.Watch(root);
-                var open = workspace.OpenSnapshots();
-                var path = FilePath;
-                var resolved = await workspace.ResolveAsync(path, root, model, open);
+                var open = workspace.OpenTexts();
+                var resolved = await workspace.ResolveAsync(FilePath, root, model, open);
                 submachines = resolved.Submachines;
                 machines = resolved.Machines;
                 var toValidate = model;
@@ -165,127 +157,141 @@ namespace FsmEditor.Editor
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             }
             if (generation != _generation || _control == null) return; // a newer sync is on its way
-            // The document changed meanwhile (a diagram edit written during validation): showing this older text would
-            // take the diagram back to it, and make the edit look like a change from outside. The change syncs again.
-            if (_buffer.CurrentSnapshot.GetText() != text)
+            // The document changed meanwhile: showing this older state would take the diagram back to it.
+            if (Document.State != state || Document.DisplayModel != display)
             {
                 ScheduleSync();
                 return;
             }
-            if (model == null) _echoText = null;
-            else if (!echo)
+            PublishDiagnostics(state, issues, error);
+            // The diagram's own edit coming back: it already shows it.
+            var same = error == null && state == _shown && display == _shownDisplay;
+            _shown = error == null ? state : null;
+            _shownDisplay = display;
+            _control.Update(same ? null : model?.Clone(), issues, error, submachines, machines, Document.MergeFallback);
+            _control.SetReadOnly(Document.ReadOnly);
+            if (_trace != null) _control.SetTrace(MapTrace(_trace));
+            while (_notices.Count > 0 && error == null)
             {
-                // The diagram now shows this text: a later change back to the last text written,
-                // such as a redo after an undo, is not our own edit.
-                _echoText = text;
-                _echoModel = model.Clone();
+                _control.Toast(_notices[0]);
+                _notices.RemoveAt(0);
             }
-            _package.Validation.Publish(FilePath, text, issues, error);
-            _control.Update(echo ? null : model, issues, error, submachines, machines);
-            if (_pendingReveal != null && model != null)
+            if (_pendingReveal != null && error == null)
             {
                 var id = _pendingReveal;
                 _pendingReveal = null;
                 _control.Reveal(id);
             }
+            (Session as DiffSession)?.Update();
+            (Session as MergeSession)?.Update();
+        }
+
+        /// <summary>The Error List: validation issues at the lines of their elements (an old file's, by xmi:id), and the problems of a file that can't be read.</summary>
+        private void PublishDiagnostics(MachineState state, List<Issue> issues, string error)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (CompareFiles.IsReadOnlySide(FilePath)) return;
+            int LineOf(string id)
+            {
+                if (Document.Old != null) return MachineFiles.OldLineOf(Document.Old.Text, id) - 1;
+                return state.Lines.TryGetValue(id ?? "", out var line) ? line - 1 : 0;
+            }
+            var entries = issues.Select(i => (i.Id, LineOf(i.Id), i.Severity, i.Message)).ToList();
+            if (state.Problems != null) entries.AddRange(state.Problems.Select(p => ("", Math.Max(0, p.Line - 1), Severity.Error, p.Message)));
+            else if (error != null) entries.Add(("", 0, Severity.Error, error));
+            _package.Validation.Replace(FilePath, entries);
         }
 
         /// <summary>Selects and shows an element, once the diagram is loaded.</summary>
         public void Reveal(string id)
         {
-            if (_control?.Session == null) _pendingReveal = id;
-            else _control.Reveal(id);
+            if (_control?.Session == null) _pendingReveal = id ?? "";
+            else _control.Reveal(id ?? "");
         }
 
         // ---------------------------------------------------------------- diagram → document
 
-        public void Write(FsmModel model)
+        public string Write(FsmModel model)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (_buffer == null) return;
-            var snapshot = _buffer.CurrentSnapshot;
-            var old = snapshot.GetText();
-            string xmi;
-            try
+            if (Document.ReadOnly) return "This diagram is read-only.";
+            if (!CanEdit()) return "The file is read-only; the change was not saved.";
+            var problem = Document.Edit(model);
+            if (problem == null)
             {
-                xmi = Xmi.ToXmi(model);
+                // The new state is the diagram's own: not shown again.
+                _shown = Document.State;
+                _shownDisplay = null;
             }
-            catch (XmiException e)
+            else
             {
-                _control.Toast($"The change could not be saved: {e.Message}");
                 // Back to what the document holds.
-                _echoText = null;
-                ScheduleSync();
-                return;
-            }
-            // Keep the file's line ends (Git may check files out with CRLF).
-            if (old.Contains("\r\n")) xmi = xmi.Replace("\n", "\r\n");
-            _echoText = xmi;
-            _echoModel = model.Clone();
-            if (xmi == old) return;
-            if (!CanEdit())
-            {
-                _control.Toast("The file is read-only; the change was not saved.");
-                _echoText = null;
-                ScheduleSync();
-                return;
-            }
-            // Checking the file out may have reloaded it.
-            old = _buffer.CurrentSnapshot.GetText();
-            if (xmi == old) return;
-            // Replace only what changed, as one undo unit.
-            int prefix = 0;
-            var max = Math.Min(old.Length, xmi.Length);
-            while (prefix < max && old[prefix] == xmi[prefix]) prefix++;
-            int suffix = 0;
-            while (suffix < max - prefix && old[old.Length - 1 - suffix] == xmi[xmi.Length - 1 - suffix]) suffix++;
-            try
-            {
-                var history = _undoProvider.GetTextBufferUndoManager(_buffer).TextBufferUndoHistory;
-                using (var transaction = history.CreateTransaction("Edit State Machine"))
-                {
-                    using (var edit = _buffer.CreateEdit())
-                    {
-                        edit.Replace(prefix, old.Length - prefix - suffix, xmi.Substring(prefix, xmi.Length - prefix - suffix));
-                        edit.Apply();
-                    }
-                    transaction.Complete();
-                }
-            }
-            catch (InvalidOperationException e)
-            {
-                _control.Toast($"The change could not be saved: {e.Message}");
+                _shown = null;
                 ScheduleSync();
             }
+            return problem;
         }
 
-        /// <summary>Asks Visual Studio whether the file may be edited (checking it out or making it writable); false when refused.</summary>
+        /// <summary>Asks Visual Studio whether the files may be edited (checking them out or making them writable); false when refused.</summary>
         private bool CanEdit()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (string.IsNullOrEmpty(FilePath) || !(GetService(typeof(Microsoft.VisualStudio.Shell.Interop.SVsQueryEditQuerySave)) is Microsoft.VisualStudio.Shell.Interop.IVsQueryEditQuerySave2 queryEdit)) return true;
-            // Flags 0: the default edit query, which may prompt to check the file out or make it writable.
-            var hr = queryEdit.QueryEditFiles(0, 1, new[] { FilePath }, null, null, out var result, out _);
-            return ErrorHandler.Succeeded(hr) && result == (uint)Microsoft.VisualStudio.Shell.Interop.tagVSQueryEditResult.QER_EditOK;
+            if (!(GetService(typeof(SVsQueryEditQuerySave)) is IVsQueryEditQuerySave2 queryEdit)) return true;
+            var files = new[] { FilePath, Document.LayoutPath }.Where(File.Exists).ToArray();
+            if (files.Length == 0) return true;
+            // Flags 0: the default edit query, which may prompt to check the files out or make them writable.
+            var hr = queryEdit.QueryEditFiles(0, files.Length, files, null, null, out var result, out _);
+            return ErrorHandler.Succeeded(hr) && result == (uint)tagVSQueryEditResult.QER_EditOK;
         }
-
-        private Microsoft.VisualStudio.Text.Operations.ITextUndoHistory History =>
-            _buffer == null ? null : _undoProvider.GetTextBufferUndoManager(_buffer).TextBufferUndoHistory;
 
         public void Undo()
         {
-            if (History?.CanUndo == true) History.Undo(1);
+            ThreadHelper.ThrowIfNotOnUIThread();
+            Document.Undo();
         }
 
         public void Redo()
         {
-            if (History?.CanRedo == true) History.Redo(1);
+            ThreadHelper.ThrowIfNotOnUIThread();
+            Document.Redo();
         }
 
         public void ShowTracePlayer() => TracePlayer.TracePlayerWindow.ShowAsync().FileAndForget("FsmEditor/ShowTracePlayer");
 
         /// <summary>The Trace Player's highlights of this machine, or null.</summary>
-        public void ShowTrace(Core.TraceView view) => _control?.SetTrace(view);
+        public void ShowTrace(TraceView view)
+        {
+            _trace = view;
+            _control?.SetTrace(MapTrace(view));
+        }
+
+        /// <summary>
+        /// The Trace Player's highlights with the ids of this diagram: the trace's ids are those reading the file gives
+        /// (<see cref="Format.DerivedIds"/>), which elements created since the file was read, and an old file's (by their
+        /// xmi:ids, until it is saved converted), don't have.
+        /// </summary>
+        private TraceView MapTrace(TraceView view)
+        {
+            var model = Document.State.Model;
+            if (view == null || model == null) return view;
+            if (_traceIdsOf != Document.State)
+            {
+                _traceIds = Format.DerivedIds(model).GroupBy(kv => kv.Value).ToDictionary(g => g.Key, g => g.First().Key);
+                _traceIdsOf = Document.State;
+            }
+            var back = _traceIds;
+            List<string> Map(List<string> ids) => ids.Select(id => back.TryGetValue(id, out var own) ? own : id).ToList();
+            return new TraceView(view.Instances.Select(i => new TraceHighlight
+            {
+                Active = Map(i.Active),
+                Taken = Map(i.Taken),
+                Via = Map(i.Via),
+                Current = Map(i.Current),
+                Event = i.Event,
+                Label = i.Label,
+                Color = i.Color,
+            }));
+        }
 
         public void GenerateCode() => _package.GenerateCodeAsync(FilePath, null).FileAndForget("FsmEditor/GenerateCode");
 
@@ -297,20 +303,45 @@ namespace FsmEditor.Editor
 
         public System.Windows.Media.Imaging.BitmapSource RenderPng() => _control?.ExportPng();
 
+        /// <summary>
+        /// Opens the model file in the text editor. A text editor can't share the diagram's document: the diagram closes
+        /// first, after asking what to do with its unsaved changes, which the text wouldn't show.
+        /// </summary>
         public void OpenAsText()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            FsmDocuments.OpenAsText(FilePath);
+            if (Document.Dirty)
+            {
+                var answer = Dialogs.Choose("Open as Text",
+                    $"{Path.GetFileName(FilePath)} has unsaved changes in the diagram, which the text editor won't show. Save them first?",
+                    "Save and Open as Text", "Open Without Saving");
+                if (answer < 0) return;
+                if (answer == 0)
+                {
+                    try
+                    {
+                        if (!Document.Save()) return;
+                    }
+                    catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                    {
+                        _control.Toast($"{Path.GetFileName(FilePath)} could not be saved: {e.Message}");
+                        return;
+                    }
+                }
+            }
+            var path = FilePath;
+            if (GetService(typeof(SVsWindowFrame)) is IVsWindowFrame frame) frame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+            FsmDocuments.OpenAsText(path);
         }
 
-        public void OpenSubmachine(string href)
+        public void OpenSubmachine(string path)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (string.IsNullOrEmpty(href)) return;
+            if (string.IsNullOrEmpty(path)) return;
             string file = null;
             try
             {
-                (file, _) = Hrefs.Resolve(FilePath, href);
+                file = Hrefs.ResolvePath(FilePath, path);
             }
             catch (Exception e) when (e is ArgumentException || e is NotSupportedException || e is PathTooLongException)
             {
@@ -318,13 +349,13 @@ namespace FsmEditor.Editor
             }
             if (!File.Exists(file))
             {
-                _control.Toast($"The referenced state machine file {href.Split('#')[0]} does not exist.");
+                _control.Toast($"The referenced state machine file {path} does not exist.");
                 return;
             }
             FsmDocuments.OpenInDiagram(file);
         }
 
-        public string AskSubmachineName(string proposed)
+        public string AskSubmachineName(string proposed, ISet<string> namesInside)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var folder = Path.GetDirectoryName(FilePath);
@@ -332,10 +363,11 @@ namespace FsmEditor.Editor
             var value = proposed;
             for (var n = 2; Exists(value); n++) value = proposed + n;
             return Dialogs.AskMachineName(value, "Extract to Submachine", "Name of the new state machine, saved next to this one:", "Extract",
-                name => Exists(name) ? $"{name}.fsm already exists." : null);
+                name => namesInside.Contains(name) ? $"An element of the new machine is named {name}: names are unique in a machine."
+                    : Exists(name) ? $"{name}.fsm already exists." : null);
         }
 
-        public bool CreateMachineFile(string name, string xmi)
+        public bool CreateMachineFiles(string name, string modelText, string layoutText)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var path = Path.Combine(Path.GetDirectoryName(FilePath), name + ".fsm");
@@ -344,12 +376,14 @@ namespace FsmEditor.Editor
                 using (var stream = new FileStream(path, FileMode.CreateNew))
                 using (var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false)))
                 {
-                    writer.Write(xmi);
+                    writer.Write(modelText);
                 }
+                File.WriteAllText(MachineFiles.LayoutPathOf(path), layoutText, new System.Text.UTF8Encoding(false));
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
-                _control.Toast($"{name}.fsm could not be created: {e.Message}");
+                VsShellUtilities.ShowMessageBox(this, $"{name}.fsm could not be written ({e.Message}). Nothing was changed.", "Extract to Submachine",
+                    OLEMSGICON.OLEMSGICON_CRITICAL, OLEMSGBUTTON.OLEMSGBUTTON_OK, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
                 return false;
             }
             AddToProjectAsync(path).FileAndForget("FsmEditor/AddSubmachine");
@@ -371,17 +405,44 @@ namespace FsmEditor.Editor
             }
         }
 
-        // ---------------------------------------------------------------- IVsTextBufferDataEvents
+        // ---------------------------------------------------------------- diff and merge
 
-        public void OnFileChanged(uint grfChange, uint dwFileAttrs)
-        {
-        }
+        FsmModel IDiffPane.CurrentModel() => Document.DisplayModel ?? Document.State.Model;
 
-        public int OnLoadCompleted(int fReload)
+        void IDiffPane.ShowDiff(PaneDiff diff) => _control?.ShowDiff(diff);
+
+        void IDiffPane.Reveal(string id) => Reveal(id ?? "");
+
+        void IDiffPane.Toast(string message) => _control?.Toast(message);
+
+        public void DiffNavigate(int dir, string key) => _package.Sessions.Navigate(this, dir, key);
+
+        public void DiffShowLayout(bool show) => _package.Sessions.ShowLayout(this, show);
+
+        public void ViewChanged(double x, double y, double zoom) => _package.Sessions.ViewChanged(this, x, y, zoom);
+
+        public void MergeChoose(string key, string side) => _package.Sessions.Choose(this, key, side);
+
+        public void MergeComplete()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            AttachBuffer();
-            return VSConstants.S_OK;
+            _package.Sessions.Complete(this);
+        }
+
+        /// <summary>Closes the pane's window (a side of a merge that ended).</summary>
+        public void CloseWindow()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (GetService(typeof(SVsWindowFrame)) is IVsWindowFrame frame) frame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+        }
+
+        public void OpenTextMerge()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            // Visual Studio's merge editor works on the text: the file opens as text, with its conflicts.
+            var path = FilePath;
+            if (GetService(typeof(SVsWindowFrame)) is IVsWindowFrame frame) frame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+            FsmDocuments.OpenAsText(path);
         }
 
         // ---------------------------------------------------------------- edit commands
@@ -419,17 +480,18 @@ namespace FsmEditor.Editor
             {
                 case VSConstants.VSStd97CmdID.Undo:
                 case VSConstants.VSStd97CmdID.MultiLevelUndo:
-                    return tb != null ? tb.CanUndo : History?.CanUndo == true;
+                    return tb != null ? tb.CanUndo : Document.CanUndo;
                 case VSConstants.VSStd97CmdID.Redo:
                 case VSConstants.VSStd97CmdID.MultiLevelRedo:
-                    return tb != null ? tb.CanRedo : History?.CanRedo == true;
+                    return tb != null ? tb.CanRedo : Document.CanRedo;
                 case VSConstants.VSStd97CmdID.Cut:
+                    return tb != null ? tb.SelectionLength > 0 : _control.HasSelection && !Document.ReadOnly;
                 case VSConstants.VSStd97CmdID.Copy:
                     return tb != null ? tb.SelectionLength > 0 : _control.HasSelection;
                 case VSConstants.VSStd97CmdID.Delete:
-                    return tb != null || _control.HasSelection;
+                    return tb != null || (_control.HasSelection && !Document.ReadOnly);
                 case VSConstants.VSStd97CmdID.Paste:
-                    return tb != null || _control.CanPaste;
+                    return tb != null || (_control.CanPaste && !Document.ReadOnly);
                 default:
                     return true;
             }
@@ -437,6 +499,7 @@ namespace FsmEditor.Editor
 
         private void Execute(VSConstants.VSStd97CmdID id)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var tb = FocusedTextBox;
             if (tb != null)
             {
@@ -472,7 +535,7 @@ namespace FsmEditor.Editor
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var group = pguidCmdGroup;
-            if (!Handles(ref group, prgCmds[0].cmdID)) return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+            if (!Handles(ref group, prgCmds[0].cmdID)) return (int)Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_NOTSUPPORTED;
             var enabled = IsEnabled((VSConstants.VSStd97CmdID)prgCmds[0].cmdID);
             prgCmds[0].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | (enabled ? OLECMDF.OLECMDF_ENABLED : 0));
             return VSConstants.S_OK;
@@ -482,7 +545,7 @@ namespace FsmEditor.Editor
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var group = pguidCmdGroup;
-            if (!Handles(ref group, nCmdID)) return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+            if (!Handles(ref group, nCmdID)) return (int)Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_NOTSUPPORTED;
             Execute((VSConstants.VSStd97CmdID)nCmdID);
             return VSConstants.S_OK;
         }
@@ -496,10 +559,10 @@ namespace FsmEditor.Editor
             {
                 _syncTimer.Stop();
                 _resyncSubscription?.Dispose();
-                if (_dataEvents != null && _dataEventsCookie != 0) _dataEvents.Unadvise(_dataEventsCookie);
-                _dataEvents = null;
-                if (_buffer != null) _buffer.Changed -= OnBufferChanged;
-                if (_document != null) _document.FileActionOccurred -= OnFileAction;
+                Document.Changed -= OnDocumentChanged;
+                Document.Loaded -= OnLoaded;
+                Document.SavedWithMessage -= OnSaved;
+                _package.Sessions.Closed(this);
                 _package.UnregisterPane(this);
                 _package.Validation.Remove(FilePath);
                 _control = null;

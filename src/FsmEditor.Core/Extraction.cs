@@ -32,24 +32,39 @@ namespace FsmEditor.Core
     /// connection point references with the same ids take their place on its border. A composite state with several
     /// regions moves whole, as above, since the new machine has one region.</item>
     /// </list>
-    /// A transition crossing the boundary is split at a connection point, keeping its trigger, guard and effect on its
+    /// A transition crossing the boundary is split at a connection point, keeping its trigger, guard and action on its
     /// source's side: an incoming one goes to an entry point reference on the submachine state, then from the new
     /// machine's entry point to its target; an outgoing one goes to an exit point of the new machine, then from the exit
     /// point reference to its target. There is one entry point per inner target and one exit point per outer target. An
-    /// incoming transition to the target of the new machine's initial transition (without guard or effect) targets the
-    /// submachine state itself (default entry) instead.
+    /// incoming transition to the target of the new machine's initial transition (without guard or action) targets the
+    /// submachine state itself (default entry) instead. The references name their points by name, as the files do.
     /// </summary>
     public static class Extraction
     {
         private const double Point = 16;
-        private const string MachineId = "sm";
 
         /// <summary>The name proposed for the new machine: the extracted state's name when there is one, else <c>Submachine</c>.</summary>
         public static string ProposedName(FsmModel model, IEnumerable<string> selected)
         {
-            var states = ExtractedRoots(model, selected).Where(v => v.Type == VertexType.State).ToList();
-            var name = states.Count == 1 ? JsWhitespace.Trim(states[0].Name) : "";
-            return name.Length > 0 ? name : "Submachine";
+            var ids = selected.ToList();
+            var states = ExtractedRoots(model, ids).Where(v => v.Type == VertexType.State).ToList();
+            var name = states.Count == 1 && !Format.IsGenerated(states[0].Name) ? JsWhitespace.Trim(states[0].Name) : "";
+            if (name.Length == 0) return "Submachine";
+            // Names are unique in a machine: a state that moves into the new machine whole leaves it its name.
+            return NamesInside(model, ids).Contains(name) ? $"{name}Machine" : name;
+        }
+
+        /// <summary>The names of the elements the new machine would hold.</summary>
+        public static HashSet<string> NamesInside(FsmModel model, IEnumerable<string> selected)
+        {
+            try
+            {
+                return new HashSet<string>(Extract(model, selected, "Submachine", "Submachine.fsm").Machine.Vertices.Select(v => v.Name).Where(n => n.Length > 0));
+            }
+            catch (ExtractException)
+            {
+                return new HashSet<string>();
+            }
         }
 
         /// <summary>Why <paramref name="selected"/> can't be extracted, or null when it can.</summary>
@@ -57,7 +72,7 @@ namespace FsmEditor.Core
         {
             try
             {
-                Extract(model, selected, "Submachine", "Submachine.fsm#sm");
+                Extract(model, selected, "Submachine", "Submachine.fsm");
                 return null;
             }
             catch (ExtractException e)
@@ -266,7 +281,7 @@ namespace FsmEditor.Core
             // Default entry: the target of the new machine's initial transition, when it has no guard or effect.
             var initial = machineVertices.FirstOrDefault(v => v.Type == VertexType.Initial && v.Parent == region.Id);
             var initialOut = initial != null ? machineTransitions.Where(t => t.Source == initial.Id).ToList() : new List<Transition>();
-            var defaultTarget = initialOut.Count == 1 && JsWhitespace.Trim(initialOut[0].Guard).Length == 0 && JsWhitespace.Trim(initialOut[0].Effect).Length == 0
+            var defaultTarget = initialOut.Count == 1 && JsWhitespace.Trim(initialOut[0].Guard).Length == 0 && JsWhitespace.Trim(initialOut[0].Action).Length == 0
                 ? initialOut[0].Target : null;
 
             // By inner target: the reference on the submachine state that incoming transitions go to.
@@ -285,7 +300,8 @@ namespace FsmEditor.Core
                     naming.Remove(v);
                     return owner.Length > 0 ? owner : "Point";
                 }
-                var id = Identifier(v.Name);
+                // A generated name (choice1*) is no name.
+                var id = Identifier(Format.IsGenerated(v.Name) ? "" : v.Name);
                 return id.Length > 0 ? id : Capitalize(TypeName(v.Type));
             }
             foreach (var t in crossing)
@@ -380,12 +396,18 @@ namespace FsmEditor.Core
                     .Where(a => a != null).Distinct().ToList();
             }
 
+            // The references name their points by name.
+            var pointNameById = entries.Concat(exits).GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First().Name);
+            foreach (var r in entryRefs.Concat(exitRefs).Concat(parentVertices))
+            {
+                if (r.Type == VertexType.ConnectionPointRef && r.Parent == state.Id && pointNameById.TryGetValue(r.Ref, out var pointName)) r.Ref = pointName;
+            }
+
             var parent = m;
             parent.Vertices = parentVertices;
             parent.Transitions = parentTransitions;
             var machine = new FsmModel
             {
-                Id = MachineId,
                 Name = name,
                 Kind = m.Kind,
                 Regions = new List<Region> { region },

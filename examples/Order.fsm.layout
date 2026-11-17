@@ -1,0 +1,76 @@
+{
+  "format": 1,
+  "initial": { "x": 40, "y": 100 },
+  "elements": [
+    {
+      "name": "Cart",
+      "x": 100,
+      "y": 80,
+      "width": 120,
+      "height": 60
+    },
+    {
+      "name": "Payment",
+      "x": 300,
+      "y": 70,
+      "width": 180,
+      "height": 80,
+      "points": [
+        {
+          "name": "retry",
+          "x": -8,
+          "y": 52
+        },
+        {
+          "name": "failed",
+          "x": 172,
+          "y": 36
+        },
+        {
+          "name": "cancelled",
+          "x": 82,
+          "y": -8,
+          "transitions": [
+            {
+              "target": "Cart",
+              "bends": [
+                { "x": 390, "y": 30 },
+                { "x": 160, "y": 30 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Shipped",
+      "x": 580,
+      "y": 10,
+      "width": 120,
+      "height": 60
+    },
+    {
+      "name": "PaymentFailed",
+      "x": 560,
+      "y": 170,
+      "width": 140,
+      "height": 60,
+      "transitions": [
+        {
+          "trigger": "retryPayment",
+          "target": "Payment.retry",
+          "bends": [
+            { "x": 630, "y": 270 },
+            { "x": 260, "y": 270 },
+            { "x": 260, "y": 130 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "final1*",
+      "x": 760,
+      "y": 27
+    }
+  ]
+}

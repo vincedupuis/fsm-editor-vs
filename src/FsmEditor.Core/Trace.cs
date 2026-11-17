@@ -629,7 +629,23 @@ namespace FsmEditor.Core
         public FsmModel Model { get; set; }
         public ModelIndex Index { get; set; }
 
-        public static TraceMachine Of(string file, FsmModel model) => new TraceMachine { File = file, Model = model, Index = new ModelIndex(model) };
+        /// <summary>Read from a file of an earlier version (XMI): its submachines are hrefs.</summary>
+        public bool Old { get; set; }
+
+        public static TraceMachine Of(string file, FsmModel model, bool old = false) => new TraceMachine { File = file, Model = model, Index = new ModelIndex(model), Old = old };
+
+        /// <summary>The machine of a file's text, in either format (its ids are those reading the file gives); null when it can't be read.</summary>
+        public static TraceMachine Read(string file, string text)
+        {
+            try
+            {
+                return Of(file, Load.LoadModel(text), Format.IsOldFormat(text));
+            }
+            catch (LoadException)
+            {
+                return null;
+            }
+        }
     }
 
     /// <summary>A log opened in the Trace Player.</summary>
@@ -960,20 +976,18 @@ namespace FsmEditor.Core
                     problem($"{machine.Model.Name} has no submachine state '{seg}' ({path}).");
                     return null;
                 }
-                var hash = state.Submachine.IndexOf('#');
-                var file = hash >= 0 ? state.Submachine.Substring(0, hash) : state.Submachine;
-                string subFile = null, id = "";
+                var file = Load.SubmachineFiles(new FsmModel { Vertices = { state } }, machine.Old)[0];
+                string subFile = null;
                 try
                 {
-                    (subFile, id) = Hrefs.Resolve(machine.File, state.Submachine);
+                    subFile = Hrefs.ResolvePath(machine.File, file);
                 }
                 catch (Exception e) when (e is ArgumentException || e is NotSupportedException || e is PathTooLongException)
                 {
                     // Not a file path: a submachine that can't be read.
                 }
-                if (id.Length == 0) id = "sm";
                 var sub = subFile != null ? Machine(subFile) : null;
-                if (sub == null || (string.IsNullOrEmpty(sub.Model.Id) ? "sm" : sub.Model.Id) != id)
+                if (sub == null)
                 {
                     problem($"The submachine of {machine.Model.Name}.{(state.Name.Length > 0 ? state.Name : seg)} ({file}) cannot be read ({path}).");
                     return null;

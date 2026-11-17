@@ -75,6 +75,13 @@ namespace FsmEditor.Editor
             S.Reindex();
             TextElement.SetForeground(this, T.BrushOf(T.Foreground));
             var ids = S.Selection.ToList();
+            // In a diff or merge: what changed in the selected element.
+            var diff = _editor.Diff;
+            if (diff != null && ids.Count == 1 && diff.Details.TryGetValue(ids[0], out var lines) && lines.Count > 0)
+            {
+                Add(H4(diff.Role == "result" || diff.Role == "incoming" || diff.Role == "current" ? "Differs between the two sides" : "Changes"));
+                foreach (var line in lines) Add(new TextBlock { Text = line, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 4) });
+            }
             if (ids.Count > 1)
             {
                 Add(H3($"{ids.Count} elements selected"));
@@ -453,18 +460,13 @@ namespace FsmEditor.Editor
                 {
                     m.Name = v;
                     Commit();
-                }),
+                }, text => S.NameCheck(m, text)),
                 SelectField("Kind", m.Kind == MachineKind.Protocol ? "protocol" : "behavioral",
                     new[] { ("behavioral", "Behavioral state machine"), ("protocol", "Protocol state machine") }, v =>
                     {
                         m.Kind = v == "protocol" ? MachineKind.Protocol : MachineKind.Behavioral;
                         Commit(true);
                     }),
-                TextField("Context (owning classifier)", m.Context, v =>
-                {
-                    m.Context = v;
-                    Commit();
-                }, placeholder: "e.g. MediaPlayer"),
                 TextField("Documentation", m.Documentation, v =>
                 {
                     m.Documentation = v;
@@ -530,7 +532,7 @@ namespace FsmEditor.Editor
                 foreach (var a in anchors)
                 {
                     var id = a is Vertex av ? av.Id : ((Transition)a).Id;
-                    var text = a is Transition at ? $"Transition {Or(Labels.TransitionLabel(S.Model, at), at.Id)}" : Or(((Vertex)a).Name, ((Vertex)a).Type.Title());
+                    var text = a is Transition at ? $"Transition {Labels.TransitionLabel(S.Model, at)}" : Or(Format.Shown(((Vertex)a).Name), ((Vertex)a).Type.Title());
                     Add(Row(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis },
                         PButton("✕", () =>
                         {
@@ -541,21 +543,22 @@ namespace FsmEditor.Editor
             }
             else
             {
-                Add(TextField("Name", v.Name, value =>
+                Add(TextField("Name", Format.Shown(v.Name), value =>
                 {
-                    v.Name = JsWhitespace.Trim(value);
+                    v.Name = value;
                     Commit();
-                }));
+                }, text => S.NameCheck(v, text), Format.IsGenerated(v.Name) ? "none shown (a generated name)" : null));
             }
-            var what = v.Type == VertexType.Comment ? "the comment" : Or(v.Name, "the element");
+            var what = v.Type == VertexType.Comment ? "the comment" : Or(Format.Shown(v.Name), "the element");
             if (v.Type == VertexType.State && v.Regions.Count > 0)
             {
                 // A composite state has a color for its header and one for its regions.
                 Add(ColorField(v.Color, c => SetColor(v, null, c), what, "Title color"));
                 Add(ColorField(v.ItemColors.TryGetValue("background", out var bg) ? bg : "", c => SetColor(v, "background", c), what, "Background color"));
             }
-            else
+            else if (v.Type != VertexType.Initial && v.Type != VertexType.ShallowHistory && v.Type != VertexType.DeepHistory)
             {
+                // Initial and history pseudostates take their transition's color.
                 Add(ColorField(v.Color, c => SetColor(v, null, c), what));
             }
 
@@ -607,12 +610,22 @@ namespace FsmEditor.Editor
                 for (int i = 0; i < v.Regions.Count; i++)
                 {
                     var region = v.Regions[i];
-                    var tb = Input(region.Name);
-                    var committed = region.Name;
+                    var tb = Input(Format.Shown(region.Name));
+                    // A single region has no name shown: named only beside others.
+                    tb.IsEnabled = v.Regions.Count > 1;
+                    var committed = tb.Text;
                     void Apply()
                     {
-                        if (JsWhitespace.Trim(tb.Text) == committed) return;
-                        committed = region.Name = JsWhitespace.Trim(tb.Text);
+                        if (tb.Text == committed) return;
+                        var ok = S.NameCheck(region, tb.Text);
+                        if (!ok.Ok)
+                        {
+                            _editor.Toast(ok.Error);
+                            tb.Text = committed;
+                            return;
+                        }
+                        region.Name = ok.Value;
+                        committed = tb.Text;
                         Commit();
                     }
                     tb.LostKeyboardFocus += (s, e) => Apply();
@@ -620,7 +633,7 @@ namespace FsmEditor.Editor
                     {
                         if (e.Key == Key.Enter) Apply();
                     };
-                    Add(Row(WithPlaceholder(tb, $"Region {i + 1}"), PButton("✕", () =>
+                    Add(Row(WithPlaceholder(tb, v.Regions.Count > 1 ? $"Region {i + 1}" : "no name (one region)"), PButton("✕", () =>
                     {
                         S.RemoveRegion(v, region.Id);
                         _editor.RenderProps();
@@ -692,13 +705,13 @@ namespace FsmEditor.Editor
             var href = st?.Submachine ?? "";
             S.Submachines.TryGetValue(href, out var info);
             var machine = href.Length > 0 ? S.MachineLabel(href) : "";
-            Add(Muted(st != null ? $"On {Or(st.Name, "state")}; refers to a point of {Or(machine, "(no submachine set)")}." : "Not attached to a state."));
+            Add(Muted(st != null ? $"On {Or(Format.Shown(st.Name), "a state")}; refers to a point of {Or(machine, "(no submachine set)")}." : "Not attached to a state."));
             var pts = st != null ? S.SubmachinePoints(st) : new List<ConnectionPointInfo>();
             string KindText(PointKind k) => k == PointKind.Exit ? "exit" : "entry";
             if (pts.Count > 0)
             {
                 var cur = $"{KindText(v.PointKind)}:{v.Ref}";
-                var options = pts.Select(q => ($"{KindText(q.Kind)}:{q.Id}", $"{Or(q.Name, q.Id)} ({KindText(q.Kind)} point)")).ToList();
+                var options = pts.Select(q => ($"{KindText(q.Kind)}:{q.Id}", $"{Or(Format.Shown(q.Name), "(unnamed)")} ({KindText(q.Kind)} point)")).ToList();
                 if (!pts.Any(q => $"{KindText(q.Kind)}:{q.Id}" == cur)) options.Insert(0, (cur, v.Ref.Length > 0 ? $"{v.Ref} (missing)" : "— choose a point —"));
                 Add(SelectField("Referenced point", cur, options, value =>
                 {
@@ -715,7 +728,7 @@ namespace FsmEditor.Editor
                     : !info.Found ? $"{machine} was not found, so its points cannot be listed."
                     : $"{machine} has no entry or exit points at its top level.";
                 if (why.Length > 0) Add(Muted(why));
-                Add(TextField("Referenced point id", v.Ref, value =>
+                Add(TextField("Referenced point name", v.Ref, value =>
                     {
                         v.Ref = JsWhitespace.Trim(value);
                         Commit();
@@ -753,7 +766,7 @@ namespace FsmEditor.Editor
             {
                 var existing = refs.FirstOrDefault(r => r.Ref == q.Id);
                 var label = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
-                label.Inlines.Add(new Run($"{(q.Kind == PointKind.Entry ? "○" : "⊗")} {Or(q.Name, q.Id)}"));
+                label.Inlines.Add(new Run($"{(q.Kind == PointKind.Entry ? "○" : "⊗")} {Or(Format.Shown(q.Name), "(unnamed)")}"));
                 label.Inlines.Add(new Run($" · {(q.Kind == PointKind.Entry ? "entry" : "exit")}") { Foreground = T.BrushOf(T.Muted) });
                 var point = q;
                 var action = existing != null
@@ -784,7 +797,7 @@ namespace FsmEditor.Editor
         {
             var s = S.Index.Vertex(t.Source);
             var g = S.Index.Vertex(t.Target);
-            string Nm(Vertex x) => x == null ? "?" : Or(x.Name, x.Type.Title());
+            string Nm(Vertex x) => x == null ? "?" : Or(Format.Shown(x.Name), x.Type.Title());
             Add(H3("Transition"),
                 Muted($"{Nm(s)} → {Nm(g)}"),
                 SelectField("Kind", t.Kind.ToString().ToLowerInvariant(), new[] { ("external", "External"), ("local", "Local"), ("internal", "Internal") }, value =>
@@ -822,11 +835,11 @@ namespace FsmEditor.Editor
                         t.Guard = value;
                         Commit();
                     }, text => Expressions.CheckGuard(text, allowElse), allowElse ? "e.g. hasDisc() && !isJammed(), or else" : "e.g. hasDisc() && !isJammed()"), t, Item("guard"), "the guard"),
-                    WithColor(TextField("Effect", t.Effect, value =>
+                    WithColor(TextField("Action", t.Action, value =>
                     {
-                        t.Effect = value;
+                        t.Action = value;
                         Commit();
-                    }, Expressions.CheckActions, "e.g. notify(); log()"), t, Item("effect"), "the effect"));
+                    }, Expressions.CheckActions, "e.g. notify(); log()"), t, Item("action"), "the action"));
             }
             Add(H4("Routing"));
             var routing = new WrapPanel();

@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "elements": [
+    {
+      "name": "A",
+      "itemColors": {
+        "effect": "#000000"
+      }
+    }
+  ]
+}

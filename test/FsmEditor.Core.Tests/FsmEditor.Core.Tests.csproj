@@ -18,9 +18,14 @@
 
   <ItemGroup>
     <None Include="..\..\examples\*.fsm" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\examples\*.fsm.layout" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
+    <!-- fsm-cli's test cases and schemas, copied into the VSIX project's cli/ by scripts/fetch-cli.sh. -->
+    <None Include="..\..\src\FsmEditor.Vsix\cli\cases\**" LinkBase="cases" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\FsmEditor.Vsix\cli\schemas\**" LinkBase="schemas" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\*.log" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
     <None Include="fixtures\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\FsmEditor.Vsix\ItemTemplates\StateMachine\StateMachine.fsm" Link="templates\StateMachine.fsm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\FsmEditor.Vsix\ItemTemplates\StateMachine\StateMachine.fsm.layout" Link="templates\StateMachine.fsm.layout" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

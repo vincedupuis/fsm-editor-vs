@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="sm_model" name="Payment">
+    <packagedElement xmi:type="uml:StateMachine" xmi:id="sm" name="Payment">
+      <ownedComment xmi:type="uml:Comment" xmi:id="sm_doc" annotatedElement="sm">
+        <body>Payment submachine. Its entry point &quot;retry&quot; and exit points &quot;failed&quot; and &quot;cancelled&quot; are referenced by the Payment state in Order.fsm.</body>
+      </ownedComment>
+      <connectionPoint xmi:type="uml:Pseudostate" xmi:id="p_retry" name="retry" kind="entryPoint"/>
+      <connectionPoint xmi:type="uml:Pseudostate" xmi:id="p_failed" name="failed" kind="exitPoint"/>
+      <connectionPoint xmi:type="uml:Pseudostate" xmi:id="p_cancelled" name="cancelled" kind="exitPoint"/>
+      <region xmi:type="uml:Region" xmi:id="r_root">
+        <subvertex xmi:type="uml:Pseudostate" xmi:id="p_init" kind="initial"/>
+        <subvertex xmi:type="uml:State" xmi:id="p_auth" name="Authorizing">
+          <entry xmi:type="uml:OpaqueBehavior" xmi:id="p_auth_entry">
+            <language>FSM</language>
+            <body>requestAuthorization()</body>
+          </entry>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="p_captured" name="Captured">
+          <entry xmi:type="uml:OpaqueBehavior" xmi:id="p_captured_entry">
+            <language>FSM</language>
+            <body>capture()</body>
+          </entry>
+        </subvertex>
+        <subvertex xmi:type="uml:State" xmi:id="p_declined" name="Declined"/>
+        <subvertex xmi:type="uml:FinalState" xmi:id="p_final"/>
+        <transition xmi:type="uml:Transition" xmi:id="pt1" kind="external" source="p_init" target="p_auth"/>
+        <transition xmi:type="uml:Transition" xmi:id="pt2" kind="external" source="p_auth" target="p_captured">
+          <trigger xmi:type="uml:Trigger" xmi:id="pt2_trigger1" name="approved" event="ev_approved"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="pt3" kind="external" source="p_auth" target="p_declined">
+          <trigger xmi:type="uml:Trigger" xmi:id="pt3_trigger1" name="declined" event="ev_declined"/>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="pt4" kind="external" source="p_captured" target="p_final"/>
+        <transition xmi:type="uml:Transition" xmi:id="pt5" kind="external" source="p_declined" target="p_failed"/>
+        <transition xmi:type="uml:Transition" xmi:id="pt6" kind="external" source="p_retry" target="p_auth">
+          <effect xmi:type="uml:OpaqueBehavior" xmi:id="pt6_effect">
+            <language>FSM</language>
+            <body>resetAttempt()</body>
+          </effect>
+        </transition>
+        <transition xmi:type="uml:Transition" xmi:id="pt7" kind="external" source="p_auth" target="p_cancelled">
+          <trigger xmi:type="uml:Trigger" xmi:id="pt7_trigger1" name="cancel" event="ev_cancel"/>
+        </transition>
+      </region>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_approved" name="approved" signal="sig_approved"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_approved" name="approved"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_declined" name="declined" signal="sig_declined"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_declined" name="declined"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_cancel" name="cancel" signal="sig_cancel"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_cancel" name="cancel"/>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="Payment" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_p_init" modelElement="p_init">
+      <bounds xmi:type="dc:Bounds" x="40" y="80" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_p_auth" modelElement="p_auth">
+      <bounds xmi:type="dc:Bounds" x="120" y="60" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_p_captured" modelElement="p_captured">
+      <bounds xmi:type="dc:Bounds" x="320" y="40" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_p_declined" modelElement="p_declined">
+      <bounds xmi:type="dc:Bounds" x="320" y="160" width="140" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_p_final" modelElement="p_final">
+      <bounds xmi:type="dc:Bounds" x="540" y="57" width="26" height="26"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_p_retry" modelElement="p_retry">
+      <bounds xmi:type="dc:Bounds" x="42" y="182" width="16" height="16"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_p_failed" modelElement="p_failed">
+      <bounds xmi:type="dc:Bounds" x="542" y="182" width="16" height="16"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_p_cancelled" modelElement="p_cancelled">
+      <bounds xmi:type="dc:Bounds" x="182" y="262" width="16" height="16"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_pt1" modelElement="pt1" source="di_p_init" target="di_p_auth">
+      <waypoint xmi:type="dc:Point" x="50" y="90"/>
+      <waypoint xmi:type="dc:Point" x="190" y="90"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_pt2" modelElement="pt2" source="di_p_auth" target="di_p_captured">
+      <waypoint xmi:type="dc:Point" x="190" y="90"/>
+      <waypoint xmi:type="dc:Point" x="390" y="70"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_pt3" modelElement="pt3" source="di_p_auth" target="di_p_declined">
+      <waypoint xmi:type="dc:Point" x="190" y="90"/>
+      <waypoint xmi:type="dc:Point" x="390" y="190"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_pt4" modelElement="pt4" source="di_p_captured" target="di_p_final">
+      <waypoint xmi:type="dc:Point" x="390" y="70"/>
+      <waypoint xmi:type="dc:Point" x="553" y="70"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_pt5" modelElement="pt5" source="di_p_declined" target="di_p_failed">
+      <waypoint xmi:type="dc:Point" x="390" y="190"/>
+      <waypoint xmi:type="dc:Point" x="550" y="190"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_pt6" modelElement="pt6" source="di_p_retry" target="di_p_auth">
+      <waypoint xmi:type="dc:Point" x="50" y="190"/>
+      <waypoint xmi:type="dc:Point" x="190" y="90"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_pt7" modelElement="pt7" source="di_p_auth" target="di_p_cancelled">
+      <waypoint xmi:type="dc:Point" x="190" y="90"/>
+      <waypoint xmi:type="dc:Point" x="190" y="270"/>
+    </ownedElement>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>

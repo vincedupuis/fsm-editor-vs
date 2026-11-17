@@ -166,7 +166,7 @@ namespace FsmEditor.TracePlayer
                     var t = _toAsk.Dequeue();
                     if (!Session.Traces.Contains(t)) continue;
                     if (_machinesDirty) Refresh();
-                    var open = FsmWorkspace.Instance.OpenSnapshots();
+                    var open = FsmWorkspace.Instance.OpenTexts();
                     var machines = Session.Machines
                         .OrderByDescending(m => open.ContainsKey(m.File))
                         .ThenBy(m => m.Model.Name, StringComparer.CurrentCultureIgnoreCase)
@@ -215,7 +215,7 @@ namespace FsmEditor.TracePlayer
         }
 
         /// <summary>Folders whose machines records can be about: the solution's, else those of the open documents and logs.</summary>
-        private IEnumerable<string> Roots(IReadOnlyDictionary<string, Microsoft.VisualStudio.Text.ITextSnapshot> open)
+        private IEnumerable<string> Roots(IReadOnlyDictionary<string, MachineState> open)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var roots = new List<string>();
@@ -235,7 +235,7 @@ namespace FsmEditor.TracePlayer
         private void LoadMachines()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            var open = FsmWorkspace.Instance.OpenSnapshots();
+            var open = FsmWorkspace.Instance.OpenTexts();
             var files = new List<string>(open.Keys);
             foreach (var root in Roots(open))
             {
@@ -247,16 +247,17 @@ namespace FsmEditor.TracePlayer
             Session.SetMachines(files.Select(f => ReadMachine(f, open)).Where(m => m != null).ToList(), f => ReadMachine(f, open));
         }
 
-        private TraceMachine ReadMachine(string file, IReadOnlyDictionary<string, Microsoft.VisualStudio.Text.ITextSnapshot> open)
+        private TraceMachine ReadMachine(string file, IReadOnlyDictionary<string, MachineState> open)
         {
             try
             {
+                // An open machine as its diagram shows it (unsaved changes included), with the ids reading its file gives.
                 string key;
                 Func<string> text;
-                if (open.TryGetValue(file, out var snapshot))
+                if (open.TryGetValue(file, out var state))
                 {
-                    key = $"v{snapshot.TextBuffer.GetHashCode()}:{snapshot.Version.VersionNumber}";
-                    text = snapshot.GetText;
+                    key = "t" + state.ModelText;
+                    text = () => state.ModelText;
                 }
                 else
                 {
@@ -265,11 +266,11 @@ namespace FsmEditor.TracePlayer
                     text = () => File.ReadAllText(file);
                 }
                 if (_parsed.TryGetValue(file, out var cached) && cached.Key == key) return cached.Machine;
-                var machine = TraceMachine.Of(file, Xmi.FromXmi(text()));
+                var machine = TraceMachine.Read(file, text());
                 _parsed[file] = (key, machine);
                 return machine;
             }
-            catch (Exception e) when (e is XmlParseException || e is XmiException || e is IOException || e is UnauthorizedAccessException || e is FormatException || e is System.Xml.XmlException || e is InvalidOperationException)
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
                 return null;
             }

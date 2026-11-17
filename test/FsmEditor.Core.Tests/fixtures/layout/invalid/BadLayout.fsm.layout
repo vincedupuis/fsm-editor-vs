@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "elements": [
+    {
+      "name": "A",
+      "regionLayout": "diagonal"
+    }
+  ]
+}

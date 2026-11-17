@@ -7,7 +7,7 @@ namespace FsmEditor.Core
     /// <summary>The text shown on transitions and in state compartments, and parsing it back.</summary>
     public static class Labels
     {
-        /// <summary><c>t1, t2 [guard] / effect</c>, or <c>[pre] t / [post]</c> for protocol machines.</summary>
+        /// <summary><c>t1, t2 [guard] / action</c>, or <c>[pre] t / [post]</c> for protocol machines.</summary>
         public static string TransitionLabel(FsmModel model, Transition t)
         {
             var trig = string.Join(", ", t.Triggers);
@@ -22,11 +22,11 @@ namespace FsmEditor.Core
             }
             s = trig;
             if (t.Guard.Length > 0) s += $" [{t.Guard}]";
-            if (t.Effect.Length > 0) s += $" / {t.Effect}";
+            if (t.Action.Length > 0) s += $" / {t.Action}";
             return JsWhitespace.Trim(s);
         }
 
-        /// <summary>The label as stacked lines: events, <c>[guard]</c>, <c>/ effect</c> (protocol: <c>[pre]</c>, event, <c>/ [post]</c>).</summary>
+        /// <summary>The label as stacked lines: events, <c>[guard]</c>, <c>/ action</c> (protocol: <c>[pre]</c>, event, <c>/ [post]</c>).</summary>
         public static List<string> TransitionLabelLines(FsmModel model, Transition t) =>
             TransitionLabelItems(model, t).Select(l => l.Text).ToList();
 
@@ -36,7 +36,7 @@ namespace FsmEditor.Core
             var trig = string.Join(", ", t.Triggers);
             var lines = model.Kind == MachineKind.Protocol
                 ? new[] { ("precondition", t.Precondition.Length > 0 ? $"[{t.Precondition}]" : ""), ("triggers", trig), ("postcondition", t.Postcondition.Length > 0 ? $"/ [{t.Postcondition}]" : "") }
-                : new[] { ("triggers", trig), ("guard", t.Guard.Length > 0 ? $"[{t.Guard}]" : ""), ("effect", t.Effect.Length > 0 ? $"/ {t.Effect}" : "") };
+                : new[] { ("triggers", trig), ("guard", t.Guard.Length > 0 ? $"[{t.Guard}]" : ""), ("action", t.Action.Length > 0 ? $"/ {t.Action}" : "") };
             return lines.Where(l => l.Item2.Length > 0).ToList();
         }
 
@@ -78,11 +78,11 @@ namespace FsmEditor.Core
             if (!trig.Ok) return $"Trigger: {trig.Error}";
             var guard = Expressions.CheckGuard(g.Success ? g.Groups[1].Value : "", AllowsElse(source));
             if (!guard.Ok) return $"Guard: {guard.Error}";
-            var effect = Expressions.CheckActions(slash >= 0 ? text.Substring(slash + 1) : "");
-            if (!effect.Ok) return $"Effect: {effect.Error}";
+            var action = Expressions.CheckActions(slash >= 0 ? text.Substring(slash + 1) : "");
+            if (!action.Ok) return $"Action: {action.Error}";
             t.Triggers = trig.Value;
             t.Guard = guard.Value;
-            t.Effect = effect.Value;
+            t.Action = action.Value;
             return null;
         }
 

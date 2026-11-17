@@ -5,20 +5,16 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FsmEditor.Core;
-using Microsoft.VisualStudio.ComponentModelHost;
-using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace FsmEditor.Services
 {
     /// <summary>
     /// The state machines of the solution: lists the *.fsm files submachine
     /// states can reference, reads their names and connection points (preferring
-    /// unsaved text of open documents), and re-syncs every open diagram when any
-    /// of them changes.
+    /// the unsaved changes of open diagrams), and re-syncs every open diagram when
+    /// any of them changes, on disk or in its diagram.
     /// </summary>
     internal sealed class FsmWorkspace : IDisposable
     {
@@ -88,20 +84,18 @@ namespace FsmEditor.Services
             return full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ? full.Substring(prefix.Length).Replace('\\', '/') : full;
         }
 
-        /// <summary>Snapshots of the .fsm documents open in Visual Studio (they may have unsaved changes). UI thread.</summary>
-        public Dictionary<string, ITextSnapshot> OpenSnapshots()
+        /// <summary>
+        /// The machines open in a diagram, with their unsaved changes: the state each shows, by full path. Machines open
+        /// as text are read from disk, as the text editor's unsaved changes aren't a machine yet. UI thread.
+        /// </summary>
+        public Dictionary<string, MachineState> OpenTexts()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            var output = new Dictionary<string, ITextSnapshot>(StringComparer.OrdinalIgnoreCase);
-            var adapters = (Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel)?.GetService<IVsEditorAdaptersFactoryService>();
-            if (adapters == null) return output;
+            var output = new Dictionary<string, MachineState>(StringComparer.OrdinalIgnoreCase);
             foreach (var info in new RunningDocumentTable(ServiceProvider.GlobalProvider))
             {
                 if (info.Moniker == null || !info.Moniker.EndsWith(".fsm", StringComparison.OrdinalIgnoreCase)) continue;
-                if (info.DocData is IVsTextBuffer vsBuffer && adapters.GetDocumentBuffer(vsBuffer) is ITextBuffer buffer)
-                {
-                    output[Path.GetFullPath(info.Moniker)] = buffer.CurrentSnapshot;
-                }
+                if (info.DocData is Editor.FsmDocument doc && !doc.ReadOnly) output[FsmDocuments.SafeFullPath(info.Moniker)] = doc.State;
             }
             return output;
         }
@@ -133,33 +127,26 @@ namespace FsmEditor.Services
             return output;
         }
 
-        /// <summary>Summary of a machine file, cached by document version or modification time. Thread-safe.</summary>
-        public MachineSummary SummaryOf(string path, IReadOnlyDictionary<string, ITextSnapshot> open)
+        /// <summary>Summary of a machine file (an open one's state, else the file, cached by modification time). Thread-safe.</summary>
+        public MachineSummary SummaryOf(string path, IReadOnlyDictionary<string, MachineState> open)
         {
             var full = Path.GetFullPath(path);
+            if (open.TryGetValue(full, out var state)) return state.Model == null ? null : MachineSummary.Of(state.Model);
             string key;
-            ITextSnapshot snapshot = null;
-            if (open.TryGetValue(full, out snapshot))
-            {
-                key = $"v{snapshot.TextBuffer.GetHashCode()}:{snapshot.Version.VersionNumber}";
-            }
-            else
-            {
-                try
-                {
-                    if (!File.Exists(full)) return null;
-                    key = $"m{File.GetLastWriteTimeUtc(full).Ticks}";
-                }
-                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
-                {
-                    return null;
-                }
-            }
-            if (_summaries.TryGetValue(full, out var cached) && cached.Key == key) return cached.Summary;
-            MachineSummary summary = null;
             try
             {
-                summary = MachineSummary.TryRead(snapshot != null ? snapshot.GetText() : File.ReadAllText(full));
+                if (!File.Exists(full)) return null;
+                key = $"m{File.GetLastWriteTimeUtc(full).Ticks}";
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                return null;
+            }
+            if (_summaries.TryGetValue(full, out var cached) && cached.Key == key) return cached.Summary;
+            MachineSummary summary;
+            try
+            {
+                summary = MachineSummary.TryRead(File.ReadAllText(full));
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
@@ -171,7 +158,7 @@ namespace FsmEditor.Services
 
         /// <summary>Everything validation needs to know about the other machines. Runs on a background thread.</summary>
         public Task<(List<MachineInfo> Machines, Dictionary<string, SubmachineInfo> Submachines)> ResolveAsync(
-            string documentPath, string root, FsmModel model, IReadOnlyDictionary<string, ITextSnapshot> open)
+            string documentPath, string root, FsmModel model, IReadOnlyDictionary<string, MachineState> open)
         {
             return Task.Run(() =>
             {

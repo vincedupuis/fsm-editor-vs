@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:uml="http://www.omg.org/spec/UML/20161101" xmlns:umldi="http://www.omg.org/spec/UML/20161101/UMLDI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI">
+  <uml:Model xmi:id="sm_model" name="MediaPlayer">
+    <packagedElement xmi:type="uml:Class" xmi:id="sm_context" name="MediaPlayer" classifierBehavior="sm">
+      <ownedBehavior xmi:type="uml:StateMachine" xmi:id="sm" name="MediaPlayer">
+        <ownedComment xmi:type="uml:Comment" xmi:id="sm_doc" annotatedElement="sm">
+          <body>Example UML state machine: composite and orthogonal states, deep history, choice, exit point and an internal transition.</body>
+        </ownedComment>
+        <region xmi:type="uml:Region" xmi:id="r_root">
+          <ownedComment xmi:type="uml:Comment" xmi:id="v_note" annotatedElement="v_hist">
+            <body>Deep history restores the
+last active playback substates
+after a fault is reset.</body>
+          </ownedComment>
+          <subvertex xmi:type="uml:Pseudostate" xmi:id="v_init" kind="initial"/>
+          <subvertex xmi:type="uml:State" xmi:id="v_off" name="Off">
+            <entry xmi:type="uml:OpaqueBehavior" xmi:id="v_off_entry">
+              <language>FSM</language>
+              <body>powerDown()</body>
+            </entry>
+          </subvertex>
+          <subvertex xmi:type="uml:FinalState" xmi:id="v_final"/>
+          <subvertex xmi:type="uml:State" xmi:id="v_on" name="On">
+            <entry xmi:type="uml:OpaqueBehavior" xmi:id="v_on_entry">
+              <language>FSM</language>
+              <body>ampOn()</body>
+            </entry>
+            <exit xmi:type="uml:OpaqueBehavior" xmi:id="v_on_exit">
+              <language>FSM</language>
+              <body>ampOff()</body>
+            </exit>
+            <connectionPoint xmi:type="uml:Pseudostate" xmi:id="v_fault_xp" name="fault" kind="exitPoint"/>
+            <region xmi:type="uml:Region" xmi:id="r_on">
+              <subvertex xmi:type="uml:Pseudostate" xmi:id="v_on_init" kind="initial"/>
+              <subvertex xmi:type="uml:Pseudostate" xmi:id="v_hist" kind="deepHistory"/>
+              <subvertex xmi:type="uml:State" xmi:id="v_stopped" name="Stopped">
+                <entry xmi:type="uml:OpaqueBehavior" xmi:id="v_stopped_entry">
+                  <language>FSM</language>
+                  <body>rewind()</body>
+                </entry>
+              </subvertex>
+              <subvertex xmi:type="uml:State" xmi:id="v_paused" name="Paused">
+                <doActivity xmi:type="uml:OpaqueBehavior" xmi:id="v_paused_do">
+                  <language>FSM</language>
+                  <body>blinkLed()</body>
+                </doActivity>
+              </subvertex>
+              <subvertex xmi:type="uml:Pseudostate" xmi:id="v_choice" kind="choice"/>
+              <subvertex xmi:type="uml:State" xmi:id="v_playing" name="Playing">
+                <region xmi:type="uml:Region" xmi:id="r_audio" name="audio">
+                  <subvertex xmi:type="uml:Pseudostate" xmi:id="v_ai" kind="initial"/>
+                  <subvertex xmi:type="uml:State" xmi:id="v_stereo" name="Stereo"/>
+                  <subvertex xmi:type="uml:State" xmi:id="v_mono" name="Mono"/>
+                  <transition xmi:type="uml:Transition" xmi:id="t16" kind="external" source="v_ai" target="v_stereo"/>
+                  <transition xmi:type="uml:Transition" xmi:id="t17" kind="external" source="v_stereo" target="v_mono">
+                    <trigger xmi:type="uml:Trigger" xmi:id="t17_trigger1" name="toggleAudio" event="ev_toggleAudio"/>
+                  </transition>
+                  <transition xmi:type="uml:Transition" xmi:id="t18" kind="external" source="v_mono" target="v_stereo">
+                    <trigger xmi:type="uml:Trigger" xmi:id="t18_trigger1" name="toggleAudio" event="ev_toggleAudio"/>
+                  </transition>
+                </region>
+                <region xmi:type="uml:Region" xmi:id="r_video" name="video">
+                  <subvertex xmi:type="uml:Pseudostate" xmi:id="v_vi" kind="initial"/>
+                  <subvertex xmi:type="uml:State" xmi:id="v_hd" name="HD"/>
+                  <subvertex xmi:type="uml:State" xmi:id="v_sd" name="SD"/>
+                  <transition xmi:type="uml:Transition" xmi:id="t19" kind="external" source="v_vi" target="v_hd"/>
+                  <transition xmi:type="uml:Transition" xmi:id="t20" kind="external" source="v_hd" target="v_sd">
+                    <trigger xmi:type="uml:Trigger" xmi:id="t20_trigger1" name="lowBandwidth" event="ev_lowBandwidth"/>
+                  </transition>
+                  <transition xmi:type="uml:Transition" xmi:id="t21" kind="external" source="v_sd" target="v_hd">
+                    <trigger xmi:type="uml:Trigger" xmi:id="t21_trigger1" name="highBandwidth" event="ev_highBandwidth"/>
+                  </transition>
+                </region>
+              </subvertex>
+              <transition xmi:type="uml:Transition" xmi:id="t5" kind="external" source="v_on_init" target="v_stopped"/>
+              <transition xmi:type="uml:Transition" xmi:id="t6" kind="external" source="v_hist" target="v_stopped"/>
+              <transition xmi:type="uml:Transition" xmi:id="t7" kind="external" source="v_stopped" target="v_playing">
+                <trigger xmi:type="uml:Trigger" xmi:id="t7_trigger1" name="play" event="ev_play"/>
+              </transition>
+              <transition xmi:type="uml:Transition" xmi:id="t8" kind="external" source="v_playing" target="v_paused">
+                <trigger xmi:type="uml:Trigger" xmi:id="t8_trigger1" name="pause" event="ev_pause"/>
+              </transition>
+              <transition xmi:type="uml:Transition" xmi:id="t9" kind="external" source="v_paused" target="v_playing">
+                <trigger xmi:type="uml:Trigger" xmi:id="t9_trigger1" name="play" event="ev_play"/>
+              </transition>
+              <transition xmi:type="uml:Transition" xmi:id="t10" kind="external" source="v_paused" target="v_stopped">
+                <trigger xmi:type="uml:Trigger" xmi:id="t10_trigger1" name="stop" event="ev_stop"/>
+              </transition>
+              <transition xmi:type="uml:Transition" xmi:id="t11" kind="external" source="v_stopped" target="v_choice">
+                <trigger xmi:type="uml:Trigger" xmi:id="t11_trigger1" name="eject" event="ev_eject"/>
+              </transition>
+              <transition xmi:type="uml:Transition" xmi:id="t12" kind="external" source="v_choice" target="v_stopped">
+                <guard xmi:type="uml:Constraint" xmi:id="t12_guard">
+                  <specification xmi:type="uml:OpaqueExpression" xmi:id="t12_guard_spec">
+                    <language>FSM</language>
+                    <body>else</body>
+                  </specification>
+                </guard>
+                <effect xmi:type="uml:OpaqueBehavior" xmi:id="t12_effect">
+                  <language>FSM</language>
+                  <body>openTray()</body>
+                </effect>
+              </transition>
+              <transition xmi:type="uml:Transition" xmi:id="t22" kind="internal" source="v_paused" target="v_paused">
+                <trigger xmi:type="uml:Trigger" xmi:id="t22_trigger1" name="volumeChanged" event="ev_volumeChanged"/>
+                <effect xmi:type="uml:OpaqueBehavior" xmi:id="t22_effect">
+                  <language>FSM</language>
+                  <body>updateVolume()</body>
+                </effect>
+              </transition>
+              <transition xmi:type="uml:Transition" xmi:id="t23" kind="external" source="v_paused" target="v_stopped">
+                <trigger xmi:type="uml:Trigger" xmi:id="t23_trigger1" name="after(5m)" event="ev_after_5m_"/>
+                <effect xmi:type="uml:OpaqueBehavior" xmi:id="t23_effect">
+                  <language>FSM</language>
+                  <body>saveBookmark()</body>
+                </effect>
+              </transition>
+            </region>
+          </subvertex>
+          <subvertex xmi:type="uml:State" xmi:id="v_fault" name="Fault">
+            <entry xmi:type="uml:OpaqueBehavior" xmi:id="v_fault_entry">
+              <language>FSM</language>
+              <body>showError()</body>
+            </entry>
+          </subvertex>
+          <transition xmi:type="uml:Transition" xmi:id="t1" kind="external" source="v_init" target="v_off"/>
+          <transition xmi:type="uml:Transition" xmi:id="t2" kind="external" source="v_off" target="v_on">
+            <trigger xmi:type="uml:Trigger" xmi:id="t2_trigger1" name="powerOn" event="ev_powerOn"/>
+          </transition>
+          <transition xmi:type="uml:Transition" xmi:id="t3" kind="external" source="v_on" target="v_off">
+            <trigger xmi:type="uml:Trigger" xmi:id="t3_trigger1" name="powerOff" event="ev_powerOff"/>
+          </transition>
+          <transition xmi:type="uml:Transition" xmi:id="t4" kind="external" source="v_off" target="v_final">
+            <trigger xmi:type="uml:Trigger" xmi:id="t4_trigger1" name="unplug" event="ev_unplug"/>
+          </transition>
+          <transition xmi:type="uml:Transition" xmi:id="t13" kind="external" source="v_choice" target="v_fault_xp">
+            <guard xmi:type="uml:Constraint" xmi:id="t13_guard">
+              <specification xmi:type="uml:OpaqueExpression" xmi:id="t13_guard_spec">
+                <language>FSM</language>
+                <body>isTrayJammed()</body>
+              </specification>
+            </guard>
+          </transition>
+          <transition xmi:type="uml:Transition" xmi:id="t14" kind="external" source="v_fault_xp" target="v_fault"/>
+          <transition xmi:type="uml:Transition" xmi:id="t15" kind="external" source="v_fault" target="v_hist">
+            <trigger xmi:type="uml:Trigger" xmi:id="t15_trigger1" name="reset" event="ev_reset"/>
+          </transition>
+        </region>
+      </ownedBehavior>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_toggleAudio" name="toggleAudio" signal="sig_toggleAudio"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_toggleAudio" name="toggleAudio"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_lowBandwidth" name="lowBandwidth" signal="sig_lowBandwidth"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_lowBandwidth" name="lowBandwidth"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_highBandwidth" name="highBandwidth" signal="sig_highBandwidth"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_highBandwidth" name="highBandwidth"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_play" name="play" signal="sig_play"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_play" name="play"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_pause" name="pause" signal="sig_pause"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_pause" name="pause"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_stop" name="stop" signal="sig_stop"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_stop" name="stop"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_eject" name="eject" signal="sig_eject"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_eject" name="eject"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_volumeChanged" name="volumeChanged" signal="sig_volumeChanged"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_volumeChanged" name="volumeChanged"/>
+    <packagedElement xmi:type="uml:TimeEvent" xmi:id="ev_after_5m_" name="after(5m)" isRelative="true">
+      <when xmi:type="uml:TimeExpression" xmi:id="ev_after_5m__when">
+        <expr xmi:type="uml:LiteralString" xmi:id="ev_after_5m__expr" value="5m"/>
+      </when>
+    </packagedElement>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_powerOn" name="powerOn" signal="sig_powerOn"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_powerOn" name="powerOn"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_powerOff" name="powerOff" signal="sig_powerOff"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_powerOff" name="powerOff"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_unplug" name="unplug" signal="sig_unplug"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_unplug" name="unplug"/>
+    <packagedElement xmi:type="uml:SignalEvent" xmi:id="ev_reset" name="reset" signal="sig_reset"/>
+    <packagedElement xmi:type="uml:Signal" xmi:id="sig_reset" name="reset"/>
+  </uml:Model>
+  <umldi:UMLStateMachineDiagram xmi:id="sm_diagram" name="MediaPlayer" modelElement="sm" isFrame="false">
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_note" modelElement="v_note">
+      <bounds xmi:type="dc:Bounds" x="30" y="480" width="210" height="64"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_init" modelElement="v_init">
+      <bounds xmi:type="dc:Bounds" x="40" y="100" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_off" modelElement="v_off">
+      <bounds xmi:type="dc:Bounds" x="100" y="80" width="150" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_final" modelElement="v_final">
+      <bounds xmi:type="dc:Bounds" x="162" y="260" width="26" height="26"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_on" modelElement="v_on">
+      <bounds xmi:type="dc:Bounds" x="340" y="20" width="780" height="500"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_r_on" modelElement="r_on">
+      <bounds xmi:type="dc:Bounds" x="340" y="78" width="780" height="442"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_fault_xp" modelElement="v_fault_xp">
+      <bounds xmi:type="dc:Bounds" x="467" y="512" width="16" height="16"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_on_init" modelElement="v_on_init">
+      <bounds xmi:type="dc:Bounds" x="355" y="138" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_hist" modelElement="v_hist">
+      <bounds xmi:type="dc:Bounds" x="355" y="400" width="26" height="26"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_stopped" modelElement="v_stopped">
+      <bounds xmi:type="dc:Bounds" x="400" y="120" width="150" height="56"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_paused" modelElement="v_paused">
+      <bounds xmi:type="dc:Bounds" x="600" y="360" width="200" height="70"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_choice" modelElement="v_choice">
+      <bounds xmi:type="dc:Bounds" x="461" y="300" width="28" height="28"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_playing" modelElement="v_playing">
+      <bounds xmi:type="dc:Bounds" x="760" y="96" width="330" height="230"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_r_audio" modelElement="r_audio">
+      <bounds xmi:type="dc:Bounds" x="760" y="120" width="330" height="103"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_r_video" modelElement="r_video">
+      <bounds xmi:type="dc:Bounds" x="760" y="223" width="330" height="103"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_ai" modelElement="v_ai">
+      <bounds xmi:type="dc:Bounds" x="780" y="160" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_stereo" modelElement="v_stereo">
+      <bounds xmi:type="dc:Bounds" x="825" y="145" width="100" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_mono" modelElement="v_mono">
+      <bounds xmi:type="dc:Bounds" x="965" y="145" width="100" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_vi" modelElement="v_vi">
+      <bounds xmi:type="dc:Bounds" x="780" y="265" width="20" height="20"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_hd" modelElement="v_hd">
+      <bounds xmi:type="dc:Bounds" x="825" y="250" width="100" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_sd" modelElement="v_sd">
+      <bounds xmi:type="dc:Bounds" x="965" y="250" width="100" height="50"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLShape" xmi:id="di_v_fault" modelElement="v_fault">
+      <bounds xmi:type="dc:Bounds" x="400" y="580" width="150" height="60"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t16" modelElement="t16" source="di_v_ai" target="di_v_stereo">
+      <waypoint xmi:type="dc:Point" x="790" y="170"/>
+      <waypoint xmi:type="dc:Point" x="875" y="170"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t17" modelElement="t17" source="di_v_stereo" target="di_v_mono">
+      <waypoint xmi:type="dc:Point" x="875" y="170"/>
+      <waypoint xmi:type="dc:Point" x="1015" y="170"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t18" modelElement="t18" source="di_v_mono" target="di_v_stereo">
+      <waypoint xmi:type="dc:Point" x="1015" y="170"/>
+      <waypoint xmi:type="dc:Point" x="945" y="210"/>
+      <waypoint xmi:type="dc:Point" x="875" y="170"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t19" modelElement="t19" source="di_v_vi" target="di_v_hd">
+      <waypoint xmi:type="dc:Point" x="790" y="275"/>
+      <waypoint xmi:type="dc:Point" x="875" y="275"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t20" modelElement="t20" source="di_v_hd" target="di_v_sd">
+      <waypoint xmi:type="dc:Point" x="875" y="275"/>
+      <waypoint xmi:type="dc:Point" x="1015" y="275"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t21" modelElement="t21" source="di_v_sd" target="di_v_hd">
+      <waypoint xmi:type="dc:Point" x="1015" y="275"/>
+      <waypoint xmi:type="dc:Point" x="945" y="313"/>
+      <waypoint xmi:type="dc:Point" x="875" y="275"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t5" modelElement="t5" source="di_v_on_init" target="di_v_stopped">
+      <waypoint xmi:type="dc:Point" x="365" y="148"/>
+      <waypoint xmi:type="dc:Point" x="475" y="148"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t6" modelElement="t6" source="di_v_hist" target="di_v_stopped">
+      <waypoint xmi:type="dc:Point" x="368" y="413"/>
+      <waypoint xmi:type="dc:Point" x="368" y="165"/>
+      <waypoint xmi:type="dc:Point" x="475" y="148"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t7" modelElement="t7" source="di_v_stopped" target="di_v_playing">
+      <waypoint xmi:type="dc:Point" x="475" y="148"/>
+      <waypoint xmi:type="dc:Point" x="925" y="211"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t8" modelElement="t8" source="di_v_playing" target="di_v_paused">
+      <waypoint xmi:type="dc:Point" x="925" y="211"/>
+      <waypoint xmi:type="dc:Point" x="870" y="380"/>
+      <waypoint xmi:type="dc:Point" x="700" y="395"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t9" modelElement="t9" source="di_v_paused" target="di_v_playing">
+      <waypoint xmi:type="dc:Point" x="700" y="395"/>
+      <waypoint xmi:type="dc:Point" x="925" y="211"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t10" modelElement="t10" source="di_v_paused" target="di_v_stopped">
+      <waypoint xmi:type="dc:Point" x="700" y="395"/>
+      <waypoint xmi:type="dc:Point" x="475" y="148"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t11" modelElement="t11" source="di_v_stopped" target="di_v_choice">
+      <waypoint xmi:type="dc:Point" x="475" y="148"/>
+      <waypoint xmi:type="dc:Point" x="475" y="314"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t12" modelElement="t12" source="di_v_choice" target="di_v_stopped">
+      <waypoint xmi:type="dc:Point" x="475" y="314"/>
+      <waypoint xmi:type="dc:Point" x="430" y="314"/>
+      <waypoint xmi:type="dc:Point" x="430" y="190"/>
+      <waypoint xmi:type="dc:Point" x="475" y="148"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t23" modelElement="t23" source="di_v_paused" target="di_v_stopped">
+      <waypoint xmi:type="dc:Point" x="700" y="395"/>
+      <waypoint xmi:type="dc:Point" x="700" y="250"/>
+      <waypoint xmi:type="dc:Point" x="475" y="148"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t1" modelElement="t1" source="di_v_init" target="di_v_off">
+      <waypoint xmi:type="dc:Point" x="50" y="110"/>
+      <waypoint xmi:type="dc:Point" x="175" y="110"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t2" modelElement="t2" source="di_v_off" target="di_v_on">
+      <waypoint xmi:type="dc:Point" x="175" y="110"/>
+      <waypoint xmi:type="dc:Point" x="300" y="95"/>
+      <waypoint xmi:type="dc:Point" x="730" y="270"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t3" modelElement="t3" source="di_v_on" target="di_v_off">
+      <waypoint xmi:type="dc:Point" x="730" y="270"/>
+      <waypoint xmi:type="dc:Point" x="300" y="125"/>
+      <waypoint xmi:type="dc:Point" x="175" y="110"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t4" modelElement="t4" source="di_v_off" target="di_v_final">
+      <waypoint xmi:type="dc:Point" x="175" y="110"/>
+      <waypoint xmi:type="dc:Point" x="175" y="273"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t13" modelElement="t13" source="di_v_choice" target="di_v_fault_xp">
+      <waypoint xmi:type="dc:Point" x="475" y="314"/>
+      <waypoint xmi:type="dc:Point" x="475" y="520"/>
+      <ownedElement xmi:type="umldi:UMLLabel" xmi:id="di_t13_label" modelElement="t13">
+        <bounds xmi:type="dc:Bounds" x="523" y="409" width="100" height="16"/>
+      </ownedElement>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t14" modelElement="t14" source="di_v_fault_xp" target="di_v_fault">
+      <waypoint xmi:type="dc:Point" x="475" y="520"/>
+      <waypoint xmi:type="dc:Point" x="475" y="610"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_t15" modelElement="t15" source="di_v_fault" target="di_v_hist">
+      <waypoint xmi:type="dc:Point" x="475" y="610"/>
+      <waypoint xmi:type="dc:Point" x="300" y="610"/>
+      <waypoint xmi:type="dc:Point" x="300" y="413"/>
+      <waypoint xmi:type="dc:Point" x="368" y="413"/>
+    </ownedElement>
+    <ownedElement xmi:type="umldi:UMLEdge" xmi:id="di_v_note_anchor1" modelElement="v_note" source="di_v_note" target="di_v_hist"/>
+  </umldi:UMLStateMachineDiagram>
+</xmi:XMI>

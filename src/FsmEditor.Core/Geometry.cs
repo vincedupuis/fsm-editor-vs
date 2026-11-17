@@ -339,6 +339,17 @@ namespace FsmEditor.Core
         {
             var s = ix.Vertex(t.Source);
             var g = ix.Vertex(t.Target);
+            if (s != null && g == null && t.Kind != TransitionKind.Internal)
+            {
+                // A transition whose target doesn't exist (a reference that names nothing): a short arrow ending in a marker.
+                var bends = new List<PointD>(t.Points);
+                var tip = bends.Count > 0 ? bends[bends.Count - 1] : new PointD(s.X + s.W + 46, s.Y + s.H / 2);
+                if (bends.Count > 0) bends.RemoveAt(bends.Count - 1);
+                var route = new List<PointD> { Clip(s, bends.Count > 0 ? bends[0] : tip) };
+                route.AddRange(bends);
+                route.Add(tip);
+                return route;
+            }
             if (s == null || g == null) return null;
             if (IsLoop(ix, t)) return LoopRoute(t, s);
             var pts = t.Points;
@@ -492,7 +503,7 @@ namespace FsmEditor.Core
             foreach (var v in model.Vertices)
             {
                 Add(v.X, v.Y);
-                var caption = v.Invariant.Length > 0 || (v.Name.Length > 0 && v.Type != VertexType.State);
+                var caption = v.Invariant.Length > 0 || (Format.Shown(v.Name).Length > 0 && v.Type != VertexType.State);
                 Add(v.X + v.W, v.Y + v.H + (caption ? 16 : 0));
             }
             foreach (var t in model.Transitions)
@@ -523,6 +534,16 @@ namespace FsmEditor.Core
                 .ToList();
 
         /// <summary>Whether a transition is drawn as a line (internal transitions are listed in the state instead).</summary>
+        /// <summary>A transition whose target doesn't exist (a reference that names nothing): drawn as a short arrow ending in a marker.</summary>
+        public static bool IsDangling(ModelIndex ix, Transition t) => ix.Vertex(t.Source) != null && ix.Vertex(t.Target) == null && t.Kind != TransitionKind.Internal;
+
+        /// <summary>The color an element is drawn in: its own, or for an initial or history pseudostate its transition's.</summary>
+        public static string ColorOf(FsmModel model, Vertex v)
+        {
+            var pseudo = v.Type == VertexType.Initial || v.Type == VertexType.ShallowHistory || v.Type == VertexType.DeepHistory;
+            return ElementColors.Of(pseudo ? model.Transitions.FirstOrDefault(t => t.Source == v.Id)?.Color : v.Color);
+        }
+
         public static bool IsDrawn(ModelIndex ix, Transition t) =>
             !(t.Kind == TransitionKind.Internal && t.Source == t.Target && ix.Vertex(t.Source)?.Type == VertexType.State);
     }

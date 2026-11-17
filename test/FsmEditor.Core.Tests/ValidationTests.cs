@@ -15,7 +15,7 @@ namespace FsmEditor.Core.Tests
             private int n;
 
             public ModelBuilder(string name) =>
-                Model = new FsmModel { Id = "sm", Name = name, Regions = { new Region { Id = "r_root" } } };
+                Model = new FsmModel { Name = name, Regions = { new Region { Id = "r_root" } } };
 
             public string Vertex(VertexType type, string parent = "r_root", string id = null, string name = "")
             {
@@ -222,16 +222,28 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
-        public void ReportsARegionIdUsedAgainOnTheRegionId()
+        public void NamesAreUniqueInTheMachineFollowTheRulesAndPointsAreUniqueOnTheirState()
         {
             var b = Machine();
-            var s = b.State("S", regions: 1);
-            b.State("T", "S_r0");
-            b.Model.Vertices.First(v => v.Id == s).Regions[0].Id = "r_root";
-            var u = b.State("U", regions: 1);
-            b.Model.Vertices.First(v => v.Id == u).Regions[0].Id = "A";
-            var dup = Validation.Validate(b.Model).Where(i => i.Message.StartsWith("Duplicate id")).Select(i => $"{i.Id}|{i.Severity.ToString().ToLowerInvariant()}|{i.Message}");
-            Assert.Equal(new[] { "r_root|error|Duplicate id 'r_root'.", "A|error|Duplicate id 'A'." }, dup);
+            b.State("S", regions: 2);
+            var regs = b.Model.Vertices.First(v => v.Id == "S").Regions;
+            regs[0].Name = "A";
+            regs[1].Name = "r";
+            b.State("T.x", regs[1].Id);
+            b.Vertex(VertexType.EntryPoint, "S", "p1", "in");
+            b.Vertex(VertexType.EntryPoint, "S", "p2", "in");
+            b.Vertex(VertexType.ExitPoint, "S", "p3", "deepHistory");
+            b.Vertex(VertexType.Choice, "r_root", "c", "c*x");
+            var names = Validation.Validate(b.Model).Where(i => System.Text.RegularExpressions.Regex.IsMatch(i.Message, "name", System.Text.RegularExpressions.RegexOptions.IgnoreCase) && !i.Message.Contains("can never"))
+                .Select(i => $"{i.Id}|{i.Message}");
+            Assert.Equal(new[]
+            {
+                $"{regs[0].Id}|Name 'A' is used more than once in the state machine.",
+                "T.x|Name 'T.x' cannot contain '.'.",
+                "p2|'S' has two points named 'in'.",
+                "p3|A point cannot be named 'deepHistory'.",
+                "c|Name 'c*x' can contain '*' only as its last character.",
+            }, names);
         }
 
         [Fact]
@@ -244,7 +256,8 @@ namespace FsmEditor.Core.Tests
             b.State("B", "r2");
             b.Init("B", "r2");
             b.State("C", "r3");
-            b.Vertex(VertexType.Final, "r4");
+            b.Vertex(VertexType.Final, "r4", name: "F");
+            for (var i = 0; i < b.Model.Regions.Count; i++) b.Model.Regions[i].Name = $"region{i}";
             Assert.Equal(
                 new[] { "|warning|The top-level region has no initial pseudostate.", "C|warning|State 'C' can never be entered." },
                 Validation.Validate(b.Model).Select(i => $"{i.Id}|{i.Severity.ToString().ToLowerInvariant()}|{i.Message}"));
@@ -254,7 +267,8 @@ namespace FsmEditor.Core.Tests
         public void WarnsOncePerTopLevelRegionWithStatesButNoInitialPseudostate()
         {
             var b = new ModelBuilder("M");
-            b.Model.Regions.Add(new Region { Id = "r2" });
+            b.Model.Regions.Add(new Region { Id = "r2", Name = "r2" });
+            b.Model.Regions[0].Name = "r1";
             b.State("A");
             b.State("B", "r2");
             Assert.Equal(

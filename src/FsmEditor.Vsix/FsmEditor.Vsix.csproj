@@ -82,7 +82,7 @@
     <PropertyGroup>
       <_StateMachineVstemplate>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\ItemTemplates\StateMachine\StateMachine.vstemplate'))</_StateMachineVstemplate>
     </PropertyGroup>
-    <Copy SourceFiles="ItemTemplates\StateMachine\StateMachine.fsm;Resources\icon.png" DestinationFolder="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\files" />
+    <Copy SourceFiles="ItemTemplates\StateMachine\StateMachine.fsm;ItemTemplates\StateMachine\StateMachine.fsm.layout;Resources\icon.png" DestinationFolder="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\files" />
     <WriteLinesToFile File="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\files\StateMachine.vstemplate"
                       Lines="$([MSBuild]::Escape($(_StateMachineVstemplate.Replace('@ProjectType@', '%(ItemTemplateProjectType.Identity)'))))"
                       Overwrite="true" WriteOnlyWhenDifferent="true" />
@@ -93,10 +93,11 @@
   <!--
     The `fsm` code generator (github.com/vincedupuis/fsm-cli) and its templates: the contents of
     the windows-x64 archive of an fsm-cli release, copied into cli/ by scripts/fetch-cli.ps1 or
-    scripts/fetch-cli.sh (the release workflow downloads the one pinned by FSM_CLI_VERSION).
+    scripts/fetch-cli.sh (the release workflow downloads the one pinned by FSM_CLI_VERSION), with the
+    JSON Schemas of the file format (cli/schemas). The test cases (cli/cases) are for the Core tests only.
   -->
   <ItemGroup>
-    <Content Include="cli\**\*" IncludeInVSIX="true" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="cli\**\*" Exclude="cli\cases\**" IncludeInVSIX="true" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <!-- A Release VSIX must bundle the generator; Debug builds only warn. -->
   <Target Name="WarnMissingCli" BeforeTargets="Build" Condition="!Exists('cli\fsm.exe') And '$(Configuration)' != 'Release'">

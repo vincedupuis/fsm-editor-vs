@@ -7,7 +7,7 @@
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
     <Name>State Machine</Name>
-    <Description>A UML state machine (.fsm), edited as a diagram in FSM Editor.</Description>
+    <Description>A UML state machine (.fsm, with its layout in .fsm.layout), edited as a diagram in FSM Editor.</Description>
     <Icon>icon.png</Icon>
     <TemplateID>FsmEditor.StateMachine.@ProjectType@</TemplateID>
     <ProjectType>@ProjectType@</ProjectType>
@@ -16,5 +16,6 @@
   </TemplateData>
   <TemplateContent>
     <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.fsm" OpenInEditor="true">StateMachine.fsm</ProjectItem>
+    <ProjectItem ReplaceParameters="false" TargetFileName="$fileinputname$.fsm.layout">StateMachine.fsm.layout</ProjectItem>
   </TemplateContent>
 </VSTemplate>

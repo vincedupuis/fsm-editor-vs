@@ -16,7 +16,14 @@ namespace FsmEditor.Core.Tests
         }
 
         private static DiagramSession Example(string file) =>
-            new DiagramSession(Xmi.FromXmi(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "examples", file))));
+            new DiagramSession(Load.LoadModel(TestFiles.Example(file), TestFiles.Example(file + ".layout")));
+
+        /// <summary>A model saved and read again.</summary>
+        private static FsmModel RoundTrip(FsmModel m)
+        {
+            var w = TestFiles.Write(m);
+            return TestFiles.Read(w.Model, w.Layout).Model;
+        }
 
         [Fact]
         public void CreatesStatesInTheRegionUnderThePoint()
@@ -118,9 +125,10 @@ namespace FsmEditor.Core.Tests
             var copy = s.Index.Vertex(s.Selection.Single());
             Assert.NotEqual(composite.Id, copy.Id);
             Assert.Equal(composite.X + 20, copy.X);
-            Assert.Equal(composite.Name, copy.Name);
+            // Names are unique: the copy takes the next free one.
+            Assert.Equal(composite.Name + "2", copy.Name);
             Assert.Equal(s.Index.Descendants(composite).Count, s.Index.Descendants(copy).Count);
-            Assert.DoesNotContain(Validation.Validate(s.Model), i => i.Message.StartsWith("Duplicate id"));
+            Assert.DoesNotContain(Validation.Validate(s.Model), i => i.Message.Contains("is used more than once"));
         }
 
         [Fact]
@@ -169,7 +177,7 @@ namespace FsmEditor.Core.Tests
             // The background color tints the regions.
             s.SetColor(v, "background", "#30a46c");
             Assert.Contains("style=\"stop-color:#dcefe6\"/></linearGradient>", SvgExport.Export(s));
-            var back = Xmi.FromXmi(Xmi.ToXmi(s.Model)).Vertices.First(x => x.Id == v.Id);
+            var back = RoundTrip(s.Model).Vertices.First(x => x.Id == v.Id);
             Assert.Equal("#0090ff", back.Color);
             Assert.Equal("#30a46c", back.ItemColors["background"]);
             // One color for both is a plain fill.
@@ -187,7 +195,7 @@ namespace FsmEditor.Core.Tests
             s.SetColor(v, "entry", "#30a46c");
             s.SetColor(t, "guard", "#0090ff");
             s.SetColor(t, null, "not a color");
-            var back = Xmi.FromXmi(Xmi.ToXmi(s.Model));
+            var back = RoundTrip(s.Model);
             var bv = back.Vertices.First(x => x.Id == v.Id);
             Assert.Equal("#e5484d", bv.Color);
             Assert.Equal("#30a46c", bv.ItemColors["entry"]);
@@ -210,7 +218,7 @@ namespace FsmEditor.Core.Tests
             Assert.Null(s.ApplyLabel(t2, "play, after(2s) [isReady() && !isBusy()] / doIt(); log()"));
             Assert.Equal(new[] { "play", "after(2s)" }, t2.Triggers);
             Assert.Equal("isReady() && !isBusy()", t2.Guard);
-            Assert.Equal("doIt(); log()", t2.Effect);
+            Assert.Equal("doIt(); log()", t2.Action);
             Assert.Equal("play, after(2s) [isReady() && !isBusy()] / doIt(); log()", Labels.TransitionLabel(s.Model, t2));
             Assert.StartsWith("Guard:", s.ApplyLabel(t2, "go [volume > 3]"));
             Assert.Equal("isReady() && !isBusy()", t2.Guard);
@@ -222,10 +230,10 @@ namespace FsmEditor.Core.Tests
         {
             var s = NewSession();
             var sub = s.CreateVertex("submachine", new PointD(400, 300));
-            s.SetSubmachine(sub, "Payment.fsm#sm");
+            s.SetSubmachine(sub, "Payment.fsm");
             s.Submachines = new Dictionary<string, SubmachineInfo>
             {
-                ["Payment.fsm#sm"] = new SubmachineInfo
+                ["Payment.fsm"] = new SubmachineInfo
                 {
                     Found = true,
                     Name = "Payment",
@@ -238,7 +246,7 @@ namespace FsmEditor.Core.Tests
             Assert.All(refs.Where(r => r.PointKind == PointKind.Entry), r => Assert.Equal(sub.X, r.CenterX));
             Assert.All(refs.Where(r => r.PointKind == PointKind.Exit), r => Assert.Equal(sub.X + sub.W, r.CenterX));
             Assert.Empty(s.FreePoints(sub));
-            Assert.Equal("Payment", s.MachineLabel("Payment.fsm#sm"));
+            Assert.Equal("Payment", s.MachineLabel("Payment.fsm"));
         }
 
         [Fact]
@@ -278,17 +286,19 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
-        public void HrefsAreRelativeAndEncoded()
+        public void SubmachinePathsAreRelative()
         {
             var root = Path.GetTempPath();
             var doc = Path.Combine(root, "models", "Order.fsm");
             var other = Path.Combine(root, "models", "sub dir", "Payment.fsm");
-            var href = Hrefs.For(doc, other, "sm");
-            Assert.Equal("sub%20dir/Payment.fsm#sm", href);
-            var (file, id) = Hrefs.Resolve(doc, href);
+            var path = Hrefs.For(doc, other);
+            Assert.Equal("sub dir/Payment.fsm", path);
+            Assert.Equal(Path.GetFullPath(other), Hrefs.ResolvePath(doc, path));
+            Assert.Equal("../Order.fsm", Hrefs.For(other, doc));
+            // An old file's href: encoded, with the machine's id.
+            var (file, id) = Hrefs.Resolve(doc, "sub%20dir/Payment.fsm#sm");
             Assert.Equal(Path.GetFullPath(other), file);
             Assert.Equal("sm", id);
-            Assert.Equal("../Order.fsm#sm", Hrefs.For(other, doc, "sm"));
         }
 
         [Fact]
@@ -578,7 +588,8 @@ namespace FsmEditor.Core.Tests
             Assert.NotEqual("", g);
             Assert.Equal(g, Named(s, "Paused").Group);
             Assert.Equal(new[] { "Stopped", "Paused" }, s.GroupMembers(g).Select(v => v.Name));
-            Assert.Contains("<group id=\"" + g + "\" members=\"" + Named(s, "Stopped").Id + " " + Named(s, "Paused").Id + "\"/>", Xmi.ToXmi(s.Model));
+            var back = RoundTrip(s.Model);
+            Assert.Equal(new[] { "Stopped", "Paused" }, back.Vertices.Where(v => v.Group.Length > 0).Select(v => v.Name));
 
             Select(s, "Paused");
             Assert.True(s.CanUngroup);

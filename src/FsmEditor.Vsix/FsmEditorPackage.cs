@@ -28,8 +28,6 @@ namespace FsmEditor
     [ProvideEditorFactory(typeof(FsmEditorFactory), 110, CommonPhysicalViewAttributes = (int)__VSPHYSICALVIEWATTRIBUTES.PVA_SupportsPreview, TrustLevel = __VSEDITORTRUSTLEVEL.ETL_AlwaysTrusted)]
     [ProvideEditorExtension(typeof(FsmEditorFactory), ".fsm", 50, NameResourceID = 110)]
     [ProvideEditorLogicalView(typeof(FsmEditorFactory), VSConstants.LOGVIEWID.Designer_string)]
-    // The XMI text opens in the XML editor with its colorization.
-    [ProvideLanguageExtension("{f6819a78-a205-47b5-be1c-675b3c7f0b8e}", ".fsm")]
     [ProvideUIContextRule(PackageGuids.FsmFileSelectedRuleString, "FSM file selected", "Fsm", new[] { "Fsm" }, new[] { "HierSingleSelectionName:.fsm$" })]
     [ProvideAutoLoad(PackageGuids.FsmFileSelectedRuleString, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
@@ -41,6 +39,7 @@ namespace FsmEditor
         private const string SettingsCollection = @"FsmEditor\CodeGeneration";
         private readonly Dictionary<string, FsmEditorPane> _panes = new Dictionary<string, FsmEditorPane>(StringComparer.OrdinalIgnoreCase);
         private OutputWindowPane _output;
+        private readonly LayoutRenames _layoutRenames = new LayoutRenames();
 
         internal static FsmEditorPackage Instance { get; private set; }
 
@@ -50,10 +49,17 @@ namespace FsmEditor
         /// <summary>Problems reported by the last code generation.</summary>
         internal Diagnostics CodeGeneration { get; private set; }
 
+        /// <summary>The diagram diffs and merges.</summary>
+        internal DiagramSessions Sessions { get; private set; }
+
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             Instance = this;
+            Sessions = new DiagramSessions(this);
+            CompareFiles.CleanUp();
+            // Advised for the life of Visual Studio, as the package is.
+            _layoutRenames.Advise();
             Validation = new Diagnostics(this, "FSM Editor", new Guid("b5c86f4e-5c2c-4b8a-9d38-2f4f5a6f1a01")) { Navigate = (file, id, line) => Reveal(file, id) };
             CodeGeneration = new Diagnostics(this, "FSM Code Generation", new Guid("b5c86f4e-5c2c-4b8a-9d38-2f4f5a6f1a02")) { Navigate = (file, id, line) => OpenAt(file, line) };
             RegisterEditorFactory(new FsmEditorFactory(this));
@@ -91,6 +97,9 @@ namespace FsmEditor
         {
             foreach (var key in _panes.Where(p => p.Value == pane).Select(p => p.Key).ToList()) _panes.Remove(key);
         }
+
+        /// <summary>The document of a machine open in a diagram, or null.</summary>
+        internal FsmDocument DocumentFor(string path) => PaneFor(path)?.Document;
 
         internal FsmEditorPane PaneFor(string path) =>
             path != null && _panes.TryGetValue(FsmDocuments.SafeFullPath(path), out var pane) ? pane : null;
@@ -137,7 +146,10 @@ namespace FsmEditor
             }
             try
             {
-                File.WriteAllText(path, Xmi.ToXmi(FsmModel.CreateDefault(name)), new UTF8Encoding(false));
+                // Its two files: the model, then its layout.
+                var files = MachineFiles.Write(FsmModel.CreateDefault(name));
+                File.WriteAllText(path, files.ModelText, new UTF8Encoding(false));
+                File.WriteAllText(MachineFiles.LayoutPathOf(path), files.LayoutText, new UTF8Encoding(false));
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {

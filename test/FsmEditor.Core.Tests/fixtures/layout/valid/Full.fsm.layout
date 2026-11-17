@@ -1,0 +1,91 @@
+{
+  "$schema": "x",
+  "format": 1,
+  "points": [
+    {
+      "name": "p",
+      "x": 1,
+      "y": 2,
+      "color": "#112233",
+      "group": "g",
+      "transitions": [
+        {
+          "target": "A",
+          "bends": [
+            {
+              "x": 1,
+              "y": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "initial": {
+    "x": 1,
+    "y": 2,
+    "bends": [
+      {
+        "x": 3,
+        "y": 4
+      }
+    ],
+    "label": {
+      "x": 0,
+      "y": -5
+    },
+    "color": "#aabbcc",
+    "itemColors": {
+      "action": "#000000"
+    }
+  },
+  "elements": [
+    {
+      "name": "A",
+      "x": 1,
+      "y": 2,
+      "width": 100,
+      "height": 60,
+      "color": "#ffffff",
+      "itemColors": {
+        "background": "#010101",
+        "entry": "#020202",
+        "do": "#030303",
+        "defer": "#040404"
+      },
+      "group": "g",
+      "regionLayout": "horizontal",
+      "transitions": [
+        {
+          "trigger": "go",
+          "target": "B",
+          "label": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "trigger": "tick"
+        }
+      ],
+      "regions": [
+        {
+          "name": "r1",
+          "size": 50,
+          "history": {
+            "x": 1,
+            "y": 1
+          },
+          "elements": [
+            {
+              "name": "X"
+            }
+          ]
+        },
+        {
+          "name": "r2"
+        }
+      ]
+    }
+  ]
+}

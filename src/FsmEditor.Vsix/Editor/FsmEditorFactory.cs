@@ -1,34 +1,30 @@
 using System;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.ComponentModelHost;
-using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.TextManager.Interop;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 namespace FsmEditor.Editor
 {
     /// <summary>
-    /// Opens *.fsm files in the diagram editor. The document data is Visual
-    /// Studio's own text buffer holding the XMI, so saving, the dirty marker,
-    /// undo/redo and a text view opened side by side (Open as XMI Text) all
-    /// work on the same document.
+    /// Opens *.fsm files in the diagram editor. The document data is an
+    /// <see cref="FsmDocument"/>, which holds the machine's two files (the model
+    /// and its layout) and their history: Visual Studio's save, dirty marker and
+    /// reload act on it, and the diagram's undo and redo walk its history. A text
+    /// editor can't share it: Open as Text closes the diagram first.
     /// </summary>
     [Guid(PackageGuids.EditorFactoryString)]
     internal sealed class FsmEditorFactory : IVsEditorFactory, IDisposable
     {
         private readonly FsmEditorPackage _package;
         private ServiceProvider _services;
-        private IOleServiceProvider _site;
 
         public FsmEditorFactory(FsmEditorPackage package) => _package = package;
 
         public int SetSite(IOleServiceProvider psp)
         {
-            _site = psp;
             _services = new ServiceProvider(psp);
             return VSConstants.S_OK;
         }
@@ -54,24 +50,22 @@ namespace FsmEditor.Editor
             pgrfCDW = 0;
             if ((grfCreateDoc & (VSConstants.CEF_OPENFILE | VSConstants.CEF_SILENT)) == 0) return VSConstants.E_INVALIDARG;
 
-            if (!(_services.GetService(typeof(SComponentModel)) is IComponentModel componentModel)) return VSConstants.E_FAIL;
-            var adapters = componentModel.GetService<IVsEditorAdaptersFactoryService>();
-            IVsTextLines textLines;
+            FsmDocument document;
             if (punkDocDataExisting == IntPtr.Zero)
             {
-                // A new buffer: the running document table loads the file into it.
-                textLines = (IVsTextLines)adapters.CreateVsTextBufferAdapter(_site);
+                // A new document: the running document table loads the files into it (LoadDocData).
+                document = new FsmDocument(pszMkDocument, CompareFiles.IsReadOnlySide(pszMkDocument));
             }
             else
             {
-                // Already open (for example as text): share its buffer.
-                textLines = Marshal.GetObjectForIUnknown(punkDocDataExisting) as IVsTextLines;
-                if (textLines == null) return VSConstants.VS_E_INCOMPATIBLEDOCDATA;
+                // Already open in the diagram editor: share it; open in another editor (as text): incompatible.
+                document = Marshal.GetObjectForIUnknown(punkDocDataExisting) as FsmDocument;
+                if (document == null) return VSConstants.VS_E_INCOMPATIBLEDOCDATA;
             }
 
-            var pane = new FsmEditorPane(_package, pszMkDocument, textLines, adapters, componentModel);
+            var pane = new FsmEditorPane(_package, document);
             ppunkDocView = Marshal.GetIUnknownForObject(pane);
-            ppunkDocData = Marshal.GetIUnknownForObject(textLines);
+            ppunkDocData = Marshal.GetIUnknownForObject(document);
             pbstrEditorCaption = "";
             return VSConstants.S_OK;
         }

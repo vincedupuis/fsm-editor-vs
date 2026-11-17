@@ -1,0 +1,204 @@
+{
+  "format": 1,
+  "initial": { "x": 40, "y": 100 },
+  "elements": [
+    {
+      "name": "comment1*",
+      "x": 30,
+      "y": 480,
+      "width": 210,
+      "height": 64
+    },
+    {
+      "name": "Off",
+      "x": 100,
+      "y": 80,
+      "width": 150,
+      "height": 60,
+      "transitions": [
+        {
+          "trigger": "powerOn",
+          "target": "On",
+          "bends": [
+            { "x": 300, "y": 95 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "final1*",
+      "x": 162,
+      "y": 260
+    },
+    {
+      "name": "On",
+      "x": 340,
+      "y": 20,
+      "width": 780,
+      "height": 500,
+      "transitions": [
+        {
+          "trigger": "powerOff",
+          "target": "Off",
+          "bends": [
+            { "x": 300, "y": 125 }
+          ]
+        }
+      ],
+      "points": [
+        {
+          "name": "fault",
+          "x": 127,
+          "y": 492
+        }
+      ],
+      "initial": { "x": 15, "y": 118 },
+      "deepHistory": {
+        "x": 15,
+        "y": 380,
+        "bends": [
+          { "x": 28, "y": 145 }
+        ]
+      },
+      "elements": [
+        {
+          "name": "Stopped",
+          "x": 60,
+          "y": 100,
+          "width": 150,
+          "height": 56
+        },
+        {
+          "name": "Paused",
+          "x": 260,
+          "y": 340,
+          "width": 200,
+          "height": 70,
+          "transitions": [
+            {
+              "trigger": "after(5m)",
+              "target": "Stopped",
+              "bends": [
+                { "x": 360, "y": 230 }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "choice1*",
+          "x": 121,
+          "y": 280,
+          "transitions": [
+            {
+              "target": "Stopped",
+              "bends": [
+                { "x": 90, "y": 294 },
+                { "x": 90, "y": 170 }
+              ]
+            },
+            {
+              "target": "On.fault",
+              "label": { "x": 98, "y": 0 }
+            }
+          ]
+        },
+        {
+          "name": "Playing",
+          "x": 420,
+          "y": 76,
+          "width": 330,
+          "height": 230,
+          "regionLayout": "vertical",
+          "transitions": [
+            {
+              "trigger": "pause",
+              "target": "Paused",
+              "bends": [
+                { "x": 530, "y": 360 }
+              ]
+            }
+          ],
+          "regions": [
+            {
+              "name": "audio",
+              "size": 103,
+              "initial": { "x": 20, "y": 64 },
+              "elements": [
+                {
+                  "name": "Stereo",
+                  "x": 65,
+                  "y": 49,
+                  "width": 100,
+                  "height": 50
+                },
+                {
+                  "name": "Mono",
+                  "x": 205,
+                  "y": 49,
+                  "width": 100,
+                  "height": 50,
+                  "transitions": [
+                    {
+                      "trigger": "toggleAudio",
+                      "target": "Stereo",
+                      "bends": [
+                        { "x": 185, "y": 114 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "video",
+              "size": 103,
+              "initial": { "x": 20, "y": 169 },
+              "elements": [
+                {
+                  "name": "HD",
+                  "x": 65,
+                  "y": 154,
+                  "width": 100,
+                  "height": 50
+                },
+                {
+                  "name": "SD",
+                  "x": 205,
+                  "y": 154,
+                  "width": 100,
+                  "height": 50,
+                  "transitions": [
+                    {
+                      "trigger": "highBandwidth",
+                      "target": "HD",
+                      "bends": [
+                        { "x": 185, "y": 217 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fault",
+      "x": 400,
+      "y": 580,
+      "width": 150,
+      "height": 60,
+      "transitions": [
+        {
+          "trigger": "reset",
+          "target": "On.deepHistory",
+          "bends": [
+            { "x": 300, "y": 610 },
+            { "x": 300, "y": 413 }
+          ]
+        }
+      ]
+    }
+  ]
+}

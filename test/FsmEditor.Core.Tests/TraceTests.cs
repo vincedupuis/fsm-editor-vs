@@ -12,7 +12,7 @@ namespace FsmEditor.Core.Tests
     {
         private static string Examples(string file) => Path.Combine(AppContext.BaseDirectory, "examples", file);
 
-        private static FsmModel Example(string file) => Xmi.FromXmi(File.ReadAllText(Examples(file)));
+        private static FsmModel Example(string file) => Load.LoadModel(File.ReadAllText(Examples(file)));
 
         private static TraceInstance Instance(string key, FsmModel model, string file = null) =>
             new TraceInstance { Key = key, File = file ?? $"/{key}.fsm", Model = model, Index = new ModelIndex(model) };
@@ -43,7 +43,7 @@ namespace FsmEditor.Core.Tests
         /// <summary>The model of the tracing tests: S, a junction leading to a choice, X and Y.</summary>
         private static FsmModel Traced()
         {
-            var m = new FsmModel { Id = "sm", Name = "Traced", Regions = { new Region { Id = "r_root" } } };
+            var m = new FsmModel { Name = "Traced", Regions = { new Region { Id = "r_root" } } };
             void V(string id, VertexType type, string name = null) => m.Vertices.Add(new Vertex { Id = id, Type = type, Name = name ?? id, Parent = "r_root", W = 10, H = 10 });
             void T(string id, string s, string t, string trigger = null, string guard = "")
             {
@@ -199,9 +199,9 @@ namespace FsmEditor.Core.Tests
             };
             var entries = Timeline(lines, TraceFormats.BuiltIn, instances);
             var output = TraceReplay.Replay(entries, entries.Count - 1, KindsOf(entries));
-            Assert.Equal(new[] { "o_pay" }, output.Single(x => x.Instance.Key == "Order").Highlight.Active);
+            Assert.Equal(new[] { "Payment" }, output.Single(x => x.Instance.Key == "Order").Highlight.Active);
             var payment = output.Single(x => x.Instance.Key == "Order.Payment");
-            Assert.Equal(new[] { "p_auth" }, payment.Highlight.Active);
+            Assert.Equal(new[] { "Authorizing" }, payment.Highlight.Active);
             Assert.Equal("/Payment.fsm", payment.Instance.File);
         }
 
@@ -226,7 +226,7 @@ namespace FsmEditor.Core.Tests
         [Fact]
         public void EntersTheEnclosingStatesAndLeavesWhatElseWasActiveInTheRegion()
         {
-            var m = new FsmModel { Id = "sm", Name = "Nest", Regions = { new Region { Id = "r_root" } } };
+            var m = new FsmModel { Name = "Nest", Regions = { new Region { Id = "r_root" } } };
             void S(string id, string parent, int regions = 0) => m.Vertices.Add(new Vertex
             {
                 Id = id, Name = id, Type = VertexType.State, Parent = parent, W = 10, H = 10,
@@ -277,26 +277,26 @@ namespace FsmEditor.Core.Tests
             Assert.False(log.NeedsMachine);
 
             var views = s.Views();
-            Assert.Equal(new[] { "o_final" }, views[Examples("Order.fsm")].Instances.Single().Active);
+            Assert.Equal(new[] { "final1*" }, views[Examples("Order.fsm")].Instances.Single().Active);
             Assert.Equal(-1, views[Examples("Order.fsm")].Instances.Single().Color);
-            Assert.Equal(new[] { "v_final" }, views[Examples("MediaPlayer.fsm")].Instances.Single().Active);
+            Assert.Equal(new[] { "final1*" }, views[Examples("MediaPlayer.fsm")].Instances.Single().Active);
             // Payment runs alone first, then inside Order: two instances, colored in that order.
             var payment = views[Examples("Payment.fsm")];
             Assert.Equal(new[] { "Payment|0", "Order.Payment|1" }, payment.Instances.Select(i => $"{i.Label}|{i.Color}"));
-            Assert.Equal(new[] { 0 }, payment.Active["p_final"]);
+            Assert.Equal(new[] { 0 }, payment.Active["final1*"]);
 
             // Back in time, to the second checkout: Order in its Payment state, the Payment instance inside it authorizing.
-            var at = s.Entries.Select((e, i) => (e, i)).Where(x => x.e.Record.Machine == "Order.Payment" && x.e.Record.Id == "p_auth" && x.e.Record.Kind == TraceKind.Enter).ElementAt(1).i;
+            var at = s.Entries.Select((e, i) => (e, i)).Where(x => x.e.Record.Machine == "Order.Payment" && x.e.Record.Id == "Authorizing" && x.e.Record.Kind == TraceKind.Enter).ElementAt(1).i;
             s.Seek(at);
             Assert.False(s.Live);
             views = s.Views();
-            Assert.Equal(new[] { "o_pay" }, views[Examples("Order.fsm")].Instances.Single().Active);
-            Assert.Equal(new[] { "p_auth" }, views[Examples("Payment.fsm")].Instances.Single(i => i.Label == "Order.Payment").Active);
-            Assert.Contains("p_auth", views[Examples("Payment.fsm")].Current);
+            Assert.Equal(new[] { "Payment" }, views[Examples("Order.fsm")].Instances.Single().Active);
+            Assert.Equal(new[] { "Authorizing" }, views[Examples("Payment.fsm")].Instances.Single(i => i.Label == "Order.Payment").Active);
+            Assert.Contains("Authorizing", views[Examples("Payment.fsm")].Current);
             Assert.Equal("▶ Trace · event checkout", views[Examples("Order.fsm")].StatusText);
             // Order's event is the step of the Payment instance inside it too: not its own last event (cancel), nor that transition.
             Assert.Equal("▶ Trace · event checkout", views[Examples("Payment.fsm")].StatusText);
-            Assert.Equal(new[] { "pt1" }, views[Examples("Payment.fsm")].Instances.Single(i => i.Label == "Order.Payment").Taken);
+            Assert.Equal(new[] { "Payment.initial#1" }, views[Examples("Payment.fsm")].Instances.Single(i => i.Label == "Order.Payment").Taken);
             var rows = s.Rows();
             Assert.Equal(s.Cursor, rows.Single(r => r.Index == s.Cursor).Index);
             Assert.All(rows, r => Assert.True(r.Resolved));
@@ -346,7 +346,7 @@ namespace FsmEditor.Core.Tests
             Assert.True(s.ReadNew(log));
             Assert.Equal(2, s.Entries.Count);
             Assert.Equal(1, s.Cursor);
-            Assert.Equal(new[] { "o_cart" }, s.Views()[Examples("Order.fsm")].Instances.Single().Active);
+            Assert.Equal(new[] { "Cart" }, s.Views()[Examples("Order.fsm")].Instances.Single().Active);
             Assert.False(s.ReadNew(log));
             // Truncated (rotated): read again from the start.
             File.WriteAllText(path, "2026-11-11T10:00:01.000Z fsm Order transition ot1 initial -> Cart\n");
@@ -379,7 +379,7 @@ namespace FsmEditor.Core.Tests
             s.Seek(1);
             var order = s.Views()[Examples("Order.fsm")].Instances.Single();
             Assert.Equal("Order (door.log)", order.Label);
-            Assert.Equal(new[] { "o_pay" }, order.Active);
+            Assert.Equal(new[] { "Payment" }, order.Active);
             Assert.False(s.Rows().Last().Resolved);
             Directory.Delete(dir, true);
         }
@@ -405,8 +405,8 @@ namespace FsmEditor.Core.Tests
         public void ReportsASubmachineHrefThatIsNotAPath()
         {
             var dir = TempDir();
-            var gate = new FsmModel { Id = "sm", Name = "Gate", Regions = { new Region { Id = "r_root" } } };
-            gate.Vertices.Add(new Vertex { Id = "s", Type = VertexType.State, Name = "Sub", Parent = "r_root", W = 10, H = 10, Submachine = "a%00b.fsm#sm" });
+            var gate = new FsmModel { Name = "Gate", Regions = { new Region { Id = "r_root" } } };
+            gate.Vertices.Add(new Vertex { Id = "s", Type = VertexType.State, Name = "Sub", Parent = "r_root", W = 10, H = 10, Submachine = "a\0b.fsm" });
             var path = Path.Combine(dir, "x.log");
             File.WriteAllText(path, "fsm Gate.Sub enter a A\n");
             var s = new TraceSession();
@@ -414,7 +414,7 @@ namespace FsmEditor.Core.Tests
             s.ReadNew(s.Open(path));
             Assert.Equal(new[]
             {
-                "The submachine of Gate.Sub (a%00b.fsm) cannot be read (Gate.Sub).",
+                "The submachine of Gate.Sub (a\0b.fsm) cannot be read (Gate.Sub).",
                 "1 record designates nothing in their state machine (shown crossed out).",
             }, s.Problems);
             Directory.Delete(dir, true);

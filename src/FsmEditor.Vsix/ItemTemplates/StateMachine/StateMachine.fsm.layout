@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "initial": { "x": 60, "y": 80 },
+  "elements": [
+    {
+      "name": "Idle",
+      "x": 160,
+      "y": 60,
+      "width": 140,
+      "height": 60
+    }
+  ]
+}

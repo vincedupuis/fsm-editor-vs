@@ -5,8 +5,11 @@ using System.Linq;
 namespace FsmEditor.Core
 {
     /// <summary>
-    /// In-memory UML state machine model. Files store it as XMI with UML DI
-    /// (see <see cref="Xmi"/>); the diagram editor works on this form.
+    /// In-memory UML state machine model. Files store it as JSON, the model and its
+    /// layout in two files (see <see cref="Format"/>; files of earlier versions are XMI,
+    /// see <see cref="Xmi"/>); the diagram editor works on this form, with absolute
+    /// coordinates. Ids are derived from the names when a file is read; the editor makes
+    /// its own for the elements it creates.
     ///
     /// The hierarchy is flat: every vertex points to its owner through
     /// <see cref="Vertex.Parent"/>, which is either a region id (root region of
@@ -75,7 +78,7 @@ namespace FsmEditor.Core
         public static readonly string[] ItemKeys =
         {
             "background", "entry", "exit", "doActivity", "deferrable", "invariant",
-            "triggers", "guard", "effect", "precondition", "postcondition",
+            "triggers", "guard", "action", "precondition", "postcondition",
         };
 
         /// <summary>Colors offered by the properties panel, readable on light and dark backgrounds.</summary>
@@ -142,22 +145,24 @@ namespace FsmEditor.Core
 
         // state
         public List<Region> Regions { get; set; } = new List<Region>();
-        public RegionLayout RegionLayout { get; set; }
+        /// <summary>How the regions of an orthogonal state are arranged; null when never set (stacked).</summary>
+        public RegionLayout? RegionLayout { get; set; }
         public string Entry { get; set; } = "";
         public string Exit { get; set; } = "";
         public string DoActivity { get; set; } = "";
         public List<string> Deferrable { get; set; } = new List<string>();
         public string Invariant { get; set; } = "";
-        /// <summary>Submachine state: XMI href of the referenced state machine, e.g. <c>Payment.fsm#sm</c>.</summary>
+        /// <summary>Submachine state: path of the referenced state machine's file, relative to this one, e.g. <c>Payment.fsm</c>.</summary>
         public string Submachine { get; set; } = "";
         public string Stereotype { get; set; } = "";
 
-        // connectionPointRef: xmi:id of the entry/exit point, inside the submachine's file
+        // connectionPointRef: name of the entry/exit point in the submachine's file
         public string Ref { get; set; } = "";
         public PointKind PointKind { get; set; }
 
         // comment
         public string Text { get; set; } = "";
+        /// <summary>Ids of the annotated vertices and transitions (references that name nothing: see <see cref="Format"/>).</summary>
         public List<string> Anchors { get; set; } = new List<string>();
 
         /// <summary>Diagram color, <c>#rrggbb</c>, or empty for the default (see <see cref="ElementColors"/>).</summary>
@@ -189,11 +194,12 @@ namespace FsmEditor.Core
     {
         public string Id { get; set; } = "";
         public string Source { get; set; } = "";
+        /// <summary>Id of the target vertex, or a reference that names nothing (see <see cref="Format.Unresolved"/>).</summary>
         public string Target { get; set; } = "";
         public TransitionKind Kind { get; set; }
         public List<string> Triggers { get; set; } = new List<string>();
         public string Guard { get; set; } = "";
-        public string Effect { get; set; } = "";
+        public string Action { get; set; } = "";
         /// <summary>Protocol state machines only.</summary>
         public string Precondition { get; set; } = "";
         public string Postcondition { get; set; } = "";
@@ -218,11 +224,8 @@ namespace FsmEditor.Core
 
     public sealed class FsmModel
     {
-        /// <summary>xmi:id of the state machine, used by other files to reference it.</summary>
-        public string Id { get; set; } = "sm";
         public string Name { get; set; } = "";
         public MachineKind Kind { get; set; }
-        public string Context { get; set; } = "";
         public string Documentation { get; set; } = "";
         public List<Region> Regions { get; set; } = new List<Region>();
         public List<Vertex> Vertices { get; set; } = new List<Vertex>();
@@ -239,13 +242,12 @@ namespace FsmEditor.Core
 
         public static FsmModel CreateDefault(string name = "StateMachine") => new FsmModel
         {
-            Id = "sm",
             Name = name,
             Regions = { new Region { Id = "r_root" } },
             Vertices =
             {
                 new Vertex { Id = "v_init", Type = VertexType.Initial, Parent = "r_root", X = 60, Y = 80, W = 20, H = 20 },
-                new Vertex { Id = "v_idle", Type = VertexType.State, Name = "Idle", Parent = "r_root", X = 160, Y = 60, W = 140, H = 60 },
+                new Vertex { Id = "v_idle", Type = VertexType.State, Name = name == "Idle" ? "Idle1" : "Idle", Parent = "r_root", X = 160, Y = 60, W = 140, H = 60 },
             },
             Transitions = { new Transition { Id = "t_init", Source = "v_init", Target = "v_idle" } },
         };
@@ -253,9 +255,7 @@ namespace FsmEditor.Core
         /// <summary>Fills in defaults so partially specified models are safe to use.</summary>
         public FsmModel Normalize()
         {
-            if (string.IsNullOrEmpty(Id)) Id = "sm";
             Name = Name ?? "";
-            Context = Context ?? "";
             Documentation = Documentation ?? "";
             Regions = Regions ?? new List<Region>();
             if (Regions.Count == 0) Regions.Add(new Region { Id = "r_root" });
@@ -288,7 +288,7 @@ namespace FsmEditor.Core
                 t.Triggers = t.Triggers ?? new List<string>();
                 t.Points = t.Points ?? new List<PointD>();
                 t.Guard = t.Guard ?? "";
-                t.Effect = t.Effect ?? "";
+                t.Action = t.Action ?? "";
                 t.Precondition = t.Precondition ?? "";
                 t.Postcondition = t.Postcondition ?? "";
                 // A state's self-transition is a loop whose bend points are its three corners, or only its
@@ -336,13 +336,13 @@ namespace FsmEditor.Core
             }
         }
 
-        /// <summary>Entry/exit points owned by the state machine itself (placed in a top-level region).</summary>
+        /// <summary>Entry/exit points owned by the state machine itself (placed in a top-level region), by name: the machines using it refer to them by name.</summary>
         public List<ConnectionPointInfo> MachineConnectionPoints()
         {
             var top = new HashSet<string>(Regions.Select(r => r.Id));
             return Vertices
                 .Where(v => (v.Type == VertexType.EntryPoint || v.Type == VertexType.ExitPoint) && top.Contains(v.Parent))
-                .Select(v => new ConnectionPointInfo(v.Id, v.Name, v.Type == VertexType.EntryPoint ? PointKind.Entry : PointKind.Exit))
+                .Select(v => new ConnectionPointInfo(v.Name, v.Name, v.Type == VertexType.EntryPoint ? PointKind.Entry : PointKind.Exit))
                 .ToList();
         }
     }
@@ -463,7 +463,7 @@ namespace FsmEditor.Core
     /// <summary>A state machine found in the workspace that submachine states can reference.</summary>
     public sealed class MachineInfo
     {
-        /// <summary>href relative to the referencing file, e.g. <c>Payment.fsm#sm</c>.</summary>
+        /// <summary>Path relative to the referencing file, e.g. <c>Payment.fsm</c>.</summary>
         public string Href { get; set; } = "";
         public string Name { get; set; } = "";
         /// <summary>Path shown to the user (relative to the solution when possible).</summary>

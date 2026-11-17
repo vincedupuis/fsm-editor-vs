@@ -125,7 +125,37 @@ namespace FsmEditor.Commands
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var path = FsmDocuments.ActiveDocumentPath();
-            if (FsmDocuments.IsFsm(path)) FsmDocuments.OpenAsText(path);
+            if (!FsmDocuments.IsFsm(path)) return;
+            // The diagram asks about its unsaved changes and closes first.
+            var pane = FsmEditorPackage.Instance.PaneFor(path);
+            if (pane != null) pane.OpenAsText();
+            else FsmDocuments.OpenAsText(path);
+        }
+    }
+
+    [Command(PackageGuids.CommandSetString, PackageIds.CompareAsDiagrams)]
+    internal sealed class CompareAsDiagramsCommand : BaseCommand<CompareAsDiagramsCommand>
+    {
+        protected override void BeforeQueryStatus(System.EventArgs e)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var path = FsmDocuments.ActiveDocumentPath();
+            var fsm = (FsmDocuments.IsFsm(path) && !Editor.CompareFiles.IsReadOnlySide(path)) || GenerateCodeCommand.SelectedIsFsm();
+            Command.Visible = fsm;
+            Command.Enabled = fsm;
+        }
+
+        protected override async Task ExecuteAsync(OleMenuCmdEventArgs e)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            var fromSelection = !FsmDocuments.ActiveIsDiagram();
+            var path = await Targets.MachineAsync(fromSelection);
+            if (!FsmDocuments.IsFsm(path) || Editor.CompareFiles.IsReadOnlySide(path))
+            {
+                await VS.MessageBox.ShowWarningAsync("Compare as Diagrams", "Select or open a .fsm state machine to compare it with its version in Git.");
+                return;
+            }
+            FsmEditorPackage.Instance.Sessions.CompareAsDiagrams(FsmDocuments.SafeFullPath(path));
         }
     }
 

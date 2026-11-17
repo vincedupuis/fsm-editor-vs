@@ -15,7 +15,7 @@ namespace FsmEditor.Core
             Message = message;
         }
 
-        /// <summary>Id of the offending vertex or transition ("" for the machine itself).</summary>
+        /// <summary>Id of the offending vertex, transition or region ("" for the machine itself).</summary>
         public string Id { get; }
         public Severity Severity { get; }
         public string Message { get; }
@@ -42,13 +42,8 @@ namespace FsmEditor.Core
                 return !string.IsNullOrEmpty(n) ? $"'{n}'" : $"'{href}'";
             }
 
-            // Identity (a region id used again can also put a state inside its own region)
             var allRegions = model.Regions.Concat(model.Vertices.SelectMany(v => v.Regions)).ToList();
-            var seen = new HashSet<string>();
-            foreach (var id in model.Vertices.Select(v => v.Id).Concat(model.Transitions.Select(t => t.Id)).Concat(allRegions.Select(r => r.Id)))
-            {
-                if (!seen.Add(id)) Add(id, Severity.Error, $"Duplicate id '{id}'.");
-            }
+            CheckNames(model, ix, Add);
 
             // Containment
             foreach (var v in model.Vertices)
@@ -60,7 +55,7 @@ namespace FsmEditor.Core
                     var machineLevel = model.Regions.Any(r => r.Id == v.Parent);
                     if (machineLevel)
                     {
-                        if (v.Name.Length == 0) Add(v.Id, Severity.Warning, "Connection points of the state machine need a name so submachine states can reference them.");
+                        // The machine's own connection point.
                     }
                     else if (owner == null || owner.Type != VertexType.State)
                     {
@@ -126,15 +121,6 @@ namespace FsmEditor.Core
                 }
             }
 
-            // Names unique within a region
-            var byRegion = new Dictionary<string, HashSet<string>>();
-            foreach (var v in model.Vertices)
-            {
-                if (v.Type != VertexType.State || v.Name.Length == 0) continue;
-                if (!byRegion.TryGetValue(v.Parent, out var names)) byRegion[v.Parent] = names = new HashSet<string>();
-                if (!names.Add(v.Name)) Add(v.Id, Severity.Warning, $"Another state named '{v.Name}' exists in the same region.");
-            }
-
             // Vertices
             foreach (var v in model.Vertices)
             {
@@ -143,7 +129,8 @@ namespace FsmEditor.Core
                 switch (v.Type)
                 {
                     case VertexType.Initial:
-                        if (outgoing.Count != 1) Add(v.Id, Severity.Error, "An initial pseudostate must have exactly one outgoing transition.");
+                        if (outgoing.Count == 0 || (outgoing.Count == 1 && Format.UnresolvedOf(outgoing[0].Target) == "")) Add(v.Id, Severity.Error, "The initial pseudostate has no target.");
+                        else if (outgoing.Count != 1) Add(v.Id, Severity.Error, "An initial pseudostate must have exactly one outgoing transition.");
                         if (incoming.Count > 0) Add(v.Id, Severity.Error, "An initial pseudostate cannot have incoming transitions.");
                         foreach (var t in outgoing)
                         {
@@ -293,7 +280,7 @@ namespace FsmEditor.Core
                 {
                     if (target == null)
                     {
-                        Add(v.Id, Severity.Error, $"{MachineName(owner.Submachine)} has no entry or exit point with id '{v.Ref}'.");
+                        Add(v.Id, Severity.Error, $"{MachineName(owner.Submachine)} has no entry or exit point named '{v.Ref}'.");
                     }
                     else if (target.Kind != kind)
                     {
@@ -336,7 +323,16 @@ namespace FsmEditor.Core
                 var s = ix.Vertex(t.Source);
                 var g = ix.Vertex(t.Target);
                 if (s == null) Add(t.Id, Severity.Error, $"Transition source '{t.Source}' does not exist.");
-                if (g == null) Add(t.Id, Severity.Error, $"Transition target '{t.Target}' does not exist.");
+                if (g == null)
+                {
+                    var r = Format.UnresolvedOf(t.Target);
+                    if (r == "")
+                    {
+                        // An initial without target is reported on the initial pseudostate.
+                        if (s?.Type != VertexType.Initial) Add(t.Id, Severity.Error, "The default transition of a history pseudostate has no target.");
+                    }
+                    else Add(t.Id, Severity.Error, $"Transition target '{r ?? t.Target}' does not exist.");
+                }
                 if (s == null || g == null) continue;
                 if (s.Type == VertexType.Comment || g.Type == VertexType.Comment)
                 {
@@ -362,7 +358,7 @@ namespace FsmEditor.Core
                 }
                 if (protocol)
                 {
-                    if (t.Effect.Length > 0) Add(t.Id, Severity.Error, "Protocol transitions cannot have effects.");
+                    if (t.Action.Length > 0) Add(t.Id, Severity.Error, "Protocol transitions cannot have actions.");
                     if (t.Guard.Length > 0) Add(t.Id, Severity.Warning, "Use a precondition instead of a guard in a protocol state machine.");
                 }
                 else if (t.Precondition.Length > 0 || t.Postcondition.Length > 0)
@@ -382,6 +378,87 @@ namespace FsmEditor.Core
             CheckText(model, ix, Add);
             CheckReachability(model, ix, Add);
             return issues;
+        }
+
+        /// <summary>
+        /// Names are the identity of elements in the file: the rules of a name, names unique in the machine (the
+        /// machine's, the regions' when their owner has several, the elements'), point names unique on their owner.
+        /// </summary>
+        private static void CheckNames(FsmModel model, ModelIndex ix, Action<string, Severity, string> add)
+        {
+            bool Rules(string id, string n, string label)
+            {
+                if (n.Length == 0)
+                {
+                    add(id, Severity.Error, $"Every {label} needs a name.");
+                    return false;
+                }
+                if (n.Contains("."))
+                {
+                    add(id, Severity.Error, $"Name '{n}' cannot contain '.'.");
+                    return false;
+                }
+                if (n.Any(JsWhitespace.Contains))
+                {
+                    add(id, Severity.Error, $"Name '{n}' cannot contain spaces.");
+                    return false;
+                }
+                if (n.Substring(0, n.Length - 1).Contains("*"))
+                {
+                    add(id, Severity.Error, $"Name '{n}' can contain '*' only as its last character.");
+                    return false;
+                }
+                return true;
+            }
+            var names = new HashSet<string>();
+            void Unique(string id, string n)
+            {
+                if (names.Contains(n)) add(id, Severity.Error, $"Name '{n}' is used more than once in the state machine.");
+                names.Add(n);
+            }
+            if (Rules("", model.Name, "state machine")) Unique("", model.Name);
+            void RegionNames(List<Region> regions)
+            {
+                if (regions.Count < 2) return;
+                foreach (var r in regions)
+                {
+                    if (Rules(r.Id, r.Name, "region")) Unique(r.Id, r.Name);
+                }
+            }
+            RegionNames(model.Regions);
+            var points = new HashSet<string>();
+            foreach (var v in model.Vertices)
+            {
+                switch (v.Type)
+                {
+                    case VertexType.Initial:
+                    case VertexType.ShallowHistory:
+                    case VertexType.DeepHistory:
+                        break;
+                    case VertexType.EntryPoint:
+                    case VertexType.ExitPoint:
+                    case VertexType.ConnectionPointRef:
+                    {
+                        var reference = v.Type == VertexType.ConnectionPointRef;
+                        var n = reference ? v.Ref : v.Name;
+                        // A reference without a point is reported with the references.
+                        if ((reference && n.Length == 0) || !Rules(v.Id, n, v.Type.Label())) break;
+                        var key = v.Parent + "\u0000" + n;
+                        if (n == "history" || n == "deepHistory") add(v.Id, Severity.Error, $"A point cannot be named '{n}'.");
+                        else if (points.Contains(key))
+                        {
+                            var owner = ix.Vertex(v.Parent);
+                            add(v.Id, Severity.Error, $"{(owner != null ? Name(owner) : $"'{model.Name}'")} has two points named '{n}'.");
+                        }
+                        else points.Add(key);
+                        break;
+                    }
+                    default:
+                        if (Rules(v.Id, v.Name, v.Type.Label())) Unique(v.Id, v.Name);
+                        RegionNames(v.Regions);
+                        break;
+                }
+            }
         }
 
         /// <summary><c>'Name'</c>, or the kind of the vertex when it has no name.</summary>
@@ -484,7 +561,7 @@ namespace FsmEditor.Core
                 var s = ix.Vertex(t.Source);
                 foreach (var trig in t.Triggers) Report(t.Id, "Trigger", Expressions.CheckTrigger(trig));
                 Report(t.Id, "Guard", Expressions.CheckGuard(t.Guard, Labels.AllowsElse(s)));
-                Report(t.Id, "Effect", Expressions.CheckActions(t.Effect));
+                Report(t.Id, "Action", Expressions.CheckActions(t.Action));
                 Report(t.Id, "Precondition", Expressions.CheckCondition(t.Precondition));
                 Report(t.Id, "Postcondition", Expressions.CheckCondition(t.Postcondition));
                 if (t.Triggers.Any(x => Expressions.TimeTriggerMs(x) != null) && s != null && s.Type != VertexType.State)

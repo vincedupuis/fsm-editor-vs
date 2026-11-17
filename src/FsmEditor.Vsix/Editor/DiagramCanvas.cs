@@ -74,6 +74,9 @@ namespace FsmEditor.Editor
             ViewChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <summary>Sets the view as another pane of a diff has it.</summary>
+        public void SetViewOf(double x, double y, double zoom) => SetView(x, y, zoom);
+
         public void ZoomAt(double factor, double sx, double sy)
         {
             var z = Geo.Clamp(Zoom * factor, 0.15, 4);
@@ -303,8 +306,9 @@ namespace FsmEditor.Editor
             var issue = IssueOf(v.Id);
             var dropTarget = !_exporting && _drag != null && _drag.DropState == v.Id;
 
-            // Outline of the element's own shape: its color, then selection, warnings and errors, win in that order.
-            var own = Theme.ColorOf(v.Color);
+            // Outline of the element's own shape: its color (an initial or history pseudostate's is its transition's), then
+            // selection, warnings and errors, win in that order.
+            var own = Theme.ColorOf(Geo.ColorOf(S.Model, v));
             var stroke = own ?? th.Line;
             double shapeWidth = 1.4;
             var fill = own ?? th.Line;
@@ -335,7 +339,15 @@ namespace FsmEditor.Editor
                 }
                 if (trace.Current.Contains(v.Id)) DrawGlow(dc, v);
             }
-            var shapePen = dropTarget ? th.PenOf(th.Accent, 2.5, 1, new[] { 6.0, 3.0 }) : th.PenOf(stroke, shapeWidth);
+            // A diagram diff or merge: the element's mark (added, removed, changed; conflict, merged, resolved).
+            double[] markDash = null;
+            if (!_exporting && !selected && DiffMarks.Of(_editor.Diff, v.Id) is DiffMarks.Mark mark)
+            {
+                stroke = mark.Color;
+                shapeWidth = mark.VertexWidth;
+                markDash = mark.Dash;
+            }
+            var shapePen = dropTarget ? th.PenOf(th.Accent, 2.5, 1, new[] { 6.0, 3.0 }) : th.PenOf(stroke, shapeWidth, 1, markDash);
             Pen StrokePen(double w) => th.PenOf(stroke, w);
             var fillBrush = th.BrushOf(fill);
             var shapeFill = th.BrushOf(own is Color oc ? th.Tint(oc, th.StateFill) : v.Type == VertexType.Comment ? th.NoteFill : th.StateFill);
@@ -374,7 +386,7 @@ namespace FsmEditor.Editor
                     {
                         dc.DrawRoundedRectangle(shapeFill, shapePen, box, 10, 10);
                     }
-                    var title = v.Name + (v.Submachine.Length > 0 ? " : " + S.MachineLabel(v.Submachine) : "");
+                    var title = Format.Shown(v.Name) + (v.Submachine.Length > 0 ? " : " + S.MachineLabel(v.Submachine) : "");
                     var centered = regions.Count == 0 && lines.Count == 0;
                     var stereo = v.Stereotype.Length > 0;
                     var ty = y + 16;
@@ -414,7 +426,7 @@ namespace FsmEditor.Editor
                                 if (v.RegionLayout == RegionLayout.Horizontal) dc.DrawLine(dashed, new Point(rr.X, rr.Y), new Point(rr.X, rr.Y + rr.H));
                                 else dc.DrawLine(dashed, new Point(rr.X, rr.Y), new Point(rr.X + rr.W, rr.Y));
                             }
-                            if (regions[i].Name.Length > 0) DrawText(dc, rr.X + 6, rr.Y + 12, regions[i].Name, 10, dimText, TextAnchor.Start, style: FontStyles.Italic);
+                            if (Format.Shown(regions[i].Name).Length > 0 && regions.Count > 1) DrawText(dc, rr.X + 6, rr.Y + 12, regions[i].Name, 10, dimText, TextAnchor.Start, style: FontStyles.Italic);
                             if (!_exporting && _drag != null && _drag.DropRegion == regions[i].Id)
                             {
                                 dc.DrawRectangle(th.BrushOf(th.Accent, 0.08), null, new Rect(rr.X, rr.Y, rr.W, rr.H));
@@ -509,7 +521,7 @@ namespace FsmEditor.Editor
                     dc.DrawEllipse(th.BrushOf(TraceColor(activeIn[i])), th.PenOf(th.Background, 1), new Point(x + w - 6 - (activeIn.Count - 1 - i) * 11, y - 7), 4, 4);
                 }
             }
-            var caption = v.Type == VertexType.ConnectionPointRef ? Or(S.PointName(ix.Vertex(v.Parent), v.Ref), "?") : v.Name;
+            var caption = Format.Shown(v.Type == VertexType.ConnectionPointRef ? Or(Or(S.PointName(ix.Vertex(v.Parent), v.Ref), v.Ref), "?") : v.Name);
             if (caption.Length > 0 && v.Type != VertexType.State && v.Type != VertexType.Comment)
             {
                 var below = v.Type == VertexType.Fork || v.Type == VertexType.Join ? y + h + 13 : y + h + 12;
@@ -552,6 +564,13 @@ namespace FsmEditor.Editor
             var issue = IssueOf(t.Id);
             var color = issue == IssueLevel.Error ? th.Error : issue == IssueLevel.Warning ? th.Warning : selected ? th.Accent : Theme.ColorOf(t.Color) ?? th.Line;
             var width = selected ? 2 : 1.3;
+            double[] markDash = null;
+            if (!_exporting && !selected && issue == IssueLevel.None && DiffMarks.Of(_editor.Diff, t.Id) is DiffMarks.Mark mark)
+            {
+                color = mark.Color;
+                width = mark.TransitionWidth;
+                markDash = mark.Dash;
+            }
             // The Trace Player: a transition taken by the current step.
             Color? takenColor = null;
             var trace = Trace;
@@ -560,7 +579,7 @@ namespace FsmEditor.Editor
                 color = (takenColor = TraceColor(takenIn[0], false)).Value;
                 width = 2.6;
             }
-            var pen = th.PenOf(color, width);
+            var pen = th.PenOf(color, width, 1, markDash);
             var line = new StreamGeometry();
             using (var ctx = line.Open())
             {
@@ -570,14 +589,25 @@ namespace FsmEditor.Editor
             if (trace != null && trace.Current.Contains(t.Id)) dc.DrawGeometry(null, th.PenOf(TraceCurrent, 7, 0.45), line);
             dc.DrawGeometry(null, pen, line);
             var b = pts[pts.Count - 1];
-            var (p1, p2) = SvgExport.ArrowHead(pts[pts.Count - 2], b);
-            var arrow = new StreamGeometry();
-            using (var ctx = arrow.Open())
+            if (Geo.IsDangling(ix, t))
             {
-                ctx.BeginFigure(P(p1), false, false);
-                ctx.PolyLineTo(new[] { P(b), P(p2) }, true, true);
+                // The target names nothing: a marker instead of an arrow head.
+                var marker = th.PenOf(th.Error, 1.4);
+                dc.DrawEllipse(th.BrushOf(th.Background), marker, P(b), 6, 6);
+                dc.DrawLine(marker, new Point(b.X - 3, b.Y - 3), new Point(b.X + 3, b.Y + 3));
+                dc.DrawLine(marker, new Point(b.X + 3, b.Y - 3), new Point(b.X - 3, b.Y + 3));
             }
-            dc.DrawGeometry(null, pen, arrow);
+            else
+            {
+                var (p1, p2) = SvgExport.ArrowHead(pts[pts.Count - 2], b);
+                var arrow = new StreamGeometry();
+                using (var ctx = arrow.Open())
+                {
+                    ctx.BeginFigure(P(p1), false, false);
+                    ctx.PolyLineTo(new[] { P(b), P(p2) }, true, true);
+                }
+                dc.DrawGeometry(null, th.PenOf(color, width), arrow);
+            }
             var lines = Labels.TransitionLabelItems(S.Model, t);
             if (lines.Count > 0)
             {

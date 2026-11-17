@@ -20,6 +20,6 @@
     <value>FSM Editor and Codegen for Visual Studio</value>
   </data>
   <data name="112" xml:space="preserve">
-    <value>Visual editor and code generator for UML 2.5.1 state machines stored as XMI with UML DI layout, with validation and SVG and PNG export.</value>
+    <value>Visual editor and code generator for UML 2.5.1 state machines stored as readable JSON, the layout in a file of its own, with validation, diagram diff and merge, and SVG and PNG export.</value>
   </data>
 </root>

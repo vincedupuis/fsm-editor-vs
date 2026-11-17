@@ -6,59 +6,44 @@ using System.Text;
 
 namespace FsmEditor.Core
 {
-    /// <summary>Name, id and connection points of the machine in a file.</summary>
+    /// <summary>Name and connection points of the machine in a file.</summary>
     public sealed class MachineSummary
     {
-        public string Id { get; set; } = "sm";
         public string Name { get; set; } = "";
         public List<ConnectionPointInfo> Points { get; set; } = new List<ConnectionPointInfo>();
 
-        public static MachineSummary Of(FsmModel m) => new MachineSummary { Id = m.Id, Name = m.Name, Points = m.MachineConnectionPoints() };
+        public static MachineSummary Of(FsmModel m) => new MachineSummary { Name = m.Name, Points = m.MachineConnectionPoints() };
 
-        /// <summary>The summary of a file's text, or null when it isn't a readable state machine.</summary>
+        /// <summary>
+        /// The summary of a file's text, or null when it isn't a readable state machine. An old file's (XMI) are its
+        /// names once converted, which the references of a converted file use.
+        /// </summary>
         public static MachineSummary TryRead(string text)
         {
-            try
+            if (Format.IsOldFormat(text))
             {
-                return Of(Xmi.FromXmi(text));
+                var converted = Conversion.ConvertGroup(new[] { new ConvertInput("/x.fsm", text) })[0];
+                return converted.Error != null ? null : Of(converted.Model);
             }
-            catch (Exception e) when (e is XmlParseException || e is XmiException)
-            {
-                return null;
-            }
+            // Names and points only: no layout to apply.
+            var read = Format.ReadModel(text);
+            return read.Failed ? null : Of(read.Model);
         }
     }
 
     /// <summary>
-    /// How state machine files reference each other: submachine states hold an
-    /// XMI href such as <c>sub/Payment.fsm#sm</c>, relative to the referencing file.
+    /// How state machine files reference each other: submachine states hold the path of the other file, relative to
+    /// the referencing one (<c>sub/Payment.fsm</c>). Files of earlier versions hold an XMI href, encoded and with the
+    /// machine's id (<c>sub/Payment.fsm#sm</c>).
     /// </summary>
     public static class Hrefs
     {
-        private const string Unreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789;,/:@&=+$-_.!~*'()";
-
-        /// <summary>
-        /// Percent-encodes the file part of an href (encodeHref of the VS Code edition): like JavaScript's encodeURI,
-        /// plus <c>#</c> and <c>?</c>, which would otherwise end the path (a file named <c>a#b.fsm</c> is <c>a%23b.fsm</c>).
-        /// </summary>
-        public static string EncodeUri(string s)
-        {
-            var sb = new StringBuilder();
-            foreach (var b in Encoding.UTF8.GetBytes(s))
-            {
-                var c = (char)b;
-                if (b < 0x80 && Unreserved.IndexOf(c) >= 0) sb.Append(c);
-                else sb.Append('%').Append(b.ToString("X2"));
-            }
-            return sb.ToString();
-        }
-
         private static readonly Encoding StrictUtf8 = new UTF8Encoding(false, true);
 
         /// <summary>
-        /// Like JavaScript's decodeURI: decodes <c>%XX</c> escapes (UTF-8), except those of reserved characters
-        /// (<c>;/:@&amp;=+$,</c>; unlike decodeURI, <c>%23</c> and <c>%3F</c> give <c>#</c> and <c>?</c>, as
-        /// <see cref="EncodeUri"/> writes them), and keeps malformed ones as they are.
+        /// Like JavaScript's decodeURI, for the submachine hrefs of old files: decodes <c>%XX</c> escapes (UTF-8),
+        /// except those of reserved characters (<c>;/:@&amp;=+$,</c>; unlike decodeURI, <c>%23</c> and <c>%3F</c> give
+        /// <c>#</c> and <c>?</c>, as earlier versions wrote them in file names), and keeps malformed ones as they are.
         /// </summary>
         public static string DecodeUri(string s)
         {
@@ -165,11 +150,14 @@ namespace FsmEditor.Core
             return (server, segments, windows);
         }
 
-        /// <summary>href of machine <paramref name="machineId"/> in <paramref name="targetFile"/>, as seen from <paramref name="documentFile"/>.</summary>
-        public static string For(string documentFile, string targetFile, string machineId) =>
-            $"{EncodeUri(Relative(Path.GetDirectoryName(documentFile), targetFile))}#{machineId}";
+        /// <summary>The path of <paramref name="targetFile"/> as a submachine state of <paramref name="documentFile"/> holds it.</summary>
+        public static string For(string documentFile, string targetFile) => Relative(Path.GetDirectoryName(documentFile), targetFile);
 
-        /// <summary>The file and element id an href points to, relative to <paramref name="documentFile"/>.</summary>
+        /// <summary>The full path of a submachine path of <paramref name="documentFile"/>.</summary>
+        public static string ResolvePath(string documentFile, string path) =>
+            Path.GetFullPath(JoinFull(Path.GetFullPath(Path.GetDirectoryName(documentFile)), path));
+
+        /// <summary>The file and element id an old file's href points to, relative to <paramref name="documentFile"/>.</summary>
         public static (string File, string Id) Resolve(string documentFile, string href)
         {
             var hash = href.IndexOf('#');
@@ -196,12 +184,12 @@ namespace FsmEditor.Core
                 if (string.Equals(Path.GetFullPath(file), Path.GetFullPath(documentFile), StringComparison.OrdinalIgnoreCase)) continue;
                 var s = summaryOf(file);
                 if (s == null) continue;
-                output.Add(new MachineInfo { Href = Hrefs.For(documentFile, file, s.Id), Name = s.Name, File = display(file), Points = s.Points });
+                output.Add(new MachineInfo { Href = Hrefs.For(documentFile, file), Name = s.Name, File = display(file), Points = s.Points });
             }
             return output.OrderBy(m => m.Name, StringComparer.CurrentCulture).ToList();
         }
 
-        /// <summary>Reads the machines referenced by submachine states, to learn their names and connection points.</summary>
+        /// <summary>Reads the machines referenced by submachine states (by path), to learn their names and connection points.</summary>
         public static Dictionary<string, SubmachineInfo> Resolve(string documentFile, FsmModel model, IReadOnlyList<MachineInfo> machines, Func<string, MachineSummary> summaryOf, Func<string, string> display)
         {
             var info = new Dictionary<string, SubmachineInfo>();
@@ -214,10 +202,10 @@ namespace FsmEditor.Core
                     continue;
                 }
                 // Outside the workspace, or written with a different relative path.
-                string file, id;
+                string file;
                 try
                 {
-                    (file, id) = Hrefs.Resolve(documentFile, href);
+                    file = Hrefs.ResolvePath(documentFile, href);
                 }
                 catch (Exception e) when (e is ArgumentException || e is NotSupportedException || e is PathTooLongException)
                 {
@@ -226,7 +214,7 @@ namespace FsmEditor.Core
                     continue;
                 }
                 var s = summaryOf(file);
-                info[href] = s != null && s.Id == id
+                info[href] = s != null
                     ? new SubmachineInfo { Found = true, Name = s.Name, File = display(file), Points = s.Points }
                     : new SubmachineInfo { Found = false };
             }

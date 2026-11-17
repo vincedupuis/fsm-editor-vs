@@ -28,6 +28,7 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
 .hit{fill:transparent}
 .anchor{fill:none;stroke:#333;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
 .line,.arrow{fill:none;stroke:#333;stroke-width:1.3;stroke-linejoin:round}
+.dangling{fill:#fff;stroke:#c00;stroke-width:1.4}
 .tlabel{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}";
 
         /// <summary>Fill of a state (<c>.shape</c> in the style sheet).</summary>
@@ -87,7 +88,8 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
             var cy = y + h / 2;
             var r = Math.Min(w, h) / 2;
             sb.Append($"<g class=\"vertex v-{v.Type.Key()}\">");
-            var c = ElementColors.Of(v.Color);
+            // An initial or history pseudostate's color is its transition's.
+            var c = Geometry.ColorOf(model, v);
             var shapeSt = c == null ? "" : Style("fill:" + ElementColors.Tint(c), "stroke:" + c);
             var fillSt = c == null ? "" : Style("fill:" + c);
             string StrokeSt(string width) => Style(c != null ? "stroke:" + c : null, width != null ? "stroke-width:" + width : null);
@@ -115,7 +117,7 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
                         }
                     }
                     sb.Append($"<rect class=\"shape\" x=\"{F(x)}\" y=\"{F(y)}\" width=\"{F(w)}\" height=\"{F(h)}\" rx=\"10\"{st}/>");
-                    var title = v.Name + (v.Submachine.Length > 0 ? " : " + session.MachineLabel(v.Submachine) : "");
+                    var title = Format.Shown(v.Name) + (v.Submachine.Length > 0 ? " : " + session.MachineLabel(v.Submachine) : "");
                     var centered = regions.Count == 0 && lines.Count == 0;
                     var ty = y + 16;
                     var stereo = v.Stereotype.Length > 0;
@@ -155,7 +157,7 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
                                     ? $"<line class=\"sep dashed\" x1=\"{F1(rr.X)}\" y1=\"{F1(rr.Y)}\" x2=\"{F1(rr.X)}\" y2=\"{F1(rr.Y + rr.H)}\"{sepSt}/>"
                                     : $"<line class=\"sep dashed\" x1=\"{F1(rr.X)}\" y1=\"{F1(rr.Y)}\" x2=\"{F1(rr.X + rr.W)}\" y2=\"{F1(rr.Y)}\"{sepSt}/>");
                             }
-                            if (regions[i].Name.Length > 0) sb.Append(Text(rr.X + 6, rr.Y + 12, "region-name", regions[i].Name, "start", c));
+                            if (Format.Shown(regions[i].Name).Length > 0 && regions.Count > 1) sb.Append(Text(rr.X + 6, rr.Y + 12, "region-name", regions[i].Name, "start", c));
                         }
                     }
                     if (v.Submachine.Length > 0)
@@ -215,7 +217,7 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
                     break;
                 }
             }
-            var caption = v.Type == VertexType.ConnectionPointRef ? Or(session.PointName(session.Index.Vertex(v.Parent), v.Ref), "?") : v.Name;
+            var caption = Format.Shown(v.Type == VertexType.ConnectionPointRef ? Or(Or(session.PointName(session.Index.Vertex(v.Parent), v.Ref), v.Ref), "?") : v.Name);
             if (caption.Length > 0 && v.Type != VertexType.State && v.Type != VertexType.Comment)
             {
                 var below = v.Type == VertexType.Fork || v.Type == VertexType.Join ? y + h + 13 : y + h + 12;
@@ -247,8 +249,16 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
             var lineSt = c == null ? "" : Style("stroke:" + c);
             sb.Append($"<path class=\"line\" d=\"{d}\"{lineSt}/>");
             var b = pts[pts.Count - 1];
-            var (p1, p2) = ArrowHead(pts[pts.Count - 2], b);
-            sb.Append($"<path class=\"arrow\" d=\"M{F1(p1.X)},{F1(p1.Y)} L{F1(b.X)},{F1(b.Y)} L{F1(p2.X)},{F1(p2.Y)}\"{lineSt}/>");
+            if (Geometry.IsDangling(ix, t))
+            {
+                // The target names nothing: a marker instead of an arrow head.
+                sb.Append($"<circle class=\"dangling\" cx=\"{F1(b.X)}\" cy=\"{F1(b.Y)}\" r=\"6\"/><path class=\"dangling\" d=\"M{F1(b.X - 3)},{F1(b.Y - 3)} L{F1(b.X + 3)},{F1(b.Y + 3)} M{F1(b.X + 3)},{F1(b.Y - 3)} L{F1(b.X - 3)},{F1(b.Y + 3)}\"/>");
+            }
+            else
+            {
+                var (p1, p2) = ArrowHead(pts[pts.Count - 2], b);
+                sb.Append($"<path class=\"arrow\" d=\"M{F1(p1.X)},{F1(p1.Y)} L{F1(b.X)},{F1(b.Y)} L{F1(p2.X)},{F1(p2.Y)}\"{lineSt}/>");
+            }
             var lines = Labels.TransitionLabelItems(model, t);
             if (lines.Count > 0)
             {

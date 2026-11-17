@@ -1,0 +1,374 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/vincedupuis/fsm-editor-vscode/blob/main/schemas/fsm-layout.schema.json",
+  "title": "FSM Editor state machine layout (.fsm.layout), format 1",
+  "description": "The drawing of the state machine of the .fsm file beside it: the same nesting and names. Coordinates are relative to the owning state (the origin at the top level).",
+  "type": "object",
+  "required": [
+    "format"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "format": {
+      "const": 1
+    },
+    "points": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/point"
+      }
+    },
+    "initial": {
+      "$ref": "#/definitions/pseudostate"
+    },
+    "history": {
+      "$ref": "#/definitions/pseudostate"
+    },
+    "deepHistory": {
+      "$ref": "#/definitions/pseudostate"
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/element"
+      }
+    },
+    "regions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/region"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "dependencies": {
+    "regions": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "initial"
+            ]
+          },
+          {
+            "required": [
+              "history"
+            ]
+          },
+          {
+            "required": [
+              "deepHistory"
+            ]
+          },
+          {
+            "required": [
+              "elements"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "xy": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9a-f]{6}$",
+      "description": "A color, #rrggbb."
+    },
+    "itemColors": {
+      "type": "object",
+      "description": "Colors of the element's items, by the field names of the .fsm file.",
+      "properties": {
+        "background": {
+          "$ref": "#/definitions/color"
+        },
+        "entry": {
+          "$ref": "#/definitions/color"
+        },
+        "exit": {
+          "$ref": "#/definitions/color"
+        },
+        "do": {
+          "$ref": "#/definitions/color"
+        },
+        "defer": {
+          "$ref": "#/definitions/color"
+        },
+        "invariant": {
+          "$ref": "#/definitions/color"
+        },
+        "trigger": {
+          "$ref": "#/definitions/color"
+        },
+        "guard": {
+          "$ref": "#/definitions/color"
+        },
+        "action": {
+          "$ref": "#/definitions/color"
+        },
+        "precondition": {
+          "$ref": "#/definitions/color"
+        },
+        "postcondition": {
+          "$ref": "#/definitions/color"
+        }
+      },
+      "additionalProperties": false
+    },
+    "pseudostate": {
+      "type": "object",
+      "description": "Where the pseudostate is, relative to its owner, and its transition's route.",
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "Left."
+        },
+        "y": {
+          "type": "number",
+          "description": "Top."
+        },
+        "group": {
+          "type": "string",
+          "description": "The group the pseudostate belongs to: its members move together."
+        },
+        "bends": {
+          "type": "array",
+          "description": "Bend points, relative to the innermost state containing both ends (the origin at the top level).",
+          "items": {
+            "$ref": "#/definitions/xy"
+          }
+        },
+        "label": {
+          "$ref": "#/definitions/xy",
+          "description": "Where the label is, from the middle of the line."
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "itemColors": {
+          "$ref": "#/definitions/itemColors"
+        }
+      },
+      "additionalProperties": false
+    },
+    "region": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "size": {
+          "type": "number",
+          "description": "The region's extent along its state's region layout."
+        },
+        "initial": {
+          "$ref": "#/definitions/pseudostate"
+        },
+        "history": {
+          "$ref": "#/definitions/pseudostate"
+        },
+        "deepHistory": {
+          "$ref": "#/definitions/pseudostate"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/element"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "element": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number",
+          "description": "Left, relative to the owning state."
+        },
+        "y": {
+          "type": "number",
+          "description": "Top, relative to the owning state."
+        },
+        "width": {
+          "type": "number",
+          "description": "Width (states, comments, forks and joins)."
+        },
+        "height": {
+          "type": "number",
+          "description": "Height (states, comments, forks and joins)."
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "itemColors": {
+          "$ref": "#/definitions/itemColors"
+        },
+        "group": {
+          "type": "string",
+          "description": "The group the element belongs to: its members move together."
+        },
+        "regionLayout": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "transitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/transition"
+          }
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/point"
+          }
+        },
+        "initial": {
+          "$ref": "#/definitions/pseudostate"
+        },
+        "history": {
+          "$ref": "#/definitions/pseudostate"
+        },
+        "deepHistory": {
+          "$ref": "#/definitions/pseudostate"
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/element"
+          }
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/region"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "dependencies": {
+        "regions": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "initial"
+                ]
+              },
+              {
+                "required": [
+                  "history"
+                ]
+              },
+              {
+                "required": [
+                  "deepHistory"
+                ]
+              },
+              {
+                "required": [
+                  "elements"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "point": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number",
+          "description": "Left, relative to the owner."
+        },
+        "y": {
+          "type": "number",
+          "description": "Top, relative to the owner."
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "itemColors": {
+          "$ref": "#/definitions/itemColors"
+        },
+        "group": {
+          "type": "string"
+        },
+        "transitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/transition"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "transition": {
+      "type": "object",
+      "description": "A transition, found under its source by its trigger and target (then by order).",
+      "properties": {
+        "trigger": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "bends": {
+          "type": "array",
+          "description": "Bend points, relative to the innermost state containing both ends (the origin at the top level).",
+          "items": {
+            "$ref": "#/definitions/xy"
+          }
+        },
+        "label": {
+          "$ref": "#/definitions/xy",
+          "description": "Where the label is, from the middle of the line."
+        },
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "itemColors": {
+          "$ref": "#/definitions/itemColors"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

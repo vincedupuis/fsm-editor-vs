@@ -2,7 +2,7 @@
 
 [![Visual Studio Marketplace version](https://badgen.net/vs-marketplace/v/VinceGoSoftware.fsm-editor-vs)](https://marketplace.visualstudio.com/items?itemName=VinceGoSoftware.fsm-editor-vs)
 
-A visual editor and code generator for UML 2.5.1 state machines in Visual Studio 2022 and later. Draw a machine in any `*.fsm` file, with a toolbox, a properties panel, live validation in the Error List and SVG and PNG export, then generate its source code from templates, in Visual Studio or with the bundled `fsm` command-line generator. Files are standard XMI 2.5.1: the UML model plus its diagram layout in UML DI, in the same file.
+A visual editor and code generator for UML 2.5.1 state machines in Visual Studio 2022 and later. Draw a machine in any `*.fsm` file, with a toolbox, a properties panel, live validation in the Error List and SVG and PNG export, then generate its source code from templates, in Visual Studio or with the bundled `fsm` command-line generator. A machine is two JSON files: `Name.fsm`, the model, readable and editable by hand (elements are identified by their names), and `Name.fsm.layout` beside it, the drawing. Changes to a machine can be reviewed and merged as diagrams, side by side.
 
 This is the Visual Studio edition of [FSM Editor for VS Code](https://github.com/vincedupuis/fsm-editor-vscode). Both editors use the same file format, rules and code generator, so a team can edit the same `.fsm` files in either, and copy and paste diagram elements between them.
 
@@ -24,12 +24,12 @@ See **[docs/CODEGEN.md](https://github.com/vincedupuis/fsm-editor-vs/blob/main/d
 
 A submachine state shows as active in its parent's diagram, and the states inside it light up in the submachine's own diagram when that file is open. When a machine runs several times at once (several logs, or a submachine used by several states), each instance has its own color in the diagram, shown in the status bar and in the window's records.
 
-The generated code reports what it does through an `onTrace` hook (see [Tracing](https://github.com/vincedupuis/fsm-editor-vscode/blob/main/docs/CODEGEN.md#tracing)); have it write lines in the built-in format, after any prefix your logger adds:
+The generated code reports what it does through an `onTrace` hook (see [Tracing](https://github.com/vincedupuis/fsm-cli/blob/main/docs/CODEGEN.md#tracing)); have it write lines in the built-in format, after any prefix your logger adds:
 
 ```
 2026-11-11T10:02:03.120Z INFO fsm Order event checkout checkout
-2026-11-11T10:02:03.121Z INFO fsm Order transition ot2 Cart -> Payment (checkout)
-2026-11-11T10:02:03.121Z INFO fsm Order.Payment enter p_auth Authorizing
+2026-11-11T10:02:03.121Z INFO fsm Order transition Cart#1 Cart -> Payment (checkout)
+2026-11-11T10:02:03.121Z INFO fsm Order.Payment enter Authorizing Authorizing
 ```
 
 That is `fsm <machine> <kind> <id> <name>`, with `kind` one of `event`, `enter`, `exit`, `transition`, and an optional ISO 8601 time (or time of day) earlier on the line. `examples/demo.log` replays the three examples. Other logs are read with the formats of **Tools › Options › FSM Editor › Trace formats**, a JSON array of formats whose rules are regular expressions with named groups giving the record, for example:
@@ -48,7 +48,7 @@ That is `fsm <machine> <kind> <id> <name>`, with `kind` one of `event`, `enter`,
 ]
 ```
 
-Groups: `time`, `machine` (the machine's name, then the submachine states leading to a submachine: `Order.Payment`), `id` (xmi:id), `name` (a name or a path of names such as `On::Playing`), `source` and `target` (a transition by its ends, through any pseudostates between them), and `kind` when the rule doesn't give one. When the lines of a log name no machine (and its format gives none), the Trace Player asks which machine they are about; click the machine next to the log in the window to change it. A log with transitions but no `enter` lines still shows the active states, from the transitions' targets.
+Groups: `time`, `machine` (the machine's name, then the submachine states leading to a submachine: `Order.Payment`), `id` (the element's id, derived from the names: `Off`, `Paused#2`, `On.fault`; see the file format), `name` (a name or a path of names such as `On::Playing`), `source` and `target` (a transition by its ends, through any pseudostates between them), and `kind` when the rule doesn't give one. When the lines of a log name no machine (and its format gives none), the Trace Player asks which machine they are about; click the machine next to the log in the window to change it. A log with transitions but no `enter` lines still shows the active states, from the transitions' targets.
 
 ## UML support
 
@@ -77,24 +77,56 @@ See **[docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blo
 - **Groups**: select elements in the same region, right-click one of them and choose *Group*, or press G. Selecting a member of a group shows a dotted rectangle around the group, and dragging it moves the whole group, into a composite state's region as well. *Ungroup*, or G again, dissolves the groups of the selected elements. A click selects a single member, for its properties, Delete or Copy. Groups are flat: grouping elements of different groups merges them into one.
 - **Extract to Submachine**: select elements of one region, or one composite state, right-click one of them and choose *Extract to Submachine…*. They move to a new state machine file next to this one, and a submachine state referencing it takes their place, with connection points for the transitions that crossed the boundary. The menu item is greyed out, with the reason in its tooltip, when the selection can't be extracted. See the [conformance doc](docs/UML-CONFORMANCE.md#submachines-and-connection-point-references).
 - **Align**: select elements, right-click one of them and choose *Align Horizontally* (on its horizontal center line) or *Align Vertically* (on its vertical one). Points on a state's border don't align. The elements keep their regions: a composite state grows when its region no longer holds them. An element that is the only selected member of its group brings the whole group along; select several members of a group, or the anchor's group, to align them within it.
-- **Colors**: in the properties panel, *Color* colors the selected element, and the swatch beside an entry, exit, do, deferrable events, invariant, trigger, guard or effect field colors just that text. A composite state has a *Title color* (its outline, text and header) and a *Background color* (its regions) instead. *Default* removes the color.
+- **Colors**: in the properties panel, *Color* colors the selected element, and the swatch beside an entry, exit, do, deferrable events, invariant, trigger, guard or action field colors just that text. A composite state has a *Title color* (its outline, text and header) and a *Background color* (its regions) instead. *Default* removes the color.
 - **View**: right-drag, middle-drag or Space+drag pans, the mouse wheel zooms (Shift+wheel pans sideways), F fits the diagram.
 - **Properties window**: right-click an element, or empty canvas for the state machine, and choose *Properties…* to edit its properties in a window next to the pointer, without the properties panel. It closes with Esc or a click outside it. *Delete* in the same menu deletes the selection.
 - **Panels**: the toolbox and the properties panel work like tool windows. The pushpin auto-hides a panel to a tab on the editor's edge (hover over it or click it to slide the panel out), ▾ Window Position also floats it over the diagram, and ✕ closes it. The two buttons at the right of the toolbar show them again. The layout applies to every diagram.
-- **Editing**: Delete removes the selection. Ctrl+C/X/V copies, cuts and pastes, including between diagrams and with VS Code. Ctrl+D duplicates. *Cut*, *Copy* and *Paste* are also in the context menu, which pastes where you right-clicked. Undo and redo (Ctrl+Z, Ctrl+Y) are Visual Studio's own, shared with the XMI text.
+- **Editing**: Delete removes the selection. Ctrl+C/X/V copies, cuts and pastes, including between diagrams and with VS Code. Ctrl+D duplicates. *Cut*, *Copy* and *Paste* are also in the context menu, which pastes where you right-clicked. Undo and redo (Ctrl+Z, Ctrl+Y) cover the model and its layout: a move is undone like any other change, and saving writes both files.
 - **Shortcuts**: S state, X final, I initial, H history, C choice, J junction, N comment, T transition, R region, G group/ungroup, V/Esc select. Shift+click a tool to keep it active.
 - **Submachines**: Alt+double-click a submachine state, or use the button in its properties, to open the referenced machine.
 
-Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Solution Explorer and of the document tab): *New State Machine...*, *Generate Code...*, *Export as SVG...*, *Export as PNG...*, *Open as XMI Text*, *Open in FSM Editor*. *New State Machine...* is also on the context menu of projects and folders. **File › New › File...** and **Add › New Item...** (General, C#, Visual Basic and C++ projects) also list a *State Machine* template. The XMI text and the diagram can be open side by side: they edit the same document.
+Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Solution Explorer and of the document tab): *New State Machine...*, *Generate Code...*, *Export as SVG...*, *Export as PNG...*, *Open as Text*, *Open in FSM Editor*, *Compare as Diagrams*. *New State Machine...* is also on the context menu of projects and folders. **File › New › File...** and **Add › New Item...** (General, C#, Visual Basic and C++ projects) also list a *State Machine* template, which adds both files.
+
+## Files
+
+A machine `Order` is `Order.fsm`, the model, and `Order.fsm.layout` beside it, the drawing. Both are JSON, and the diagram edits them together: moving an element changes only the layout file, and undo and save cover both. Renaming `Order.fsm` in Solution Explorer takes `Order.fsm.layout` with it. The model file is meant to be read, reviewed and edited by hand:
+
+```json
+{
+  "format": 1,
+  "name": "Order",
+  "type": "behavioral",
+  "initial": { "target": "Cart" },
+  "elements": [
+    {
+      "name": "Cart",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "checkout", "target": "Payment" }
+      ]
+    },
+    …
+```
+
+Elements are identified by their names, which are unique in the machine and have no spaces. Elements you don't name (choices, final states, comments…) get a generated name ending with `*`, which the diagram doesn't show. *Open as Text* opens the model file in Visual Studio's JSON editor (when the diagram has unsaved changes, which the file doesn't hold yet, it offers to save them first; the diagram closes, as the two can't share the document), and *Open in FSM Editor* brings the diagram back. A file that isn't valid JSON, or has the wrong shape, shows its problems with their lines instead of the diagram, and in the Error List. A model and a layout file that disagree (a hand edit, a merge, a lost layout file) are reconciled: elements without a place are placed automatically, and nothing in the model is ever dropped. The format is described in [fsm-cli's README](https://github.com/vincedupuis/fsm-cli#the-fsm-file-format) and in [docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blob/main/docs/UML-CONFORMANCE.md#file-format).
+
+Files of earlier versions (XMI 2.5.1 with UML DI) still open, unchanged (opening one doesn't mark it as changed): saving one after a change writes the new format, converting the files linked to it by submachine states at the same time, and says what was renamed or left out. *Open as Text* opens them in the XML editor.
+
+## Diagram diff and merge
+
+**Diff.** *Compare as Diagrams* (the context menu of a `.fsm` file in Solution Explorer or of its document tab, or **Tools › FSM Editor**) opens the file's version in Git and the file as diagrams side by side: the older one on the left, read-only, the file on the right, editable. The older version is the one in the index when the file has changes not staged yet, else the last commit's. Added elements are marked on the right, removed ones on the left, changed ones on both; select a changed element to see what changed in it (guard, action, target…). ◀ ▶ step through the changes, and the two diagrams scroll and zoom together. Changes of the drawing alone (positions, routes, colors) aren't marked unless you tick *Show layout changes*. Elements are matched by name, transitions by source, trigger and target: a renamed state shows as one removed and one added. An older version without its layout file is drawn where the newer one places the same elements. An old-format file compares with its converted version.
+
+**Merge.** A `.fsm` file with merge conflicts (after a merge, rebase or cherry-pick) opens as three diagrams: the result (the file, starting as the current side, and marked as changed only once you choose), and the **Incoming** and **Current** sides beside it, read-only. The conflicts, the differences between the two sides, are listed and marked: take each from incoming or keep it current, or all at once, then **Complete Merge**, which saves both files without markers and marks them resolved in Git. When Git gives the common version, the changes each side made, which Git merged by itself, are marked lightly. When a side of the conflicts isn't a valid machine file, the diagram shows why, with a button to open the file as text, where Visual Studio's merge editor can resolve it. A conflict in the layout file alone opens the diagram with the current positions; saving writes a clean layout file.
 
 ## Development
 
 Requirements: Windows with Visual Studio 2022 (17.0 or later) and the *Visual Studio extension development* workload; [Rust](https://rustup.rs/) to build `fsm` from a clone of fsm-cli, or else an `fsm-<version>-windows-x64.zip` from the [fsm-cli releases](https://github.com/vincedupuis/fsm-cli/releases).
 
 ```powershell
-scripts\fetch-cli.ps1        # copies fsm.exe and its templates from a clone of fsm-cli (..\fsm-cli) into src\FsmEditor.Vsix\cli
-                             # (-Build builds it there first with cargo; -Source takes an unpacked fsm-<version>-windows-x64.zip instead)
-dotnet test                  # model, file format, validation and editing tests
+scripts\fetch-cli.ps1        # copies fsm.exe, its templates, the format's schemas and test cases from a clone of fsm-cli (..\fsm-cli) into src\FsmEditor.Vsix\cli
+                             # (-Build builds it there first with cargo; -Source takes an unpacked fsm-<version>-windows-x64.zip,
+                             #  with the fsm-schemas and fsm-cases archives of the release unpacked in it, instead)
+dotnet test                  # model, file format (against fsm-cli's test cases), validation, editing, diff and merge tests
 ```
 
 Open `FsmEditor.sln`, set **FsmEditor.Vsix** as the startup project and press F5 to start the Visual Studio experimental instance, then open `examples\MediaPlayer.fsm`, or `examples\Order.fsm` for a submachine with connection point references (it uses `examples\Payment.fsm`). Building in Release produces `src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix`; double-click it to install it.
@@ -114,16 +146,18 @@ On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging ste
 
 ### Layout
 
-- `src/FsmEditor.Core/` (.NET Standard 2.0, no Visual Studio dependency): the model (`Model.cs`), the text grammar (`Expressions.cs`), the XMI/UML DI file format (`Xmi.cs`, `XmlTree.cs`), the validator (`Validation.cs`), diagram geometry (`Geometry.cs`, `Labels.cs`), every editing operation of the diagram (`DiagramSession.cs`, `Tools.cs`), SVG export, the clipboard format, submachine resolution (`Workspace.cs`) and the Trace Player's logic (`Trace.cs`)
+- `src/FsmEditor.Core/` (.NET Standard 2.0, no Visual Studio dependency): the model (`Model.cs`), the text grammar (`Expressions.cs`), the file format (`Json.cs`, `Format.cs`, `MachineFiles.cs`), reading and converting files of earlier versions (`Xmi.cs`, `XmlTree.cs`, `Conversion.cs`, `Load.cs`), comparing and merging versions (`Compare.cs`, `Merge.cs`, `Sessions.cs`), the validator (`Validation.cs`), diagram geometry (`Geometry.cs`, `Labels.cs`), every editing operation of the diagram (`DiagramSession.cs`, `Tools.cs`), SVG export, the clipboard format, submachine resolution (`Workspace.cs`) and the Trace Player's logic (`Trace.cs`)
 - `src/FsmEditor.Vsix/`: the Visual Studio extension
   - `FsmEditorPackage.cs`: registration, the Error List providers, SVG and PNG export and the code generation flow
-  - `Editor/FsmEditorFactory.cs`, `Editor/FsmEditorPane.cs`: the document window; syncs the text buffer and the diagram
+  - `Editor/FsmDocument.cs`: the document data, the model and layout files with their undo history, saving and conversion
+  - `Editor/FsmEditorFactory.cs`, `Editor/FsmEditorPane.cs`: the document window; syncs the document and the diagram
+  - `Editor/DiagramSessions.cs`: the diagram diff and merge panes
   - `Editor/EditorControl.cs`, `Editor/DiagramCanvas.cs`, `Editor/PropertiesPanel.cs`: the WPF diagram editor
-  - `Services/`: open documents, the solution's machines, the Error List, dialogs
+  - `Services/`: open documents, the solution's machines, the Error List, dialogs, Git, the JSON text view, layout files renamed with their models
   - `CodeGen/`: running the `fsm` generator and its dialog
   - `TracePlayer/`: the Trace Player tool window and the service following the logs
   - `Commands/`, `VSCommandTable.vsct`: menu commands
-- `test/FsmEditor.Core.Tests/`: tests, including parity tests against reference results of the VS Code extension (`fixtures/`)
-- `scripts/fetch-cli.*`: copies the code generator into the VSIX
+- `test/FsmEditor.Core.Tests/`: tests: fsm-cli's test cases (`cases`, copied by `scripts/fetch-cli.*`), the layout file's test files and parity results of the VS Code extension (`fixtures/`)
+- `scripts/fetch-cli.*`: copies the code generator, its templates, schemas and test cases into `src/FsmEditor.Vsix/cli`
 - `vs-publish.json`: the Marketplace listing; `images/`: the README's screenshots
 - `docs/`: UML conformance and code generation

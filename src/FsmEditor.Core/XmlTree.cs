@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 namespace FsmEditor.Core
 {
     /// <summary>
+    /// The XML reader of files of earlier versions (XMI, see <see cref="Xmi"/>): nothing writes XML any more.
     /// A read-only XML element whose element and attribute names use canonical
     /// prefixes for known namespace URIs, so documents using other prefixes read
     /// the same (<c>uml:State</c> whatever prefix the file binds to the UML namespace).
@@ -35,31 +36,6 @@ namespace FsmEditor.Core
         public XmlParseException(string message, int line) : base($"Line {line}: {message}") => Line = line;
 
         public int Line { get; }
-    }
-
-    /// <summary>An element to write: name, attributes in order, and children (elements or text).</summary>
-    public sealed class XNode
-    {
-        public XNode(string name, params (string Key, object Value)[] attrs)
-        {
-            Name = name;
-            Attrs.AddRange(attrs);
-        }
-
-        public string Name { get; set; }
-        public List<(string Key, object Value)> Attrs { get; } = new List<(string, object)>();
-        /// <summary>Child <see cref="XNode"/>s or strings.</summary>
-        public List<object> Children { get; } = new List<object>();
-
-        public XNode Add(params object[] children)
-        {
-            foreach (var c in children)
-            {
-                if (c is IEnumerable<XNode> many) Children.AddRange(many);
-                else if (c != null) Children.Add(c);
-            }
-            return this;
-        }
     }
 
     public static class XmlTree
@@ -302,74 +278,6 @@ namespace FsmEditor.Core
             foreach (var c in raw.Children) el.Children.Add(Resolve(c, s, canonical));
             return el;
         }
-
-        public static string Escape(string s)
-        {
-            var sb = new StringBuilder(s.Length);
-            foreach (var c in s)
-            {
-                switch (c)
-                {
-                    case '&': sb.Append("&amp;"); break;
-                    case '<': sb.Append("&lt;"); break;
-                    case '>': sb.Append("&gt;"); break;
-                    case '"': sb.Append("&quot;"); break;
-                    case '\r': sb.Append("&#13;"); break;
-                    case '\n': sb.Append("&#10;"); break;
-                    case '\t': sb.Append("&#9;"); break;
-                    default: sb.Append(c); break;
-                }
-            }
-            return sb.ToString();
-        }
-
-        /// <summary>Writes the document with two-space indentation and LF line ends.</summary>
-        public static string Write(XNode root)
-        {
-            var output = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-            WriteNode(root, "", output);
-            return output.ToString();
-        }
-
-        private static void WriteNode(XNode node, string indent, StringBuilder output)
-        {
-            output.Append(indent).Append('<').Append(node.Name);
-            foreach (var (key, value) in node.Attrs)
-            {
-                var s = FormatValue(value);
-                if (string.IsNullOrEmpty(s)) continue;
-                output.Append(' ').Append(key).Append("=\"").Append(Escape(s)).Append('"');
-            }
-            if (node.Children.Count == 0)
-            {
-                output.Append("/>\n");
-            }
-            else if (node.Children.Count == 1 && node.Children[0] is string only)
-            {
-                output.Append('>').Append(Escape(only).Replace("&#10;", "\n")).Append("</").Append(node.Name).Append(">\n");
-            }
-            else
-            {
-                output.Append(">\n");
-                foreach (var c in node.Children)
-                {
-                    if (c is XNode child) WriteNode(child, indent + "  ", output);
-                    else output.Append(indent).Append("  ").Append(Escape(c.ToString())).Append('\n');
-                }
-                output.Append(indent).Append("</").Append(node.Name).Append(">\n");
-            }
-        }
-
-        private static string FormatValue(object value)
-        {
-            switch (value)
-            {
-                case null: return null;
-                case double d: return Num.Format(d);
-                case string s: return s;
-                default: return Convert.ToString(value, CultureInfo.InvariantCulture);
-            }
-        }
     }
 
     /// <summary>Number helpers matching how the diagram and the files have always printed coordinates.</summary>
@@ -420,6 +328,10 @@ namespace FsmEditor.Core
             ShortestDigits(n, out var digits, out var point);
             return Layout(digits, point);
         }
+
+        /// <summary>JavaScript's <c>String(n)</c>, <c>NaN</c> and <c>Infinity</c> included.</summary>
+        public static string Js(double n) =>
+            double.IsNaN(n) ? "NaN" : double.IsPositiveInfinity(n) ? "Infinity" : double.IsNegativeInfinity(n) ? "-Infinity" : Format(n);
 
         /// <summary>
         /// Shortest digits <paramref name="digits"/> (no trailing zero) such that

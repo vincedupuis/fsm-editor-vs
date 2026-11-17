@@ -83,12 +83,69 @@ namespace FsmEditor.Core
 
         public string UniqueName(string baseName)
         {
-            var names = new HashSet<string>(Model.Vertices.Select(v => v.Name));
+            var names = UsedNames(null);
             if (!names.Contains(baseName)) return baseName;
             for (int i = 2; ; i++)
             {
                 if (!names.Contains(baseName + i)) return baseName + i;
             }
+        }
+
+        // Names are the elements' identity in the file: unique in the machine (the machine's, the elements', the regions'
+        // of an owner with several), unique on their state for points. A name ending with * is generated (saving gives
+        // one to what has none) and isn't shown.
+
+        private static bool IsNamed(VertexType t) =>
+            t == VertexType.State || t == VertexType.Choice || t == VertexType.Junction || t == VertexType.Fork || t == VertexType.Join
+            || t == VertexType.Final || t == VertexType.Terminate || t == VertexType.Comment;
+
+        /// <summary>The names in use in the machine, but those of <paramref name="except"/> (an element or a region).</summary>
+        public HashSet<string> UsedNames(object except)
+        {
+            var names = new HashSet<string> { Model.Name };
+            void Regions(List<Region> list)
+            {
+                if (list.Count < 2) return;
+                foreach (var r in list)
+                {
+                    if (r != except && r.Name.Length > 0) names.Add(r.Name);
+                }
+            }
+            Regions(Model.Regions);
+            foreach (var v in Model.Vertices)
+            {
+                if (v != except && IsNamed(v.Type) && v.Name.Length > 0) names.Add(v.Name);
+                Regions(v.Regions);
+            }
+            return names;
+        }
+
+        /// <summary>
+        /// The check of a name typed for <paramref name="e"/> (a <see cref="Vertex"/>, a <see cref="Region"/>, or the
+        /// <see cref="FsmModel"/> itself): no spaces, '.' or '*', unique. An empty name gives the element a generated one
+        /// when it is saved (the machine needs a name). The value is the name to set.
+        /// </summary>
+        public Check<string> NameCheck(object e, string value)
+        {
+            var n = JsWhitespace.Trim(value ?? "");
+            if (n.Any(c => c == '.' || c == '*' || JsWhitespace.Contains(c))) return Check<string>.Fail("A name can't contain spaces, '.' or '*'.");
+            if (n.Length == 0) return e == Model ? Check<string>.Fail("The state machine needs a name.") : Check<string>.Success("");
+            var current = e is Vertex cv ? cv.Name : e is Region cr ? cr.Name : Model.Name;
+            if (n == Format.Shown(current)) return Check<string>.Success(n);
+            if (e is Vertex p && (p.Type == VertexType.EntryPoint || p.Type == VertexType.ExitPoint))
+            {
+                var owner = Index.Vertex(p.Parent);
+                var mates = Model.Vertices.Where(q => q != p && (q.Type == VertexType.EntryPoint || q.Type == VertexType.ExitPoint)
+                    && (owner != null ? q.Parent == owner.Id : Index.Vertex(q.Parent) == null));
+                var reserved = n == "history" || n == "deepHistory";
+                if (mates.Any(q => q.Name == n) || reserved)
+                {
+                    return Check<string>.Fail($"'{n}' can't name this point: {(reserved ? "it names history pseudostates" : "another point of its state has it")}.");
+                }
+                return Check<string>.Success(n);
+            }
+            if (UsedNames(e == Model ? null : e).Contains(n) && !(e == Model && n == Model.Name)) return Check<string>.Fail($"'{n}' is already used in this state machine: names are unique.");
+            return Check<string>.Success(n);
         }
 
         /// <summary>Display name of the machine a submachine href points to.</summary>
@@ -97,7 +154,7 @@ namespace FsmEditor.Core
             if (Submachines.TryGetValue(href ?? "", out var info) && !string.IsNullOrEmpty(info.Name)) return info.Name;
             var known = Machines.FirstOrDefault(m => m.Href == href);
             if (known != null && known.Name.Length > 0) return known.Name;
-            var file = Hrefs.DecodeUri((href ?? "").Split('#')[0]);
+            var file = href ?? "";
             file = file.Substring(file.LastIndexOf('/') + 1);
             return file.EndsWith(".fsm", StringComparison.Ordinal) ? file.Substring(0, file.Length - 4) : file;
         }
@@ -179,6 +236,13 @@ namespace FsmEditor.Core
                 v.Y = Geometry.Snap(p.Y - v.H / 2);
                 var r = Geometry.RegionAt(Index, p, new HashSet<string>());
                 v.Parent = r != null ? r.Id : RootRegion;
+                // A region has one initial, one shallow and one deep history pseudostate at most (the file holds one).
+                if ((v.Type == VertexType.Initial || v.Type == VertexType.ShallowHistory || v.Type == VertexType.DeepHistory)
+                    && Model.Vertices.Any(x => x.Parent == v.Parent && x.Type == v.Type))
+                {
+                    Say($"This region already has {(v.Type == VertexType.Initial ? "an initial pseudostate" : $"a {v.Type.Title().ToLowerInvariant()}")}.");
+                    return null;
+                }
             }
             Model.Vertices.Add(v);
             Reindex();
@@ -286,7 +350,7 @@ namespace FsmEditor.Core
                 Target = state.Id,
                 Kind = TransitionKind.Internal,
                 Triggers = { "event" },
-                Effect = "action()",
+                Action = "action()",
             });
             Commit();
         }
@@ -300,7 +364,11 @@ namespace FsmEditor.Core
                 .Where(t => !transitionIds.Contains(t.Id) && !ids.Contains(t.Source) && !ids.Contains(t.Target))
                 .ToList();
             var alive = new HashSet<string>(Model.Vertices.Select(v => v.Id).Concat(Model.Transitions.Select(t => t.Id)));
-            foreach (var v in Model.Vertices) v.Anchors = v.Anchors.Where(alive.Contains).ToList();
+            // An anchor that named nothing in the file (U+E001/U+E002 and its reference) is kept as it is.
+            foreach (var v in Model.Vertices)
+            {
+                v.Anchors = v.Anchors.Where(a => alive.Contains(a) || a.StartsWith(Format.Unresolved, StringComparison.Ordinal) || a.StartsWith(Format.UnresolvedAnchor, StringComparison.Ordinal)).ToList();
+            }
             Selection = new HashSet<string>(Selection.Where(alive.Contains));
             Reindex();
         }
@@ -372,8 +440,11 @@ namespace FsmEditor.Core
             return t;
         }
 
-        /// <summary>Why a transition can't go from <paramref name="source"/> to <paramref name="target"/>, or null when it can.</summary>
-        private static string ConnectProblem(Vertex source, Vertex target)
+        /// <summary>
+        /// Why a transition can't go from <paramref name="source"/> to <paramref name="target"/>, or null when it can
+        /// (<paramref name="moving"/>: the transition being reconnected).
+        /// </summary>
+        private string ConnectProblem(Vertex source, Vertex target, Transition moving = null)
         {
             if (source.Type == VertexType.ConnectionPointRef && source.PointKind == PointKind.Entry)
             {
@@ -388,6 +459,13 @@ namespace FsmEditor.Core
                 return $"A {source.Type.Title().ToLowerInvariant()} cannot have outgoing transitions.";
             }
             if (target.Type == VertexType.Initial) return "An initial pseudostate cannot be the target of a transition.";
+            if (source.Type == VertexType.Initial || source.Type == VertexType.ShallowHistory || source.Type == VertexType.DeepHistory)
+            {
+                if (Model.Transitions.Any(t => t.Source == source.Id && t != moving))
+                {
+                    return $"A{(source.Type == VertexType.Initial ? "n initial pseudostate" : " history pseudostate")} has one transition only.";
+                }
+            }
             return null;
         }
 
@@ -401,7 +479,7 @@ namespace FsmEditor.Core
             var source = atSource ? v : Index.Vertex(t.Source);
             var target = atSource ? Index.Vertex(t.Target) : v;
             if (source == null || target == null) return;
-            var problem = ConnectProblem(source, target);
+            var problem = ConnectProblem(source, target, t);
             if (problem != null)
             {
                 Say(problem);
@@ -1073,7 +1151,7 @@ namespace FsmEditor.Core
         {
             var output = new List<Issue>();
             var vs = Model.Vertices.Where(v => v.Type != VertexType.Comment).ToList();
-            string Describe(Vertex v) => v.Name.Length > 0 ? $"'{v.Name}'" : $"an unnamed {v.Type.Title()}";
+            string Describe(Vertex v) => Format.Shown(v.Name).Length > 0 ? $"'{v.Name}'" : $"a {v.Type.Title().ToLowerInvariant()}";
             for (int i = 0; i < vs.Count; i++)
             {
                 var a = vs[i];
@@ -1367,7 +1445,10 @@ namespace FsmEditor.Core
                 }
                 v.X += offX;
                 v.Y += offY;
-                v.Regions = v.Regions.Select(r => new Region { Id = map[r.Id], Name = r.Name, Size = r.Size }).ToList();
+                // Names are unique: a copy takes the next free one (Idle2); a generated one is given again when saved.
+                string Fresh(string n) => n.Length == 0 || Format.IsGenerated(n) ? "" : UniqueName(n);
+                if (IsNamed(v.Type)) v.Name = Fresh(v.Name);
+                v.Regions = v.Regions.Select(r => new Region { Id = map[r.Id], Name = Fresh(r.Name), Size = r.Size }).ToList();
                 if (map.TryGetValue(v.Parent, out var parent))
                 {
                     v.Parent = parent;

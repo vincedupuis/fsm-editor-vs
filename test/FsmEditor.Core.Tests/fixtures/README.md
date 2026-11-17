@@ -1,52 +1,7 @@
-# Parity fixtures
+# Test fixtures
 
-Reference results produced by FSM Editor for VS Code (TypeScript), used by
-`ParityTests.cs` to check that this C# implementation reads, writes and
-validates state machines exactly the same way:
+- `grammar.json`: the results of every grammar check of the VS Code edition (`media/expressions.js`, the reference) for a list of texts, which `ParityTests.cs` compares with this edition's. Made by the umbrella repo's `node parity/fixtures.mjs`, which also copies the next two.
+- `layout/valid`, `layout/invalid`: layout files (`.fsm.layout`) that the layout schema accepts and refuses: the VS Code edition's `test/unit/fixtures/layout`. The layout file's format belongs to the editions and is defined by the VS Code edition (its `docs/UML-CONFORMANCE.md`, "The layout file", and `schemas/fsm-layout.schema.json`, copied to `src/FsmEditor.Vsix/Schemas/fsm-layout.schema.json`). `CasesTests.cs` checks that the layout reader takes and refuses the same files.
+- `old/`: the examples in the old format (XMI, FSM Editor 0.6 and earlier), the VS Code edition's `test/unit/fixtures/old`: converting them must give `examples/`, byte for byte.
 
-- `expected.json`: validation issues of `examples/*.fsm` and of the cases below,
-  and the results of every grammar check for a list of texts;
-- `<case>.fsm`: edge-case models (invalid text, broken structure, protocol
-  machine with stereotypes, context and documentation, cycles of pseudostates)
-  written by `toXmi`, except `colors.fsm`, whose colors were then edited by hand
-  (uppercase and invalid values, unknown items, a missing element, a foreign
-  extension) to check that reading them is lenient, and `loops.fsm`, given extra
-  waypoints on self-transitions (as older versions wrote them) to check that
-  reading resets a state's loop unless it has one or three, and keeps a
-  pseudostate's bend points, and `regions.fsm`, composite states whose regions
-  have their own sizes (stacked, side by side, a single region, and sizes that
-  don't fit their state), and `groups.fsm`, whose groups were edited by hand
-  (members out of file order, a member on a state's border, members in another
-  region, a vertex in two groups, a missing member, a group without an id and
-  groups of one) to check which groups reading keeps, and `edges.fsm`
-  (completion transitions with and without guards, a comment text with spaces
-  and line breaks around it, a time trigger and an event whose ids would collide,
-  and the model hash line that files saved by earlier versions end with, which
-  reading ignores and writing leaves out), and `regionids.fsm` (region ids used
-  again by another region, a vertex and a transition, and several top-level
-  regions, one without an initial pseudostate), and `settle.fsm`, written by an
-  earlier version and then edited by hand (a composite state without its region
-  shapes, a transition in an outer region, a coordinate off the 0.1 px grid, an
-  infinite width, and a label that the earlier writer moved by 0.1 px on each
-  save), whose round trip must save to itself, as the round trip of every case
-  whose ids are unique must, and
-  `infinite.fsm`, edited by hand to hold infinite coordinates (`Infinity`,
-  `-Infinity`, `1e400`) in bend points and in a label box, read as JavaScript
-  reads them (`+x || 0`: the label's middle becomes NaN, so its offset is 0,
-  and the bend points become 0);
-- `<case>.roundtrip.xmi`: `toXmi(fromXmi(<case>.fsm))`, which saves to itself when
-  the case's ids are unique: `toXmi(fromXmi(<case>.roundtrip.xmi))` gives it back
-  unchanged (`structure`, `cycles` and `regionids` use ids twice: saving them
-  again must keep the same elements).
-
-Regenerate them when the reference implementation changes its rules or format,
-from the umbrella repo: `node parity/fixtures.mjs` (needs `npm install` done in
-fsm-editor-vscode; `--vscode`, `--vs`, `--jb` and `--cli` point it at other
-checkouts). It bundles `src/xmi.ts`, `src/validation.ts` and
-`media/expressions.js` of the VS Code extension, rewrites `expected.json` and the
-`.roundtrip.xmi` files in the Visual Studio and JetBrains fixtures and in
-fsm-cli's (`tests/fixtures`, which also gets the VS Code examples), and copies
-the `<case>.fsm` files from the Visual Studio fixtures to the other two. The grammar texts and the
-case list are in the script; a new case is a `<case>.fsm` added to the Visual
-Studio fixtures and to the script's list, then to `ParityTests.cs` and
-`ParityTest.kt`.
+The model file's format is fsm-cli's: `CasesTests.cs` checks the reader and the validator against fsm-cli's test cases, which `scripts/fetch-cli.sh` (into `src/FsmEditor.Vsix/cli/cases`) copies. That the three editions write the same files for the same machines (examples, fsm-cli's cases, old files converted) is checked from the umbrella repo with `node parity/check.mjs`.

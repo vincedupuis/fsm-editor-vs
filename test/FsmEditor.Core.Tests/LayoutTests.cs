@@ -18,7 +18,7 @@ namespace FsmEditor.Core.Tests
         /// <summary>Q holds P, whose stacked regions r1 (A) and r2 (C, D, a transition with a bend point) share it equally; headers are 24 high.</summary>
         private static DiagramSession Nested()
         {
-            var m = new FsmModel { Id = "sm", Name = "T", Regions = { new Region { Id = "r0" } } };
+            var m = new FsmModel { Name = "T", Regions = { new Region { Id = "r0" } } };
             m.Vertices.Add(State("Q", "r0", 50, 50, 600, 500, "rq"));
             m.Vertices.Add(State("P", "rq", 100, 100, 300, 260, "r1", "r2"));
             m.Vertices.Add(State("A", "r1", 130, 150));
@@ -176,7 +176,7 @@ namespace FsmEditor.Core.Tests
             s.Selection = new HashSet<string> { "A" };
             var data = ClipboardJson.TryRead(ClipboardJson.Write(s.CollectSelection()));
             s.Paste(data, new PointD(350, 300));
-            var copy = s.Model.Vertices.Single(v => v.Name == "A" && v.Id != "A");
+            var copy = s.Model.Vertices.Single(v => v.Name == "A2");
             Assert.Equal(("r2", 350.0, 300.0), (copy.Parent, copy.X, copy.Y));
             Assert.Equal((360.0, 260.0), (V(s, "P").W, V(s, "P").H));
         }
@@ -232,12 +232,12 @@ namespace FsmEditor.Core.Tests
         public void AStateInItsOwnRegionNeitherGrowsForeverNorOverflowsTheWriter()
         {
             // A file edited by hand: state S reuses the id of the top-level region for its own region.
-            var m = new FsmModel { Id = "sm", Name = "T", Regions = { new Region { Id = "r0" } } };
+            var m = new FsmModel { Name = "T", Regions = { new Region { Id = "r0" } } };
             m.Vertices.Add(State("S", "r0", 50, 50, 200, 100, "r0"));
             m.Vertices.Add(State("A", "r0", 60, 90));
             var s = new DiagramSession(m);
             Assert.NotNull(s.CreateVertex("state", new PointD(500, 500)));
-            Assert.Throws<XmiException>(() => Xmi.ToXmi(s.Model));
+            Assert.NotEmpty(Format.WriteMachine(s.Model).Lost);
         }
 
         [Fact]

@@ -20,8 +20,8 @@ namespace FsmEditor.Editor
     /// <summary>What the diagram editor asks of the document window hosting it.</summary>
     internal interface IEditorHost
     {
-        /// <summary>Writes the model to the document (as XMI).</summary>
-        void Write(FsmModel model);
+        /// <summary>Writes the model to the document (its two files); a message when the change can't be made, else null.</summary>
+        string Write(FsmModel model);
         void Undo();
         void Redo();
         void GenerateCode();
@@ -30,11 +30,25 @@ namespace FsmEditor.Editor
         void ExportSvg();
         void ExportPng();
         void OpenAsText();
-        void OpenSubmachine(string href);
-        /// <summary>Asks for the name of a state machine to create next to the document, starting from <paramref name="proposed"/>; null when cancelled.</summary>
-        string AskSubmachineName(string proposed);
-        /// <summary>Creates <c>name.fsm</c> next to the document with <paramref name="xmi"/>; false (after telling why) when it can't.</summary>
-        bool CreateMachineFile(string name, string xmi);
+        /// <summary>Opens the machine of a submachine state's reference (its file path, relative to the document).</summary>
+        void OpenSubmachine(string path);
+        /// <summary>
+        /// Asks for the name of a state machine to create next to the document, starting from <paramref name="proposed"/>
+        /// and refusing the names of <paramref name="namesInside"/>; null when cancelled.
+        /// </summary>
+        string AskSubmachineName(string proposed, ISet<string> namesInside);
+        /// <summary>Creates <c>name.fsm</c> and its layout file next to the document; false (after telling why) when it can't.</summary>
+        bool CreateMachineFiles(string name, string modelText, string layoutText);
+        /// <summary>The next or previous change or conflict (<paramref name="dir"/>), or the conflict of <paramref name="key"/>.</summary>
+        void DiffNavigate(int dir, string key);
+        void DiffShowLayout(bool show);
+        /// <summary>The view moved: the other panes of a diff or merge follow.</summary>
+        void ViewChanged(double x, double y, double zoom);
+        /// <summary>Takes a side (<c>incoming</c> or <c>current</c>) for the conflict of <paramref name="key"/>, or all of them (null).</summary>
+        void MergeChoose(string key, string side);
+        void MergeComplete();
+        /// <summary>Opens the file in Visual Studio's text merge, for conflicts the diagram merge can't open.</summary>
+        void OpenTextMerge();
     }
 
     /// <summary>
@@ -50,6 +64,13 @@ namespace FsmEditor.Editor
         private readonly Grid _canvasHost = new Grid();
         private readonly Canvas _overlay = new Canvas { ClipToBounds = true };
         private readonly Border _toolbar = new Border();
+        /// <summary>The bar of a diff or merge pane: its role, the changes to step through and, in the result, the conflicts.</summary>
+        private readonly Border _diffBar = new Border { Visibility = Visibility.Collapsed };
+        /// <summary>The model last received from the document: a read-only diagram goes back to it after a change.</summary>
+        private FsmModel _received;
+        private bool _mergeFallback;
+        /// <summary>The view is being set by another pane of the diff: not sent back.</summary>
+        private bool _viewFromPartner;
         private readonly ScrollViewer _toolbox = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Width = 176 };
         private readonly ScrollViewer _propsScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Width = 270 };
         private readonly Border _status = new Border();
@@ -94,6 +115,7 @@ namespace FsmEditor.Editor
             Focusable = false;
 
             SetDock(_toolbar, Dock.Top);
+            SetDock(_diffBar, Dock.Top);
             SetDock(_status, Dock.Bottom);
             _propsScroll.Content = _props;
             _toolboxPane = new ToolPane("Toolbox", _toolbox, OnPaneChanged);
@@ -116,6 +138,7 @@ namespace FsmEditor.Editor
             _canvasHost.Children.Add(_parseError);
             _canvasHost.Children.Add(_floatLayer);
             Children.Add(_toolbar);
+            Children.Add(_diffBar);
             Children.Add(_status);
             Children.Add(_leftTabs);
             Children.Add(_rightTabs);
@@ -123,7 +146,12 @@ namespace FsmEditor.Editor
             Children.Add(_rightDock);
             Children.Add(_canvasHost);
 
-            _canvas.ViewChanged += (s, e) => UpdateZoomLabel();
+            _canvas.ViewChanged += (s, e) =>
+            {
+                UpdateZoomLabel();
+                // The panes of a diff or merge scroll and zoom together.
+                if (Diff != null && !_viewFromPartner) _host.ViewChanged(_canvas.ViewX, _canvas.ViewY, _canvas.Zoom);
+            };
             _canvas.ToolChanged += (s, e) =>
             {
                 UpdateToolbox();
@@ -194,6 +222,42 @@ namespace FsmEditor.Editor
 
         public DiagramCanvas Canvas => _canvas;
 
+        /// <summary>A version of the file or a side of a merge: changes are refused.</summary>
+        public bool ReadOnly { get; private set; }
+
+        public void SetReadOnly(bool readOnly)
+        {
+            if (ReadOnly == readOnly) return;
+            ReadOnly = readOnly;
+            ArrangePanes();
+            RenderProps();
+        }
+
+        /// <summary>The marks and bar of a diff or merge pane, or null.</summary>
+        public PaneDiff Diff { get; private set; }
+
+        public void ShowDiff(PaneDiff diff)
+        {
+            Diff = diff;
+            RenderDiffBar();
+            _canvas.InvalidateVisual();
+            RenderProps();
+        }
+
+        /// <summary>The view of another pane of the diff or merge.</summary>
+        public void SetView(double x, double y, double zoom)
+        {
+            _viewFromPartner = true;
+            try
+            {
+                _canvas.SetViewOf(x, y, zoom);
+            }
+            finally
+            {
+                _viewFromPartner = false;
+            }
+        }
+
         private void OnThemeChanged(object sender, EventArgs e)
         {
             ClosePropertiesWindow();
@@ -210,12 +274,13 @@ namespace FsmEditor.Editor
         /// or the reason the file can't be read.
         /// </summary>
         public void Update(FsmModel model, List<Issue> issues, string error,
-            IReadOnlyDictionary<string, SubmachineInfo> submachines, IReadOnlyList<MachineInfo> machines)
+            IReadOnlyDictionary<string, SubmachineInfo> submachines, IReadOnlyList<MachineInfo> machines, bool mergeFallback = false)
         {
             _validationIssues = issues ?? new List<Issue>();
             RefreshLayoutIssues();
             if (error != null)
             {
+                _mergeFallback = mergeFallback;
                 ShowParseError(error);
                 RenderStatus();
                 return;
@@ -223,6 +288,7 @@ namespace FsmEditor.Editor
             _parseError.Visibility = Visibility.Collapsed;
             if (model != null)
             {
+                _received = model.Clone();
                 if (Session == null)
                 {
                     Session = new DiagramSession(model);
@@ -261,8 +327,19 @@ namespace FsmEditor.Editor
         {
             // The document can't be read: writing the model shown before would replace the text being fixed.
             if (_parseError.Visibility == Visibility.Visible) return;
+            if (ReadOnly)
+            {
+                // A read-only diagram: back to what it shows.
+                if (_received != null) Session.ReplaceModel(_received.Clone());
+                RefreshLayoutIssues();
+                _canvas.InvalidateVisual();
+                RenderProps();
+                Toast("This diagram is read-only.");
+                return;
+            }
             RefreshLayoutIssues();
-            _host.Write(Session.Model);
+            var problem = _host.Write(Session.Model);
+            if (problem != null) Toast(problem);
             _canvas.InvalidateVisual();
             UpdateTitle();
             RenderStatus();
@@ -398,22 +475,22 @@ namespace FsmEditor.Editor
                 Toast(problem);
                 return;
             }
-            var name = _host.AskSubmachineName(Extraction.ProposedName(Session.Model, ids));
+            var name = _host.AskSubmachineName(Extraction.ProposedName(Session.Model, ids), Extraction.NamesInside(Session.Model, ids));
             if (name == null) return;
-            var result = Extraction.Extract(Session.Model, ids, name, Hrefs.EncodeUri(name + ".fsm") + "#sm");
-            string xmi;
+            var result = Extraction.Extract(Session.Model, ids, name, name + ".fsm");
+            MachineState machine;
             try
             {
-                xmi = Xmi.ToXmi(result.Machine);
-                // The edited machine must be writable too, before the new file is created (as in the VS Code edition).
-                Xmi.ToXmi(result.Parent);
+                machine = MachineFiles.Write(result.Machine);
+                // The edited machine must be writable too, before the new files are created (as in the VS Code edition).
+                MachineFiles.Write(result.Parent.Clone());
             }
-            catch (XmiException e)
+            catch (FormatLossException e)
             {
-                Toast(e.Message);
+                Toast($"The change can't be saved: {e.Message}");
                 return;
             }
-            if (!_host.CreateMachineFile(name, xmi)) return;
+            if (!_host.CreateMachineFiles(name, machine.ModelText, machine.LayoutText)) return;
             Session.ReplaceModel(result.Parent);
             Session.Selection = new HashSet<string> { result.StateId };
             Session.Commit();
@@ -570,12 +647,12 @@ namespace FsmEditor.Editor
                     var atTop = v.Regions.Count > 0 || Labels.ActivityLines(Session.Model, v).Count > 0;
                     var y = atTop ? v.Y + (v.Stereotype.Length > 0 ? 14 : 2) : v.Y + v.H / 2 - 12 + (v.Stereotype.Length > 0 ? 6 : 0);
                     box = new RectD(v.X + 4, y, v.W - 8, 24);
-                    value = v.Name;
+                    value = Format.Shown(v.Name);
                 }
                 else
                 {
                     box = new RectD(v.X + v.W / 2 - 60, v.Y + v.H + 2, 120, 22);
-                    value = v.Name;
+                    value = Format.Shown(v.Name);
                 }
             }
             else
@@ -681,8 +758,14 @@ namespace FsmEditor.Editor
             }
             else
             {
-                if (v.Name == JsWhitespace.Trim(text)) return true;
-                v.Name = JsWhitespace.Trim(text);
+                if (Format.Shown(v.Name) == JsWhitespace.Trim(text)) return true;
+                var ok = Session.NameCheck(v, text);
+                if (!ok.Ok)
+                {
+                    Toast($"Name not changed. {ok.Error}");
+                    return true;
+                }
+                v.Name = ok.Value;
             }
             Session.Commit();
             RenderProps();
@@ -756,7 +839,8 @@ namespace FsmEditor.Editor
 
         private void Place(ToolPane pane, bool left)
         {
-            if (pane.Closed) return;
+            // A read-only diagram (a version of the file, a side of a merge) has no toolbox.
+            if (pane.Closed || (pane == _toolboxPane && ReadOnly)) return;
             pane.Height = double.NaN;
             pane.Effect = null;
             switch (pane.Mode)
@@ -853,6 +937,7 @@ namespace FsmEditor.Editor
             TextElement.SetForeground(this, th.BrushOf(th.Foreground));
             BuildToolbar();
             BuildToolbox();
+            RenderDiffBar();
             _propsScroll.Background = th.BrushOf(th.Panel);
             _propsScroll.BorderBrush = th.BrushOf(th.Border);
             _leftTabs.Background = _rightTabs.Background = th.BrushOf(th.Panel);
@@ -950,7 +1035,7 @@ namespace FsmEditor.Editor
             right.Children.Add(ToolbarButton("export", "Export as SVG", _host.ExportSvg, "SVG"));
             right.Children.Add(ToolbarButton("export", "Export as PNG", _host.ExportPng, "PNG"));
             right.Children.Add(Separator(th));
-            right.Children.Add(ToolbarButton("xmi", "Open as XMI text", _host.OpenAsText, "XMI"));
+            right.Children.Add(ToolbarButton("xmi", "Open as Text: the model file in the text editor", _host.OpenAsText, "Text"));
             right.Children.Add(Separator(th));
             right.Children.Add(ToolbarButton("toolbox", "Show Toolbox", () => ShowPane(_toolboxPane)));
             right.Children.Add(ToolbarButton("properties", "Show Properties", () => ShowPane(_propsPane)));
@@ -1169,13 +1254,107 @@ namespace FsmEditor.Editor
             _toastTimer.Start();
         }
 
+        private static readonly Dictionary<string, string> RoleLabels = new Dictionary<string, string>
+        {
+            ["old"] = "Old", ["new"] = "New", ["incoming"] = "Incoming", ["current"] = "Current", ["result"] = "Result",
+        };
+
+        /// <summary>The bar of a diff or merge pane: its role, the changes to step through and, in the result, the conflicts.</summary>
+        private void RenderDiffBar()
+        {
+            var diff = Diff;
+            if (diff == null)
+            {
+                _diffBar.Child = null;
+                _diffBar.Visibility = Visibility.Collapsed;
+                return;
+            }
+            var th = Theme.Current;
+            _diffBar.Visibility = Visibility.Visible;
+            _diffBar.Background = th.BrushOf(th.Panel);
+            _diffBar.BorderBrush = th.BrushOf(th.Border);
+            _diffBar.BorderThickness = new Thickness(0, 0, 0, 1);
+            _diffBar.Padding = new Thickness(8, 3, 8, 3);
+            var root = new StackPanel();
+            var bar = new WrapPanel { Orientation = Orientation.Horizontal };
+            root.Children.Add(bar);
+            TextBlock Text(string text, bool strong = false, bool muted = false) => new TextBlock
+            {
+                Text = text,
+                FontWeight = strong ? FontWeights.SemiBold : FontWeights.Normal,
+                Foreground = muted ? th.BrushOf(th.Muted) : th.BrushOf(th.Foreground),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 10, 0),
+            };
+            Button Btn(string text, string tip, Action click, bool enabled = true, bool on = false)
+            {
+                var b = new Button { Content = text, ToolTip = tip, IsEnabled = enabled, Padding = new Thickness(6, 1, 6, 1), Margin = new Thickness(0, 1, 6, 1) };
+                Theme.Style(b, VsResourceKeys.ButtonStyleKey);
+                if (on) b.FontWeight = FontWeights.SemiBold;
+                b.Click += (s, e) => click();
+                return b;
+            }
+            bar.Children.Add(Text(RoleLabels.TryGetValue(diff.Role, out var label) ? label : diff.Role, strong: true));
+            bar.Children.Add(Text(diff.Title ?? "", muted: true));
+            var isDiff = diff.Role == "old" || diff.Role == "new";
+            var what = isDiff ? "change" : "conflict";
+            bar.Children.Add(Text(diff.Count > 0 ? $"{diff.Count} {what}{(diff.Count == 1 ? "" : "s")}" : isDiff ? "No changes" : "No conflicts"));
+            bar.Children.Add(Btn("◀", isDiff ? "Previous change" : "Previous conflict", () => _host.DiffNavigate(-1, null), diff.Count > 0));
+            bar.Children.Add(Btn("▶", isDiff ? "Next change" : "Next conflict", () => _host.DiffNavigate(1, null), diff.Count > 0));
+            if (isDiff)
+            {
+                var box = new CheckBox { Content = "Show layout changes", IsChecked = diff.ShowLayout, VerticalAlignment = VerticalAlignment.Center, Foreground = th.BrushOf(th.Foreground) };
+                box.Click += (s, e) => _host.DiffShowLayout(box.IsChecked == true);
+                bar.Children.Add(box);
+            }
+            else if (diff.Role == "result")
+            {
+                bar.Children.Add(Btn("Take All Incoming", null, () => _host.MergeChoose(null, "incoming")));
+                bar.Children.Add(Btn("Keep All Current", null, () => _host.MergeChoose(null, "current")));
+                var complete = Btn("Complete Merge", null, _host.MergeComplete);
+                complete.FontWeight = FontWeights.SemiBold;
+                bar.Children.Add(complete);
+                var list = new StackPanel();
+                foreach (var c in diff.Conflicts ?? new List<ConflictRow>())
+                {
+                    var row = new DockPanel { Margin = new Thickness(0, 1, 0, 1) };
+                    var key = c.Key;
+                    var keep = Btn("Keep Current", null, () => _host.MergeChoose(key, "current"), on: c.Choice == "current");
+                    var take = Btn("Take Incoming", null, () => _host.MergeChoose(key, "incoming"), on: c.Choice == "incoming");
+                    SetDock(keep, Dock.Right);
+                    SetDock(take, Dock.Right);
+                    row.Children.Add(keep);
+                    row.Children.Add(take);
+                    var name = new TextBlock
+                    {
+                        Text = (c.Choice != null ? "✓ " : "") + $"{c.Label} · {c.How}",
+                        ToolTip = string.Join("\n", c.Details ?? new List<string>()),
+                        Cursor = Cursors.Hand,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        TextTrimming = TextTrimming.CharacterEllipsis,
+                        Foreground = c.Choice != null ? th.BrushOf(th.Muted) : th.BrushOf(th.Foreground),
+                    };
+                    name.MouseLeftButtonUp += (s, e) => _host.DiffNavigate(0, key);
+                    row.Children.Add(name);
+                    list.Children.Add(row);
+                }
+                if (list.Children.Count > 0)
+                {
+                    root.Children.Add(new ScrollViewer { Content = list, MaxHeight = 150, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Margin = new Thickness(0, 4, 0, 0) });
+                }
+            }
+            _diffBar.Child = root;
+        }
+
+        /// <summary>The screen of a file that can't be read: its problems (one per line, "Line N: message"), and Open as Text.</summary>
         private void ShowParseError(string error)
         {
             var th = Theme.Current;
             var panel = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(24) };
+            var lines = error.StartsWith("Line ", StringComparison.Ordinal);
             panel.Children.Add(new TextBlock
             {
-                Text = "This file cannot be displayed because it is not a readable UML state machine (XMI):",
+                Text = lines ? "This file cannot be displayed: it is not a valid state machine file." : "This file cannot be displayed:",
                 TextWrapping = TextWrapping.Wrap,
                 TextAlignment = TextAlignment.Center,
                 Margin = new Thickness(0, 0, 0, 10),
@@ -1186,13 +1365,21 @@ namespace FsmEditor.Editor
                 Foreground = th.BrushOf(th.Error),
                 FontFamily = new FontFamily("Consolas"),
                 TextWrapping = TextWrapping.Wrap,
-                TextAlignment = TextAlignment.Center,
+                TextAlignment = lines ? TextAlignment.Left : TextAlignment.Center,
                 Margin = new Thickness(0, 0, 0, 10),
             });
             var open = new Button { Content = "Open as Text", HorizontalAlignment = HorizontalAlignment.Center, Padding = new Thickness(10, 4, 10, 4) };
             Theme.Style(open, VsResourceKeys.ButtonStyleKey);
             open.Click += (s, e) => _host.OpenAsText();
             panel.Children.Add(open);
+            if (_mergeFallback)
+            {
+                // A file with merge conflicts whose sides can't be read as machines: Visual Studio's text merge.
+                var merge = new Button { Content = "Open in the Text Merge Editor", HorizontalAlignment = HorizontalAlignment.Center, Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(0, 6, 0, 0) };
+                Theme.Style(merge, VsResourceKeys.ButtonStyleKey);
+                merge.Click += (s, e) => _host.OpenTextMerge();
+                panel.Children.Add(merge);
+            }
             _parseError.Child = panel;
             _parseError.Visibility = Visibility.Visible;
         }
