@@ -56,12 +56,16 @@ namespace FsmEditor.Core.Tests
 
         public static string Example(string file) => File.ReadAllText(Examples(file));
 
-        public static string Old(string name) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "fixtures", "old", name + ".fsm"));
+        /// <summary>fsm-editor-common's interface cases, copied by scripts/fetch-common.sh.</summary>
+        public static string ApiCases => Path.Combine(AppContext.BaseDirectory, "api-cases", "cases.jsonl");
 
-        /// <summary>fsm-cli's test cases, copied by scripts/fetch-cli.sh.</summary>
-        public static string Cases => Path.Combine(AppContext.BaseDirectory, "cases");
-
-        public static string Schemas => Path.Combine(AppContext.BaseDirectory, "schemas");
+        /// <summary>The sidecar for the tests: <c>FSM_EDITOR_COMMON</c>, else the one scripts/fetch-common.sh copied.</summary>
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        internal static void UseSidecar()
+        {
+            var exe = Path.Combine(AppContext.BaseDirectory, "cli", OperatingSystem.IsWindows() ? "fsm-editor-common.exe" : "fsm-editor-common");
+            Common.ExecutablePath = Environment.GetEnvironmentVariable("FSM_EDITOR_COMMON") ?? exe;
+        }
 
         /// <summary>A machine's two files read; fails on problems.</summary>
         public static ReadMachine Read(string model, string layout = null)
@@ -77,9 +81,7 @@ namespace FsmEditor.Core.Tests
         /// <summary>Writes a copy of a model (generated names given), as the editor saves it.</summary>
         public static Written Write(FsmModel model)
         {
-            var m = model.Clone();
-            Format.AssignNames(m);
-            var w = Format.WriteMachine(m);
+            var w = Format.WriteMachine(model.Clone());
             Assert.Empty(w.Lost);
             return w;
         }

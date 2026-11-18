@@ -59,10 +59,8 @@ namespace FsmEditor.Core
         /// </summary>
         public static MachineState Write(FsmModel model)
         {
-            Format.AssignNames(model);
             var w = Format.WriteMachine(model);
             if (w.Lost.Count > 0) throw new FormatLossException(w.Lost);
-            Format.ResolveReferences(model, w);
             return new MachineState { ModelText = w.Model, LayoutText = w.Layout, Model = model, Lines = w.Lines };
         }
 

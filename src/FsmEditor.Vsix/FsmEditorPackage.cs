@@ -56,6 +56,9 @@ namespace FsmEditor
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             Instance = this;
+            // fsm-editor-common's sidecar, started on first use: reading, writing, converting, validating, comparing,
+            // merging and code generation go through it.
+            Core.Common.ExecutablePath = CodeGenerator.CommonPath;
             Sessions = new DiagramSessions(this);
             CompareFiles.CleanUp();
             // Advised for the life of Visual Studio, as the package is.
@@ -74,6 +77,7 @@ namespace FsmEditor
                 Validation?.Dispose();
                 CodeGeneration?.Dispose();
                 FsmWorkspace.Instance.Dispose();
+                Core.Common.Shutdown();
             }
             base.Dispose(disposing);
         }
@@ -239,10 +243,10 @@ namespace FsmEditor
             }
         }
 
-        /// <summary>Templates offered for a machine: fsm's own, then the *.jinja files of the solution.</summary>
-        private static List<TemplateChoice> TemplateChoices(string cli, string root)
+        /// <summary>Templates offered for a machine: the bundled ones, then the *.jinja files of the solution.</summary>
+        private static List<TemplateChoice> TemplateChoices(string root)
         {
-            var choices = FsmCli.BundledTemplates(cli)
+            var choices = CodeGenerator.BundledTemplates()
                 .Select(f => new TemplateChoice { Path = f, Name = Path.GetFileNameWithoutExtension(f), Description = "bundled template" })
                 .ToList();
             var found = new List<string>();
@@ -274,7 +278,7 @@ namespace FsmEditor
             _output ?? (_output = await VS.Windows.CreateOutputWindowPaneAsync("FSM Code Generation"));
 
         /// <summary>
-        /// Generates code for <paramref name="source"/> with <c>fsm write</c>.
+        /// Generates code for <paramref name="source"/> (fsm-cli's generator, run by fsm-editor-common).
         /// <paramref name="args"/> (from the Command Window: <c>-t &lt;template&gt; -o &lt;folder&gt;</c>) skip the dialog.
         /// </summary>
         internal async Task GenerateCodeAsync(string source, string args)
@@ -287,18 +291,10 @@ namespace FsmEditor
             }
             source = FsmDocuments.SafeFullPath(source);
             var options = await General.GetLiveInstanceAsync();
-            var cli = FsmCli.Locate(options.CliPath);
-            if (cli == null)
-            {
-                await VS.MessageBox.ShowErrorAsync("Generate Code", string.IsNullOrWhiteSpace(options.CliPath)
-                    ? "The fsm code generator was not found. Set its path in Tools > Options > FSM Editor, or put fsm.exe on the PATH."
-                    : $"The fsm code generator '{options.CliPath}' configured in Tools > Options > FSM Editor does not exist.");
-                return;
-            }
             var root = FsmWorkspace.Instance.RootFor(source);
             string ResolveArg(string p) => Path.IsPathRooted(p) ? p : Path.GetFullPath(Path.Combine(root, p));
 
-            var (argTemplate, argOut) = FsmCli.ParseCommandArgs(args);
+            var (argTemplate, argOut) = CodeGenerator.ParseCommandArgs(args);
             var settings = Settings();
             var outKey = Key("Out", source);
             var lastTemplate = settings.GetString(SettingsCollection, "Template", "");
@@ -310,15 +306,15 @@ namespace FsmEditor
                 // unless the solution folder has that file.
                 string bundled = null;
                 if (argTemplate.IndexOfAny(new[] { '/', '\\', '.' }) < 0)
-                    bundled = FsmCli.BundledTemplates(cli).FirstOrDefault(f => Path.GetFileNameWithoutExtension(f) == argTemplate);
+                    bundled = CodeGenerator.BundledTemplates().FirstOrDefault(f => Path.GetFileNameWithoutExtension(f) == argTemplate);
                 else if (argTemplate.IndexOfAny(new[] { '/', '\\' }) < 0 && !File.Exists(ResolveArg(argTemplate)))
-                    bundled = FsmCli.BundledTemplates(cli).FirstOrDefault(f => string.Equals(Path.GetFileName(f), argTemplate, StringComparison.OrdinalIgnoreCase));
+                    bundled = CodeGenerator.BundledTemplates().FirstOrDefault(f => string.Equals(Path.GetFileName(f), argTemplate, StringComparison.OrdinalIgnoreCase));
                 template = bundled ?? ResolveArg(argTemplate);
                 output = ResolveArg(argOut);
             }
             else
             {
-                var chosen = GenerateCodeDialog.Show(Path.GetFileNameWithoutExtension(source), TemplateChoices(cli, root), lastTemplate,
+                var chosen = GenerateCodeDialog.Show(Path.GetFileNameWithoutExtension(source), TemplateChoices(root), lastTemplate,
                     lastOut.Length > 0 ? lastOut : Path.GetDirectoryName(source));
                 if (chosen == null) return;
                 (template, output) = chosen.Value;
@@ -328,24 +324,23 @@ namespace FsmEditor
 
             if (options.SaveBeforeGenerating) FsmDocuments.SaveOpenMachines();
             var pane = await OutputAsync();
-            var cliArgs = FsmCli.WriteArgs(source, template, output);
-            await pane.WriteLineAsync($"{DateTime.Now:T} {FsmCli.CommandLine(cli, cliArgs)}");
+            await pane.WriteLineAsync($"{DateTime.Now:T} {FsmWorkspace.Display(root, source)} with {Path.GetFileName(template)} into {FsmWorkspace.Display(root, output)}");
             await VS.StatusBar.ShowMessageAsync($"Generating code for {Path.GetFileName(source)}...");
 
-            CliResult result;
+            GenerateResult result;
             try
             {
-                result = await FsmCli.RunAsync(cli, cliArgs, Path.GetDirectoryName(source));
+                result = await System.Threading.Tasks.Task.Run(() => CodeGenerator.Generate(source, template, output));
             }
-            catch (Exception e) when (e is System.ComponentModel.Win32Exception || e is IOException || e is InvalidOperationException)
+            catch (Exception e) when (e is CommonException || e is IOException || e is UnauthorizedAccessException)
             {
                 await JoinableTaskFactory.SwitchToMainThreadAsync();
                 await pane.WriteLineAsync($"  {e.Message}");
-                await VS.MessageBox.ShowErrorAsync("Code generation failed", $"Could not run {cli}: {e.Message}");
+                await VS.MessageBox.ShowErrorAsync("Code generation failed", e.Message);
                 return;
             }
             await JoinableTaskFactory.SwitchToMainThreadAsync();
-            foreach (var line in result.Output.Concat(result.Errors)) await pane.WriteLineAsync("  " + line);
+            foreach (var i in result.Issues) await pane.WriteLineAsync($"  {FsmWorkspace.Display(root, i.File)}:{i.Line}: {i.Severity.ToString().ToLowerInvariant()}: {i.Message}");
 
             CodeGeneration.Clear();
             foreach (var group in result.Issues.GroupBy(i => i.File, StringComparer.OrdinalIgnoreCase))
@@ -357,6 +352,7 @@ namespace FsmEditor
             if (result.ExitCode == 0)
             {
                 var n = result.Written.Count;
+                foreach (var f in result.Written) await pane.WriteLineAsync($"  wrote {FsmWorkspace.Display(root, f)}");
                 await pane.WriteLineAsync($"  {n} file{(n == 1 ? "" : "s")} written in {where}");
                 await VS.StatusBar.ShowMessageAsync($"Generated {n} file{(n == 1 ? "" : "s")} in {where}.");
                 if (result.Issues.Count > 0) CodeGeneration.Show();
@@ -365,10 +361,9 @@ namespace FsmEditor
             await VS.StatusBar.ShowMessageAsync("Code generation failed.");
             await pane.ActivateAsync();
             if (result.Issues.Count > 0) CodeGeneration.Show();
-            // fsm's own message says why, also for bad usage (exit 2), such as a template it refuses.
-            var reason = result.Issues.Any(i => i.Severity == Severity.Error) ? "The state machine has errors (see the Error List)."
-                : result.Message ?? (result.ExitCode == 2 ? "The generator was called with bad arguments."
-                : result.Errors.LastOrDefault() ?? $"{Path.GetFileNameWithoutExtension(cli)} exited with code {result.ExitCode}.");
+            if (result.Error != null) await pane.WriteLineAsync($"  {result.Error}");
+            // The generator's own message says why, also for a request it refuses, such as a template.
+            var reason = result.Error ?? (result.Issues.Any(i => i.Severity == Severity.Error) ? "The state machine has errors (see the Error List)." : $"The generator stopped with exit code {result.ExitCode}.");
             await VS.MessageBox.ShowErrorAsync("Code generation failed", reason + " Details are in the FSM Code Generation output.");
         }
     }

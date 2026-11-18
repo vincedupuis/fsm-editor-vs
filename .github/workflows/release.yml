@@ -10,9 +10,10 @@ on:
     tags: ['v*']
 
 env:
-  # Release of fsm-cli (github.com/vincedupuis/fsm-cli) whose `fsm` code generator (fsm-<version>-windows-x64.zip)
-  # and fsm-schemas-<version>.tar.gz the VSIX bundles, and whose fsm-cases-<version>.tar.gz the tests use.
-  FSM_CLI_VERSION: 0.7.0
+  # Release of fsm-editor-common (github.com/vincedupuis/fsm-editor-common) whose sidecar
+  # (fsm-editor-common-<version>-windows-x64.zip), templates and schemas archives the VSIX bundles, and whose
+  # api-cases archive the tests replay.
+  FSM_COMMON_VERSION: 0.1.0
 
 jobs:
   release:
@@ -37,21 +38,21 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Fetch the fsm code generator, the format's schemas and its test cases
+      - name: Fetch fsm-editor-common, fsm-cli's templates, the schemas and the interface's cases
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $name = "fsm-$env:FSM_CLI_VERSION-windows-x64"
-          Invoke-WebRequest "https://github.com/vincedupuis/fsm-cli/releases/download/v$env:FSM_CLI_VERSION/$name.zip" -OutFile "$env:RUNNER_TEMP\fsm.zip"
-          Expand-Archive "$env:RUNNER_TEMP\fsm.zip" -DestinationPath $env:RUNNER_TEMP
+          $v = $env:FSM_COMMON_VERSION
+          $name = "fsm-editor-common-$v-windows-x64"
+          gh release download "v$v" -R vincedupuis/fsm-editor-common -p "$name.zip" -p "fsm-editor-common-*-$v.tar.gz" -D $env:RUNNER_TEMP --clobber
+          if ($LASTEXITCODE -ne 0) { throw "fsm-editor-common $v could not be downloaded" }
+          Expand-Archive "$env:RUNNER_TEMP\$name.zip" -DestinationPath $env:RUNNER_TEMP
           New-Item -ItemType Directory -Force src\FsmEditor.Vsix\cli | Out-Null
           Copy-Item -Recurse -Force "$env:RUNNER_TEMP\$name\*" src\FsmEditor.Vsix\cli
-          # The model file's JSON Schemas (installed with the extension) and test cases (for the tests only, not bundled).
-          foreach ($part in 'schemas', 'cases') {
-            gh release download "v$env:FSM_CLI_VERSION" -R vincedupuis/fsm-cli -p "fsm-$part-$env:FSM_CLI_VERSION.tar.gz" -D $env:RUNNER_TEMP --clobber
-            if ($LASTEXITCODE -ne 0) { throw "fsm-$part-$env:FSM_CLI_VERSION.tar.gz could not be downloaded" }
-            tar xzf "$env:RUNNER_TEMP\fsm-$part-$env:FSM_CLI_VERSION.tar.gz" -C src\FsmEditor.Vsix\cli
+          # The templates and schemas (installed with the extension) and the interface's cases (for the tests only).
+          foreach ($part in 'templates', 'schemas', 'api-cases') {
+            tar xzf "$env:RUNNER_TEMP\fsm-editor-common-$part-$v.tar.gz" -C src\FsmEditor.Vsix\cli
           }
           Get-ChildItem -Recurse src\FsmEditor.Vsix\cli -Depth 1 | Select-Object FullName
 

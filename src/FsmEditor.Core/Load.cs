@@ -10,9 +10,8 @@ namespace FsmEditor.Core
     }
 
     /// <summary>
-    /// Reading a machine's model from a file's text, in either format: the JSON format (<see cref="Format"/>), or the
-    /// XMI of earlier versions (<see cref="Xmi"/>, read as it is, without converting it). A port of the VS Code
-    /// edition's <c>src/load.ts</c>.
+    /// Reading a machine's model from a file's text, in either format: the JSON format, or the XMI of earlier versions
+    /// (read as it is, without converting it). fsm-editor-common's (<see cref="Common"/>).
     /// </summary>
     public static class Load
     {
@@ -23,20 +22,9 @@ namespace FsmEditor.Core
         /// </summary>
         public static FsmModel LoadModel(string text, string layout = null)
         {
-            if (Format.IsOldFormat(text))
-            {
-                try
-                {
-                    return Xmi.FromXmi(text);
-                }
-                catch (Exception e) when (e is XmlParseException || e is XmiException)
-                {
-                    throw new LoadException(e.Message);
-                }
-            }
-            var read = Format.ReadMachine(text, layout);
-            if (read.Failed) throw new LoadException($"Line {read.Problems[0].Line}: {read.Problems[0].Message}");
-            return read.Model;
+            var r = (Dictionary<string, object>)Common.Call("load", Common.Args(("model", Common.Str(text ?? "")), ("layout", Common.Str(layout))));
+            if (r.TryGetValue("error", out var error)) throw new LoadException(error as string ?? "");
+            return ModelJson.Read(r["model"]);
         }
 
         /// <summary>
@@ -51,20 +39,8 @@ namespace FsmEditor.Core
         /// <summary>The submachine paths of a file's text (either format); none when it can't be read.</summary>
         public static List<string> SubmachineFilesOf(string text)
         {
-            if (!Format.IsOldFormat(text))
-            {
-                // Paths only: no layout to apply.
-                var read = Format.ReadModel(text);
-                return read.Failed ? new List<string>() : SubmachineFiles(read.Model, false);
-            }
-            try
-            {
-                return SubmachineFiles(LoadModel(text), true);
-            }
-            catch (LoadException)
-            {
-                return new List<string>();
-            }
+            var r = (Dictionary<string, object>)Common.Call("load", Common.Args(("model", Common.Str(text ?? ""))));
+            return r.ContainsKey("error") ? new List<string>() : ModelJson.Strings(r, "submachines");
         }
     }
 }

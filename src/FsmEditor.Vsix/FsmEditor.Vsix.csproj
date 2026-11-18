@@ -91,20 +91,21 @@
   </Target>
 
   <!--
-    The `fsm` code generator (github.com/vincedupuis/fsm-cli) and its templates: the contents of
-    the windows-x64 archive of an fsm-cli release, copied into cli/ by scripts/fetch-cli.ps1 or
-    scripts/fetch-cli.sh (the release workflow downloads the one pinned by FSM_CLI_VERSION), with the
-    JSON Schemas of the file format (cli/schemas). The test cases (cli/cases) are for the Core tests only.
+    fsm-editor-common's sidecar (github.com/vincedupuis/fsm-editor-common), which reads, writes, converts, validates,
+    compares and merges the machines and generates their code, with fsm-cli's templates and the files' JSON Schemas:
+    the windows-x64 and templates/schemas archives of an fsm-editor-common release, copied into cli/ by
+    scripts/fetch-common.ps1 or scripts/fetch-common.sh (the release workflow downloads the one pinned by
+    FSM_COMMON_VERSION). The interface's cases (cli/api-cases) are for the Core tests only.
   -->
   <ItemGroup>
-    <Content Include="cli\**\*" Exclude="cli\cases\**" IncludeInVSIX="true" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="cli\**\*" Exclude="cli\api-cases\**;cli\fsm-editor-common;cli\schemas\api.schema.json" IncludeInVSIX="true" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-  <!-- A Release VSIX must bundle the generator; Debug builds only warn. -->
-  <Target Name="WarnMissingCli" BeforeTargets="Build" Condition="!Exists('cli\fsm.exe') And '$(Configuration)' != 'Release'">
-    <Warning Text="cli\fsm.exe is missing: run scripts\fetch-cli.ps1 (or scripts/fetch-cli.sh) so the VSIX bundles the code generator. Without it, code generation uses the 'fsm executable' option or an fsm.exe on the PATH." />
+  <!-- The extension can't work without the sidecar: a Release build requires it; Debug builds only warn. -->
+  <Target Name="WarnMissingCommon" BeforeTargets="Build" Condition="!Exists('cli\fsm-editor-common.exe') And '$(Configuration)' != 'Release'">
+    <Warning Text="cli\fsm-editor-common.exe is missing: run scripts\fetch-common.ps1 (or scripts/fetch-common.sh) so the VSIX bundles fsm-editor-common, without which the editor can't read or write machines." />
   </Target>
-  <Target Name="RequireCliForRelease" BeforeTargets="Build" Condition="!Exists('cli\fsm.exe') And '$(Configuration)' == 'Release' And '$(IsWindows)' == 'true'">
-    <Error Text="cli\fsm.exe is missing: run scripts\fetch-cli.ps1 before a Release build, so the published VSIX bundles the code generator." />
+  <Target Name="RequireCommonForRelease" BeforeTargets="Build" Condition="!Exists('cli\fsm-editor-common.exe') And '$(Configuration)' == 'Release' And '$(IsWindows)' == 'true'">
+    <Error Text="cli\fsm-editor-common.exe is missing: run scripts\fetch-common.ps1 before a Release build, so the published VSIX bundles fsm-editor-common." />
   </Target>
 
 

@@ -46,7 +46,7 @@ A transition label combines them as `event, after(2s) [isReady() && !isBusy()] /
 
 Names are letters, digits and `_` and must not start with a digit. Decimal times such as `after(1.5s)` are accepted, but the time must be greater than zero.
 
-Variables, arguments, comparisons, dotted names and change events (`when(...)`) are not accepted. The editor refuses them as you type: the field turns red and nothing is saved. Files edited as text are checked by the validator. The grammar is defined in [`src/FsmEditor.Core/Expressions.cs`](../src/FsmEditor.Core/Expressions.cs).
+Variables, arguments, comparisons, dotted names and change events (`when(...)`) are not accepted. The editor refuses them when you enter them: the field turns red and nothing is saved. Files edited as text are checked by the validator. The grammar is fsm-cli's ([`src/expressions.rs`](https://github.com/vincedupuis/fsm-cli/blob/main/src/expressions.rs)).
 
 ## Submachines and connection point references
 

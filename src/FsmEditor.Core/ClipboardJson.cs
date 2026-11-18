@@ -22,7 +22,7 @@ namespace FsmEditor.Core
             return sb.ToString();
         }
 
-        private static string WriteVertex(Vertex v)
+        internal static string WriteVertex(Vertex v)
         {
             var o = new JsonObjectWriter();
             o.Str("id", v.Id).Str("type", v.Type.Key()).Str("name", v.Name).Str("parent", v.Parent)
@@ -39,14 +39,14 @@ namespace FsmEditor.Core
             return o.ToString();
         }
 
-        private static string WriteRegion(Region r)
+        internal static string WriteRegion(Region r)
         {
             var o = new JsonObjectWriter().Str("id", r.Id).Str("name", r.Name);
             if (r.Size is double size) o.Num("size", size);
             return o.ToString();
         }
 
-        private static string WriteTransition(Transition t)
+        internal static string WriteTransition(Transition t)
         {
             var o = new JsonObjectWriter();
             o.Str("id", t.Id).Str("source", t.Source).Str("target", t.Target).Str("kind", t.Kind.ToString().ToLowerInvariant())
@@ -75,9 +75,9 @@ namespace FsmEditor.Core
             if (any) o.Raw("itemColors", w.ToString());
         }
 
-        private static string ReadColor(Dictionary<string, object> o, string key) => ElementColors.IsColor(Str(o, key)) ? Str(o, key) : "";
+        internal static string ReadColor(Dictionary<string, object> o, string key) => ElementColors.IsColor(Str(o, key)) ? Str(o, key) : "";
 
-        private static Dictionary<string, string> ReadItemColors(Dictionary<string, object> o)
+        internal static Dictionary<string, string> ReadItemColors(Dictionary<string, object> o)
         {
             var items = new Dictionary<string, string>();
             if (o.TryGetValue("itemColors", out var v) && v is Dictionary<string, object> d)
@@ -91,7 +91,7 @@ namespace FsmEditor.Core
             return items;
         }
 
-        private static string StringArray(IEnumerable<string> items) => "[" + string.Join(",", items.Select(Quote)) + "]";
+        internal static string StringArray(IEnumerable<string> items) => "[" + string.Join(",", items.Select(Quote)) + "]";
 
         public static string Quote(string s)
         {
@@ -114,7 +114,7 @@ namespace FsmEditor.Core
             return sb.Append('"').ToString();
         }
 
-        private sealed class JsonObjectWriter
+        internal sealed class JsonObjectWriter
         {
             private readonly List<string> _parts = new List<string>();
 

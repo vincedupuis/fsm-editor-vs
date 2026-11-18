@@ -120,18 +120,18 @@ Files of earlier versions (XMI 2.5.1 with UML DI) still open, unchanged (opening
 
 ## Development
 
-Requirements: Windows with Visual Studio 2022 (17.0 or later) and the *Visual Studio extension development* workload; [Rust](https://rustup.rs/) to build `fsm` from a clone of fsm-cli, or else an `fsm-<version>-windows-x64.zip` from the [fsm-cli releases](https://github.com/vincedupuis/fsm-cli/releases).
+Requirements: Windows with Visual Studio 2022 (17.0 or later) and the *Visual Studio extension development* workload; [Rust](https://rustup.rs/) to build fsm-editor-common's sidecar from clones of [fsm-editor-common](https://github.com/vincedupuis/fsm-editor-common) and [fsm-cli](https://github.com/vincedupuis/fsm-cli), or else the archives of an [fsm-editor-common release](https://github.com/vincedupuis/fsm-editor-common/releases).
 
 ```powershell
-scripts\fetch-cli.ps1        # copies fsm.exe, its templates, the format's schemas and test cases from a clone of fsm-cli (..\fsm-cli) into src\FsmEditor.Vsix\cli
-                             # (-Build builds it there first with cargo; -Source takes an unpacked fsm-<version>-windows-x64.zip,
-                             #  with the fsm-schemas and fsm-cases archives of the release unpacked in it, instead)
-dotnet test                  # model, file format (against fsm-cli's test cases), validation, editing, diff and merge tests
+scripts\fetch-common.ps1     # copies fsm-editor-common.exe, fsm-cli's templates, the schemas and the interface's cases from clones
+                             # (..\fsm-editor-common, ..\fsm-cli) into src\FsmEditor.Vsix\cli (-Build builds it there first with
+                             # cargo; -Source takes a folder of the release's archives, unpacked, instead)
+dotnet test                  # the client of fsm-editor-common (its interface's cases), editing, extraction and trace tests
 ```
 
 Open `FsmEditor.sln`, set **FsmEditor.Vsix** as the startup project and press F5 to start the Visual Studio experimental instance, then open `examples\MediaPlayer.fsm`, or `examples\Order.fsm` for a submachine with connection point references (it uses `examples\Payment.fsm`). Building in Release produces `src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix`; double-click it to install it.
 
-To publish, build in Release (it fails if `fsm.exe` hasn't been fetched), then upload the `.vsix` with `vs-publish.json`, which describes the Marketplace listing and uses this README as its page:
+To publish, build in Release (it fails if `fsm-editor-common.exe` hasn't been fetched), then upload the `.vsix` with `vs-publish.json`, which describes the Marketplace listing and uses this README as its page:
 
 ```powershell
 & "$env:VSINSTALLDIR\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish `
@@ -140,13 +140,13 @@ To publish, build in Release (it fails if `fsm.exe` hasn't been fetched), then u
 
 Bump the version in `source.extension.vsixmanifest`, `FsmEditor.Vsix.csproj` and `InstalledProductRegistration` in `FsmEditorPackage.cs` first.
 
-Pushing a version tag (`git tag v0.3.3 && git push origin v0.3.3`) also builds the `.vsix` on GitHub Actions (`.github/workflows/release.yml`, which bundles the `fsm` generator of the fsm-cli release set in `FSM_CLI_VERSION`) and attaches it to the GitHub Release of that tag. The tag must match the manifest version.
+Pushing a version tag (`git tag v0.3.3 && git push origin v0.3.3`) also builds the `.vsix` on GitHub Actions (`.github/workflows/release.yml`, which bundles the fsm-editor-common release set in `FSM_COMMON_VERSION`) and attaches it to the GitHub Release of that tag. The tag must match the manifest version.
 
 On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging steps only run on Windows) and `dotnet test` runs the tests.
 
 ### Layout
 
-- `src/FsmEditor.Core/` (.NET Standard 2.0, no Visual Studio dependency): the model (`Model.cs`), the text grammar (`Expressions.cs`), the file format (`Json.cs`, `Format.cs`, `MachineFiles.cs`), reading and converting files of earlier versions (`Xmi.cs`, `XmlTree.cs`, `Conversion.cs`, `Load.cs`), comparing and merging versions (`Compare.cs`, `Merge.cs`, `Sessions.cs`), the validator (`Validation.cs`), diagram geometry (`Geometry.cs`, `Labels.cs`), every editing operation of the diagram (`DiagramSession.cs`, `Tools.cs`), SVG export, the clipboard format, submachine resolution (`Workspace.cs`) and the Trace Player's logic (`Trace.cs`)
+- `src/FsmEditor.Core/` (.NET Standard 2.0, no Visual Studio dependency): the model (`Model.cs`, its JSON in `ModelJson.cs`), the client of fsm-editor-common's sidecar (`Common.cs`) and what goes through it: the text grammar's checks (`Expressions.cs`), the file format (`Format.cs`, `MachineFiles.cs`), converting files of earlier versions (`Conversion.cs`, `Load.cs`), comparing and merging versions (`Compare.cs`, `Merge.cs`; the panes' logic in `Sessions.cs`), the validator (`Validation.cs`); diagram geometry (`Geometry.cs`, `Labels.cs`), every editing operation of the diagram (`DiagramSession.cs`, `Tools.cs`), SVG export, the clipboard format, submachine resolution (`Workspace.cs`) and the Trace Player's logic (`Trace.cs`)
 - `src/FsmEditor.Vsix/`: the Visual Studio extension
   - `FsmEditorPackage.cs`: registration, the Error List providers, SVG and PNG export and the code generation flow
   - `Editor/FsmDocument.cs`: the document data, the model and layout files with their undo history, saving and conversion
@@ -154,10 +154,10 @@ On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging ste
   - `Editor/DiagramSessions.cs`: the diagram diff and merge panes
   - `Editor/EditorControl.cs`, `Editor/DiagramCanvas.cs`, `Editor/PropertiesPanel.cs`: the WPF diagram editor
   - `Services/`: open documents, the solution's machines, the Error List, dialogs, Git, the JSON text view, layout files renamed with their models
-  - `CodeGen/`: running the `fsm` generator and its dialog
+  - `CodeGen/`: code generation through fsm-editor-common, and its dialog
   - `TracePlayer/`: the Trace Player tool window and the service following the logs
   - `Commands/`, `VSCommandTable.vsct`: menu commands
-- `test/FsmEditor.Core.Tests/`: tests: fsm-cli's test cases (`cases`, copied by `scripts/fetch-cli.*`), the layout file's test files and parity results of the VS Code extension (`fixtures/`)
-- `scripts/fetch-cli.*`: copies the code generator, its templates, schemas and test cases into `src/FsmEditor.Vsix/cli`
+- `test/FsmEditor.Core.Tests/`: tests, which run fsm-editor-common's sidecar (`FSM_EDITOR_COMMON`, else the one `scripts/fetch-common.*` copied) and replay its interface's cases
+- `scripts/fetch-common.*`: copies fsm-editor-common's sidecar, fsm-cli's templates, the schemas and the interface's cases into `src/FsmEditor.Vsix/cli`
 - `vs-publish.json`: the Marketplace listing; `images/`: the README's screenshots
 - `docs/`: UML conformance and code generation
