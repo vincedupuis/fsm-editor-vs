@@ -1251,6 +1251,8 @@ namespace FsmEditor.Editor
             _toast.Child = new TextBlock { Text = message, Foreground = Brushes.White, FontSize = 12, TextWrapping = TextWrapping.Wrap, MaxWidth = 520 };
             _toast.Visibility = Visibility.Visible;
             _toastTimer.Stop();
+            // Long enough to read: 60 ms a character, from 2.6 s to 8 s.
+            _toastTimer.Interval = TimeSpan.FromMilliseconds(Math.Min(8000, Math.Max(2600, message.Length * 60)));
             _toastTimer.Start();
         }
 
