@@ -86,9 +86,8 @@ namespace FsmEditor.Editor
         /// <summary>Raised by the editor whose panel layout changed, so that the other editors follow it.</summary>
         private static event EventHandler PanesChanged;
         private readonly Border _problems = new Border { Visibility = Visibility.Collapsed };
-        private readonly Border _toast = new Border { Visibility = Visibility.Collapsed, IsHitTestVisible = false };
+        private readonly Border _toast = new PassThroughBorder { Visibility = Visibility.Collapsed };
         private readonly Border _parseError = new Border { Visibility = Visibility.Collapsed };
-        private readonly DispatcherTimer _toastTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2600) };
         private readonly Dictionary<string, Button> _toolButtons = new Dictionary<string, Button>();
         private TextBlock _title;
         private TextBlock _zoom;
@@ -164,11 +163,6 @@ namespace FsmEditor.Editor
                     _firstLoad = false;
                     _canvas.Fit();
                 }
-            };
-            _toastTimer.Tick += (s, e) =>
-            {
-                _toastTimer.Stop();
-                _toast.Visibility = Visibility.Collapsed;
             };
             // Visual Studio unloads the content of a document tab that isn't shown, and loads it again when it is.
             Loaded += (s, e) =>
@@ -1248,12 +1242,20 @@ namespace FsmEditor.Editor
 
         public void Toast(string message)
         {
-            _toast.Child = new TextBlock { Text = message, Foreground = Brushes.White, FontSize = 12, TextWrapping = TextWrapping.Wrap, MaxWidth = 520 };
+            // Stays until its × is clicked or the next toast replaces it.
+            var close = FlatButton("×", "Close");
+            close.Foreground = Brushes.White;
+            close.FontSize = 14;
+            close.Padding = new Thickness(4, 0, 4, 0);
+            close.Margin = new Thickness(8, 0, 0, 0);
+            close.VerticalAlignment = VerticalAlignment.Center;
+            close.Click += (s, e) => _toast.Visibility = Visibility.Collapsed;
+            DockPanel.SetDock(close, Dock.Right);
+            var panel = new DockPanel();
+            panel.Children.Add(close);
+            panel.Children.Add(new TextBlock { Text = message, Foreground = Brushes.White, FontSize = 12, TextWrapping = TextWrapping.Wrap, MaxWidth = 520, VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false });
+            _toast.Child = panel;
             _toast.Visibility = Visibility.Visible;
-            _toastTimer.Stop();
-            // Long enough to read: 60 ms a character, from 2.6 s to 8 s.
-            _toastTimer.Interval = TimeSpan.FromMilliseconds(Math.Min(8000, Math.Max(2600, message.Length * 60)));
-            _toastTimer.Start();
         }
 
         private static readonly Dictionary<string, string> RoleLabels = new Dictionary<string, string>
@@ -1385,5 +1387,11 @@ namespace FsmEditor.Editor
             _parseError.Child = panel;
             _parseError.Visibility = Visibility.Visible;
         }
+    }
+
+    /// <summary>A border that lets clicks through to what is under it; only its child's hit-testable parts (the toast's ×) take them.</summary>
+    internal sealed class PassThroughBorder : Border
+    {
+        protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters) => null;
     }
 }
