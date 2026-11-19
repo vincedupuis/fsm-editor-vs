@@ -112,19 +112,13 @@ namespace FsmEditor.Core
             return at < 0 ? 1 : text.Substring(0, at).Count(c => c == '\n') + 1;
         }
 
-        /// <summary>The message saying what converting old files did: the files converted, those skipped, every rename and loss.</summary>
+        /// <summary>The message saying which files converting old files changed from XMI to JSON, and which it skipped.</summary>
         public static string ConversionMessage(IReadOnlyList<(string File, Converted Result)> converted, IReadOnlyList<string> skipped)
         {
-            var lines = new List<string>();
-            foreach (var (file, r) in converted)
-            {
-                foreach (var x in r.Renames) lines.Add($"{file}: {x}.");
-                if (r.Generated > 0) lines.Add($"{file}: {r.Generated} unnamed element{(r.Generated == 1 ? "" : "s")} got a generated name (ending with *, not shown on the diagram).");
-                foreach (var l in r.Losses) lines.Add($"{file}: left out {l}.");
-            }
-            var message = $"Saved in the new format (the model in .fsm, the layout in .fsm.layout): {string.Join(", ", converted.Select(c => c.File))}.";
-            if (skipped.Count > 0) message += $" Not converted, as they have unsaved changes or can't be read: {string.Join(", ", skipped)}.";
-            if (lines.Count > 0) message += " " + string.Join(" ", lines);
+            var message = converted.Count == 1
+                ? $"{converted[0].File} is no longer saved in XMI but in JSON, in two separate files: {converted[0].File} and {converted[0].File}.layout."
+                : $"{string.Join(", ", converted.Select(c => c.File))} are no longer saved in XMI but in JSON, each in two separate files: .fsm and .fsm.layout.";
+            if (skipped.Count > 0) message += $" Still in XMI, as they have unsaved changes or can't be read: {string.Join(", ", skipped)}.";
             return message;
         }
     }
