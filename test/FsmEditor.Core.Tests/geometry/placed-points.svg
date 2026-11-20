@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 18 642 172" width="642" height="172">
+<title>Points</title>
+<style>
+text{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#1f1f1f;font-size:12px}
+.shape{fill:#fdfdfd;stroke:#333;stroke-width:1.4}
+.fill{fill:#333}
+.stroke{fill:none;stroke:#333;stroke-width:1.6}
+.sep{stroke:#333;stroke-width:1;opacity:.8}
+.sep.dashed{stroke-dasharray:7 4}
+.name{font-weight:600}
+.activity,.tlabel{font-size:11px}
+.stereo,.region-name{font-size:10px;font-style:italic;opacity:.8}
+.invariant{font-size:11px;font-style:italic}
+.glyph{font-size:11px;font-weight:700}
+.v-comment .shape{fill:#fbf3cf}
+.v-comment text{font-size:11px}
+.hit{fill:transparent}
+.anchor{fill:none;stroke:#333;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
+.line,.arrow{fill:none;stroke:#333;stroke-width:1.3;stroke-linejoin:round}
+.dangling{fill:#fff;stroke:#c00;stroke-width:1.4}
+.tlabel{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}</style>
+<rect x="20" y="18" width="642" height="172" fill="#fff"/>
+<g class="vertex v-initial"><circle class="fill" cx="50" cy="50" r="10"/></g><g class="vertex v-state"><rect class="shape" x="100" y="40" width="140" height="60" rx="10"/><text class="name" x="170" y="74" text-anchor="middle">Simple</text></g><g class="vertex v-state"><rect class="shape" x="280" y="40" width="250" height="130" rx="10"/><text class="name" x="405" y="56" text-anchor="middle">C</text><line class="sep" x1="280" y1="64" x2="530" y2="64"/></g><g class="vertex v-entryPoint"><circle class="shape" cx="578" cy="48" r="8"/><text class="activity" x="578" y="68" text-anchor="middle">start</text></g><g class="vertex v-exitPoint"><circle class="shape" cx="634" cy="48" r="8"/><path class="stroke" d="M629.04,43.04 L638.96,52.96 M638.96,43.04 L629.04,52.96" style="stroke-width:1.3"/><text class="activity" x="634" y="68" text-anchor="middle">stop</text></g><g class="vertex v-initial"><circle class="fill" cx="320" cy="100" r="10"/></g><g class="vertex v-state"><rect class="shape" x="370" y="90" width="140" height="60" rx="10"/><text class="name" x="440" y="124" text-anchor="middle">Inner</text></g><g class="vertex v-entryPoint"><circle class="shape" cx="100" cy="58" r="8"/><text class="activity" x="100" y="78" text-anchor="middle">in</text></g><g class="vertex v-entryPoint"><circle class="shape" cx="280" cy="58" r="8"/><text class="activity" x="280" y="78" text-anchor="middle">in</text></g><g class="vertex v-exitPoint"><circle class="shape" cx="530" cy="58" r="8"/><path class="stroke" d="M525.04,53.04 L534.96,62.96 M534.96,53.04 L525.04,62.96" style="stroke-width:1.3"/><text class="activity" x="530" y="78" text-anchor="middle">out</text></g><g class="transition"><path class="line" d="M59.9,51.6 L100,58.3"/><path class="arrow" d="M90.3,60.9 L100,58.3 L91.7,52.8"/></g><g class="transition"><path class="line" d="M240,80.4 L280,86.4"/><path class="arrow" d="M270.4,89.1 L280,86.4 L271.6,81"/><text class="tlabel" x="260.9" y="75.5" text-anchor="middle"><tspan x="260.9" dy="0">go</tspan></text></g><g class="transition"><path class="line" d="M280,58 L280,58"/><path class="arrow" d="M270.9,62.1 L280,58 L270.9,53.9"/><text class="tlabel" x="280" y="50" text-anchor="middle"><tspan x="280" dy="0">again</tspan></text></g><g class="transition"><path class="line" d="M272,58.9 L240,62.4"/><path class="arrow" d="M248.6,57.3 L240,62.4 L249.5,65.4"/></g><g class="transition"><path class="line" d="M523.4,62.5 L483.5,90"/><path class="arrow" d="M488.8,81.5 L483.5,90 L493.4,88.2"/></g><g class="transition"><path class="line" d="M329.9,101.6 L370,108.3"/><path class="arrow" d="M360.3,110.9 L370,108.3 L361.7,102.8"/></g><g class="transition"><path class="line" d="M483.5,90 L523.4,62.5"/><path class="arrow" d="M518.2,71.1 L523.4,62.5 L513.6,64.4"/><text class="tlabel" x="500.1" y="69.3" text-anchor="end"><tspan x="500.1" dy="0">leave</tspan></text></g><g class="transition"><path class="line" d="M626,48.4 L240,66.7"/><path class="arrow" d="M248.9,62.2 L240,66.7 L249.3,70.3"/></g>
+</svg>

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "name": "Transitions",
+  "type": "behavioral",
+  "initial": { "target": "A" },
+  "elements": [
+    {
+      "name": "A",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "target": "B" },
+        { "type": "external", "target": "B" },
+        { "type": "internal", "trigger": "tick" },
+        { "type": "local", "trigger": "l", "target": "B" },
+        { "type": "external", "trigger": "e", "precondition": "p()", "postcondition": "q()", "target": "B" }
+      ]
+    },
+    {
+      "name": "B",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "after(1s)", "target": "A" },
+        { "type": "external", "trigger": "after(2x)", "target": "A" }
+      ]
+    },
+    {
+      "name": "choice1*",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "trigger": "after(1s)", "guard": "else", "target": "A" },
+        { "type": "internal" }
+      ]
+    },
+    {
+      "name": "C",
+      "type": "state",
+      "transitions": [
+        { "type": "local", "trigger": "x", "target": "C." },
+        { "type": "local", "trigger": "y", "target": "Inner" }
+      ],
+      "initial": { "target": "Inner" },
+      "elements": [
+        { "name": "Inner", "type": "state" }
+      ]
+    }
+  ]
+}

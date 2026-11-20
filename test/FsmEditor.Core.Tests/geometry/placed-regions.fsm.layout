@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "regions": [
+    {
+      "name": "left",
+      "initial": { "x": 40, "y": 40 },
+      "elements": [
+        {
+          "name": "A",
+          "x": 100,
+          "y": 40,
+          "width": 140,
+          "height": 60
+        },
+        {
+          "name": "O",
+          "x": 280,
+          "y": 40,
+          "width": 190,
+          "height": 210,
+          "regions": [
+            {
+              "name": "r1",
+              "elements": [
+                {
+                  "name": "X",
+                  "x": 30,
+                  "y": 50,
+                  "width": 140,
+                  "height": 60
+                }
+              ]
+            },
+            {
+              "name": "left",
+              "elements": [
+                {
+                  "name": "Y",
+                  "x": 30,
+                  "y": 130,
+                  "width": 140,
+                  "height": 60
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "region1*",
+      "history": { "x": 40, "y": 40 },
+      "elements": [
+        {
+          "name": "B",
+          "x": 106,
+          "y": 40,
+          "width": 140,
+          "height": 60
+        }
+      ]
+    }
+  ]
+}

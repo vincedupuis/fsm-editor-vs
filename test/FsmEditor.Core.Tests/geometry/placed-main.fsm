@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "name": "Main",
+  "type": "behavioral",
+  "initial": { "target": "A" },
+  "elements": [
+    {
+      "name": "A",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "go", "target": "Run" },
+        { "type": "external", "trigger": "retry", "target": "Run.again" },
+        { "type": "external", "trigger": "bad", "target": "Run.done" }
+      ]
+    },
+    {
+      "name": "Run",
+      "type": "state",
+      "submachine": "Sub.fsm",
+      "transitions": [
+        { "type": "external", "target": "A" },
+        { "type": "external", "trigger": "self", "target": "Run.again" }
+      ],
+      "points": [
+        {
+          "name": "again",
+          "type": "entryPoint",
+          "transitions": [
+            { "type": "external", "target": "A" }
+          ]
+        },
+        {
+          "name": "done",
+          "type": "exitPoint",
+          "transitions": [
+            { "type": "external", "target": "A" }
+          ]
+        },
+        {
+          "name": "nothere",
+          "type": "exitPoint",
+          "transitions": [
+            { "type": "external", "target": "A" }
+          ]
+        },
+        { "name": "quit", "type": "entryPoint" },
+        { "name": "", "type": "exitPoint" },
+        { "name": "done", "type": "exitPoint" }
+      ]
+    },
+    { "name": "Gone", "type": "state", "submachine": "Missing.fsm" },
+    { "name": "Broken", "type": "state", "submachine": "Broken.fsm" },
+    {
+      "name": "Both",
+      "type": "state",
+      "submachine": "Sub.fsm",
+      "initial": { "target": "Z" },
+      "elements": [
+        { "name": "Z", "type": "state" }
+      ]
+    }
+  ]
+}

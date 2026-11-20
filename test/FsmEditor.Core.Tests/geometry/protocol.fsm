@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "name": "Door",
+  "type": "protocol",
+  "documentation": "A door & its \"lock\" <protocol>.\nSecond line.",
+  "initial": { "target": "Open" },
+  "elements": [
+    {
+      "name": "Open",
+      "type": "state",
+      "stereotype": "Critical",
+      "entry": "light()",
+      "transitions": [
+        { "type": "external", "trigger": "close", "precondition": "isClear()", "postcondition": "isShut()", "target": "Closed" }
+      ]
+    },
+    {
+      "name": "Closed",
+      "type": "state",
+      "stereotype": "Critical",
+      "invariant": "!isOpen() && (isShut() || (isLocked()))",
+      "transitions": [
+        { "type": "external", "trigger": "open", "action": "e()", "target": "Open" },
+        { "type": "external", "trigger": "lock, after(1.5s)", "target": "Locked" }
+      ]
+    },
+    { "name": "Locked", "type": "state", "stereotype": "Safe", "defer": "knock" }
+  ]
+}

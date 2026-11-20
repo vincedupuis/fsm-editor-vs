@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "points": [
+    {
+      "name": "retry",
+      "x": 42,
+      "y": 182
+    },
+    {
+      "name": "failed",
+      "x": 542,
+      "y": 182
+    },
+    {
+      "name": "cancelled",
+      "x": 182,
+      "y": 262
+    }
+  ],
+  "initial": { "x": 40, "y": 80 },
+  "elements": [
+    {
+      "name": "Authorizing",
+      "x": 120,
+      "y": 60,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "Captured",
+      "x": 320,
+      "y": 40,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "Declined",
+      "x": 320,
+      "y": 160,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "final1*",
+      "x": 540,
+      "y": 57
+    }
+  ]
+}

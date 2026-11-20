@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "initial": { "x": -5, "y": -5 },
+  "elements": [
+    {
+      "name": "comment1*",
+      "x": 540,
+      "y": 40,
+      "width": 160,
+      "height": 64
+    },
+    {
+      "name": "A",
+      "x": 140,
+      "y": 40,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "name": "B",
+      "x": 340,
+      "y": 40,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "name": "C",
+      "x": 340,
+      "y": 160,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "name": "D",
+      "x": 140,
+      "y": 280,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "name": "E",
+      "x": 340,
+      "y": 280,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "name": "F",
+      "x": 540,
+      "y": 280,
+      "width": 120,
+      "height": 50
+    }
+  ]
+}

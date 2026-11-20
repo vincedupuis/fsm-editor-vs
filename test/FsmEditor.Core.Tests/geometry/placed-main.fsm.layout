@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "initial": { "x": 40, "y": 40 },
+  "elements": [
+    {
+      "name": "A",
+      "x": 100,
+      "y": 40,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "Run",
+      "x": 280,
+      "y": 40,
+      "width": 140,
+      "height": 60,
+      "points": [
+        {
+          "name": "again",
+          "x": -8,
+          "y": 10
+        },
+        {
+          "name": "done",
+          "x": 132,
+          "y": 34
+        },
+        {
+          "name": "nothere",
+          "x": 132,
+          "y": 44
+        },
+        {
+          "name": "quit",
+          "x": -8,
+          "y": 44
+        },
+        {
+          "name": "",
+          "x": 132,
+          "y": 44
+        },
+        {
+          "name": "done",
+          "x": 132,
+          "y": 44
+        }
+      ]
+    },
+    {
+      "name": "Gone",
+      "x": 460,
+      "y": 40,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "Broken",
+      "x": 640,
+      "y": 40,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "Both",
+      "x": 820,
+      "y": 40,
+      "width": 250,
+      "height": 130,
+      "initial": { "x": 30, "y": 50 },
+      "elements": [
+        {
+          "name": "Z",
+          "x": 90,
+          "y": 50,
+          "width": 140,
+          "height": 60
+        }
+      ]
+    }
+  ]
+}

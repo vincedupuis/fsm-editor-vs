@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-25 -25 745 375" width="745" height="375">
+<title>Edges</title>
+<style>
+text{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#1f1f1f;font-size:12px}
+.shape{fill:#fdfdfd;stroke:#333;stroke-width:1.4}
+.fill{fill:#333}
+.stroke{fill:none;stroke:#333;stroke-width:1.6}
+.sep{stroke:#333;stroke-width:1;opacity:.8}
+.sep.dashed{stroke-dasharray:7 4}
+.name{font-weight:600}
+.activity,.tlabel{font-size:11px}
+.stereo,.region-name{font-size:10px;font-style:italic;opacity:.8}
+.invariant{font-size:11px;font-style:italic}
+.glyph{font-size:11px;font-weight:700}
+.v-comment .shape{fill:#fbf3cf}
+.v-comment text{font-size:11px}
+.hit{fill:transparent}
+.anchor{fill:none;stroke:#333;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
+.line,.arrow{fill:none;stroke:#333;stroke-width:1.3;stroke-linejoin:round}
+.dangling{fill:#fff;stroke:#c00;stroke-width:1.4}
+.tlabel{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}</style>
+<rect x="-25" y="-25" width="745" height="375" fill="#fff"/>
+<g class="vertex v-initial"><circle class="fill" cx="5" cy="5" r="10"/></g><g class="vertex v-comment"><path class="shape" d="M540,40 H688 L700,52 V104 H540 Z"/><path class="stroke" d="M688,40 V52 H700" style="stroke-width:1"/><text class="" x="548" y="57" text-anchor="start">indented</text><text class="" x="548" y="71" text-anchor="start">note</text><text class="" x="548" y="85" text-anchor="start"></text><text class="" x="548" y="99" text-anchor="start"></text></g><g class="vertex v-state"><rect class="shape" x="140" y="40" width="120" height="50" rx="10"/><text class="name" x="200" y="69" text-anchor="middle">A</text></g><g class="vertex v-state"><rect class="shape" x="340" y="40" width="120" height="50" rx="10"/><text class="name" x="400" y="69" text-anchor="middle">B</text></g><g class="vertex v-state"><rect class="shape" x="340" y="160" width="120" height="50" rx="10"/><text class="name" x="400" y="189" text-anchor="middle">C</text></g><g class="vertex v-state"><rect class="shape" x="140" y="280" width="120" height="50" rx="10"/><text class="name" x="200" y="309" text-anchor="middle">D</text></g><g class="vertex v-state"><rect class="shape" x="340" y="280" width="120" height="50" rx="10"/><text class="name" x="400" y="309" text-anchor="middle">E</text></g><g class="vertex v-state"><rect class="shape" x="540" y="280" width="120" height="50" rx="10"/><text class="name" x="600" y="309" text-anchor="middle">F</text></g><line class="anchor" x1="540" y1="69.5" x2="460" y2="66.9"/><g class="transition"><path class="line" d="M14.6,7.9 L140,46.5"/><path class="arrow" d="M130.1,47.8 L140,46.5 L132.5,40"/></g><g class="transition"><path class="line" d="M260,65 L340,65"/><path class="arrow" d="M330.9,69.1 L340,65 L330.9,60.9"/><text class="tlabel" x="300" y="57" text-anchor="middle"><tspan x="300" dy="0">after(1s)</tspan></text></g><g class="transition"><path class="line" d="M340,65 L260,65"/><path class="arrow" d="M269.1,60.9 L260,65 L269.1,69.1"/><text class="tlabel" x="300" y="57" text-anchor="middle"><tspan x="300" dy="0">after_1s_</tspan></text></g><g class="transition"><path class="line" d="M400,90 L400,160"/><path class="arrow" d="M395.9,150.9 L400,160 L404.1,150.9"/><text class="tlabel" x="394" y="129" text-anchor="end"><tspan x="394" dy="0">[ready()]</tspan></text></g><g class="transition"><path class="line" d="M379.2,90 L220.8,280"/><path class="arrow" d="M223.5,270.4 L220.8,280 L229.8,275.6"/></g><g class="transition"><path class="line" d="M260,305 L340,305"/><path class="arrow" d="M330.9,309.1 L340,305 L330.9,300.9"/></g><g class="transition"><path class="line" d="M260,305 L540,305"/><path class="arrow" d="M530.9,309.1 L540,305 L530.9,300.9"/></g>
+</svg>

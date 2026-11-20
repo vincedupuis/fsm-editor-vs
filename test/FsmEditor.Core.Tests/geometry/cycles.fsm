@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "name": "Cycles",
+  "type": "behavioral",
+  "points": [
+    {
+      "name": "mep",
+      "type": "entryPoint",
+      "transitions": [
+        { "type": "external", "target": "mj" }
+      ]
+    }
+  ],
+  "initial": { "target": "A" },
+  "elements": [
+    {
+      "name": "A",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "e1", "target": "c1" },
+        { "type": "external", "trigger": "e2", "target": "cs" },
+        { "type": "external", "trigger": "e3", "target": "junction1*" },
+        { "type": "external", "trigger": "e4", "target": "j1" },
+        { "type": "external", "trigger": "e5", "target": "k1" },
+        { "type": "external", "trigger": "e6", "target": "S.deepHistory" },
+        { "type": "external", "trigger": "e7", "target": "E.ep" },
+        { "type": "external", "trigger": "e8", "target": "X" },
+        { "type": "external", "trigger": "e10", "target": "fc" },
+        { "type": "external", "trigger": "e11", "target": "d1" }
+      ]
+    },
+    { "name": "B", "type": "state" },
+    {
+      "name": "c1",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "g()", "target": "c2" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "c2",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "h()", "target": "c1" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "cs",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "g()", "target": "cs" },
+        { "type": "external", "guard": "else", "target": "B" },
+        { "type": "internal" }
+      ]
+    },
+    {
+      "name": "choice1*",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "g()", "target": "junction1*" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "junction1*",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "target": "choice1*" }
+      ]
+    },
+    {
+      "name": "j1",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "guard": "a()", "target": "j2" },
+        { "type": "external", "guard": "b()", "target": "j3" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "j2",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "target": "j4" }
+      ]
+    },
+    {
+      "name": "j3",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "target": "j1" }
+      ]
+    },
+    {
+      "name": "j4",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "target": "j1" }
+      ]
+    },
+    {
+      "name": "k1",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "guard": "a()", "target": "k1" },
+        { "type": "external", "guard": "else", "target": "k2" }
+      ]
+    },
+    {
+      "name": "k2",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "guard": "a()", "target": "k2" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "S",
+      "type": "state",
+      "deepHistory": { "target": "hc" },
+      "elements": [
+        { "name": "S1", "type": "state" },
+        {
+          "name": "hc",
+          "type": "choice",
+          "transitions": [
+            { "type": "external", "guard": "g()", "target": "S.deepHistory" },
+            { "type": "external", "guard": "else", "target": "S1" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "E",
+      "type": "state",
+      "points": [
+        {
+          "name": "ep",
+          "type": "entryPoint",
+          "transitions": [
+            { "type": "external", "target": "ec" }
+          ]
+        }
+      ],
+      "elements": [
+        { "name": "E1", "type": "state" },
+        {
+          "name": "ec",
+          "type": "choice",
+          "transitions": [
+            { "type": "external", "guard": "else", "target": "E1" },
+            { "type": "external", "guard": "g()", "target": "E.ep" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "X",
+      "type": "state",
+      "points": [
+        {
+          "name": "xp",
+          "type": "exitPoint",
+          "transitions": [
+            { "type": "external", "target": "xj" }
+          ]
+        }
+      ],
+      "elements": [
+        {
+          "name": "X1",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "trigger": "e9", "target": "X.xp" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "xj",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "guard": "g()", "target": "X.xp" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "P",
+      "type": "state",
+      "regions": [
+        {
+          "name": "region1*",
+          "elements": [
+            {
+              "name": "P1",
+              "type": "state",
+              "transitions": [
+                { "type": "external", "target": "jn" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "region2*",
+          "elements": [
+            {
+              "name": "P2",
+              "type": "state",
+              "transitions": [
+                { "type": "external", "target": "jn" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "f",
+      "type": "fork",
+      "transitions": [
+        { "type": "external", "target": "P1" },
+        { "type": "external", "target": "fc" }
+      ]
+    },
+    {
+      "name": "fc",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "g()", "target": "f" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "mj",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "guard": "g()", "target": "Cycles.mep" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "jn",
+      "type": "join",
+      "transitions": [
+        { "type": "external", "target": "jc" }
+      ]
+    },
+    {
+      "name": "jc",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "g()", "target": "jn" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "d1",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "guard": "g()", "target": "d1" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    },
+    {
+      "name": "d2",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "g()", "target": "d1" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    }
+  ]
+}

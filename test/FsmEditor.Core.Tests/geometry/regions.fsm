@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "name": "Regions",
+  "type": "behavioral",
+  "initial": { "target": "Stacked" },
+  "elements": [
+    {
+      "name": "Stacked",
+      "type": "state",
+      "entry": "start(); log()",
+      "regions": [
+        {
+          "name": "top",
+          "elements": [
+            { "name": "S1", "type": "state" }
+          ]
+        },
+        {
+          "name": "middle",
+          "elements": [
+            { "name": "S2", "type": "state" }
+          ]
+        },
+        {
+          "name": "bottom",
+          "elements": [
+            { "name": "S3", "type": "state" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Side",
+      "type": "state",
+      "regions": [
+        {
+          "name": "region1*",
+          "elements": [
+            { "name": "H1", "type": "state" }
+          ]
+        },
+        {
+          "name": "region2*",
+          "elements": [
+            { "name": "H2", "type": "state" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Single",
+      "type": "state",
+      "elements": [
+        { "name": "X1", "type": "state" }
+      ]
+    },
+    {
+      "name": "Oversized",
+      "type": "state",
+      "regions": [
+        { "name": "region3*" },
+        { "name": "region4*" }
+      ]
+    }
+  ]
+}

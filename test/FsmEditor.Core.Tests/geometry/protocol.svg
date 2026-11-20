@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -36 480 316" width="480" height="316">
+<title>Door</title>
+<style>
+text{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#1f1f1f;font-size:12px}
+.shape{fill:#fdfdfd;stroke:#333;stroke-width:1.4}
+.fill{fill:#333}
+.stroke{fill:none;stroke:#333;stroke-width:1.6}
+.sep{stroke:#333;stroke-width:1;opacity:.8}
+.sep.dashed{stroke-dasharray:7 4}
+.name{font-weight:600}
+.activity,.tlabel{font-size:11px}
+.stereo,.region-name{font-size:10px;font-style:italic;opacity:.8}
+.invariant{font-size:11px;font-style:italic}
+.glyph{font-size:11px;font-weight:700}
+.v-comment .shape{fill:#fbf3cf}
+.v-comment text{font-size:11px}
+.hit{fill:transparent}
+.anchor{fill:none;stroke:#333;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
+.line,.arrow{fill:none;stroke:#333;stroke-width:1.3;stroke-linejoin:round}
+.dangling{fill:#fff;stroke:#c00;stroke-width:1.4}
+.tlabel{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}</style>
+<rect x="-20" y="-36" width="480" height="316" fill="#fff"/>
+<g class="vertex v-initial"><circle class="fill" cx="10" cy="10" r="10"/></g><g class="vertex v-state"><rect class="shape" x="0" y="0" width="140" height="60" rx="10"/><text class="stereo" x="70" y="13" text-anchor="middle">«Critical»</text><text class="name" x="70" y="28" text-anchor="middle">Open</text><line class="sep" x1="0" y1="36" x2="140" y2="36"/><text class="activity" x="8" y="50" text-anchor="start">entry / light()</text></g><g class="vertex v-state"><rect class="shape" x="300" y="0" width="140" height="60" rx="10"/><text class="stereo" x="370" y="26" text-anchor="middle">«Critical»</text><text class="name" x="370" y="40" text-anchor="middle">Closed</text><text class="invariant" x="304" y="74" text-anchor="start">{!isOpen() &amp;&amp; (isShut() || (isLocked()))}</text></g><g class="vertex v-state"><rect class="shape" x="300" y="200" width="140" height="60" rx="10"/><text class="stereo" x="370" y="213" text-anchor="middle">«Safe»</text><text class="name" x="370" y="228" text-anchor="middle">Locked</text><line class="sep" x1="300" y1="236" x2="440" y2="236"/><text class="activity" x="308" y="250" text-anchor="start">knock / defer</text></g><g class="transition"><path class="line" d="M19.5,13.2 L0,6.7"/><path class="arrow" d="M10,5.7 L0,6.7 L7.4,13.4"/></g><g class="transition"><path class="line" d="M140,30 L300,30"/><path class="arrow" d="M290.9,34.1 L300,30 L290.9,25.9"/><text class="tlabel" x="220" y="-4" text-anchor="middle"><tspan x="220" dy="0">[isClear()]</tspan><tspan x="220" dy="13">close</tspan><tspan x="220" dy="13">/ [isShut()]</tspan></text></g><g class="transition"><path class="line" d="M300,30 L140,30"/><path class="arrow" d="M149.1,25.9 L140,30 L149.1,34.1"/><text class="tlabel" x="220" y="22" text-anchor="middle"><tspan x="220" dy="0">open</tspan></text></g><g class="transition"><path class="line" d="M370,60 L370,200"/><path class="arrow" d="M365.9,190.9 L370,200 L374.1,190.9"/><text class="tlabel" x="364" y="134" text-anchor="end"><tspan x="364" dy="0">lock, after(1.5s)</tspan></text></g>
+</svg>

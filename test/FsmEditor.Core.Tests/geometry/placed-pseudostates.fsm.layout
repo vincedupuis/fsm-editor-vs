@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "initial": { "x": 40, "y": 40 },
+  "history": { "x": 100, "y": 40 },
+  "elements": [
+    {
+      "name": "A",
+      "x": 166,
+      "y": 40,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "fork1*",
+      "x": 346,
+      "y": 40,
+      "width": 90,
+      "height": 8
+    },
+    {
+      "name": "join1*",
+      "x": 476,
+      "y": 40,
+      "width": 90,
+      "height": 8
+    },
+    {
+      "name": "choice1*",
+      "x": 606,
+      "y": 40
+    },
+    {
+      "name": "choice2*",
+      "x": 674,
+      "y": 40
+    },
+    {
+      "name": "junction1*",
+      "x": 742,
+      "y": 40
+    },
+    {
+      "name": "O",
+      "x": 796,
+      "y": 40,
+      "width": 250,
+      "height": 210,
+      "regions": [
+        {
+          "name": "r1",
+          "initial": { "x": 30, "y": 50 },
+          "elements": [
+            {
+              "name": "X",
+              "x": 90,
+              "y": 50,
+              "width": 140,
+              "height": 60
+            }
+          ]
+        },
+        {
+          "name": "r2",
+          "initial": { "x": 30, "y": 130 },
+          "elements": [
+            {
+              "name": "Y",
+              "x": 90,
+              "y": 130,
+              "width": 140,
+              "height": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "final1*",
+      "x": 1086,
+      "y": 40
+    },
+    {
+      "name": "terminate1*",
+      "x": 1152,
+      "y": 40
+    },
+    {
+      "name": "fork2*",
+      "x": 1212,
+      "y": 40,
+      "width": 90,
+      "height": 8
+    },
+    {
+      "name": "Two",
+      "x": 1342,
+      "y": 40,
+      "width": 560,
+      "height": 130,
+      "initial": { "x": 30, "y": 50 },
+      "elements": [
+        {
+          "name": "P",
+          "x": 90,
+          "y": 50,
+          "width": 140,
+          "height": 60
+        },
+        {
+          "name": "Q",
+          "x": 270,
+          "y": 50,
+          "width": 140,
+          "height": 60
+        },
+        {
+          "name": "join2*",
+          "x": 450,
+          "y": 50,
+          "width": 90,
+          "height": 8
+        }
+      ]
+    },
+    {
+      "name": "fork3*",
+      "x": 1942,
+      "y": 40,
+      "width": 90,
+      "height": 8
+    }
+  ]
+}

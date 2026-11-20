@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "name": "Pseudostates",
+  "type": "behavioral",
+  "initial": { "target": "A" },
+  "history": { "target": "A" },
+  "elements": [
+    {
+      "name": "A",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "split", "target": "fork1*" },
+        { "type": "external", "trigger": "pick", "target": "choice1*" },
+        { "type": "external", "trigger": "j", "target": "junction1*" }
+      ]
+    },
+    {
+      "name": "fork1*",
+      "type": "fork",
+      "transitions": [
+        { "type": "external", "target": "X" },
+        { "type": "external", "trigger": "t", "guard": "g()", "target": "Y" }
+      ]
+    },
+    {
+      "name": "join1*",
+      "type": "join",
+      "transitions": [
+        { "type": "external", "target": "A" },
+        { "type": "external", "target": "A" }
+      ]
+    },
+    {
+      "name": "choice1*",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "a()", "target": "A" },
+        { "type": "external", "target": "A" }
+      ]
+    },
+    { "name": "choice2*", "type": "choice" },
+    {
+      "name": "junction1*",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "guard": "else", "target": "A" },
+        { "type": "external", "guard": "b()", "target": "A" }
+      ]
+    },
+    {
+      "name": "O",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "e", "target": "join1*" }
+      ],
+      "regions": [
+        {
+          "name": "r1",
+          "initial": { "target": "X" },
+          "elements": [
+            { "name": "X", "type": "state" }
+          ]
+        },
+        {
+          "name": "r2",
+          "initial": { "target": "Y" },
+          "elements": [
+            {
+              "name": "Y",
+              "type": "state",
+              "transitions": [
+                { "type": "external", "target": "join1*" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    { "name": "final1*", "type": "final" },
+    { "name": "terminate1*", "type": "terminate" },
+    {
+      "name": "fork2*",
+      "type": "fork",
+      "transitions": [
+        { "type": "external", "target": "A" }
+      ]
+    },
+    {
+      "name": "Two",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "both", "target": "fork3*" }
+      ],
+      "initial": { "target": "P" },
+      "elements": [
+        {
+          "name": "P",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "target": "join2*" }
+          ]
+        },
+        {
+          "name": "Q",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "target": "join2*" }
+          ]
+        },
+        {
+          "name": "join2*",
+          "type": "join",
+          "transitions": [
+            { "type": "external", "target": "Two" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fork3*",
+      "type": "fork",
+      "transitions": [
+        { "type": "external", "target": "P" },
+        { "type": "external", "target": "Q" }
+      ]
+    }
+  ]
+}

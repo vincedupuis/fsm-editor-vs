@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "name": "Order",
+  "type": "behavioral",
+  "documentation": "Uses the Payment state machine as a submachine, entering and leaving it through connection point references.",
+  "initial": { "target": "Cart" },
+  "elements": [
+    {
+      "name": "Cart",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "checkout", "target": "Payment" }
+      ]
+    },
+    {
+      "name": "Payment",
+      "type": "state",
+      "submachine": "Payment.fsm",
+      "transitions": [
+        { "type": "external", "target": "Shipped" }
+      ],
+      "points": [
+        { "name": "retry", "type": "entryPoint" },
+        {
+          "name": "failed",
+          "type": "exitPoint",
+          "transitions": [
+            { "type": "external", "target": "PaymentFailed" }
+          ]
+        },
+        {
+          "name": "cancelled",
+          "type": "exitPoint",
+          "transitions": [
+            { "type": "external", "target": "Cart" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Shipped",
+      "type": "state",
+      "entry": "ship()",
+      "transitions": [
+        { "type": "external", "target": "final1*" }
+      ]
+    },
+    {
+      "name": "PaymentFailed",
+      "type": "state",
+      "entry": "notifyCustomer()",
+      "transitions": [
+        { "type": "external", "trigger": "retryPayment", "target": "Payment.retry" }
+      ]
+    },
+    { "name": "final1*", "type": "final" }
+  ]
+}

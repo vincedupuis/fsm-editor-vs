@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "name": "Grammar",
+  "type": "behavioral",
+  "initial": { "target": "A" },
+  "elements": [
+    {
+      "name": "A",
+      "type": "state",
+      "stereotype": "1bad",
+      "entry": "start(1)",
+      "do": "x() && y()",
+      "exit": "a.b()",
+      "defer": "after(2s), go()",
+      "invariant": "v > 3",
+      "transitions": [
+        { "type": "external", "trigger": "when(x), after(0s), go", "guard": "volume > 3", "action": "a() && b()", "target": "B" }
+      ]
+    },
+    {
+      "name": "B",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "guard": "else", "target": "choice1*" }
+      ]
+    },
+    {
+      "name": "choice1*",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "trigger": "after(2s)", "guard": "isOk()", "target": "A" },
+        { "type": "external", "guard": "else", "target": "B" }
+      ]
+    }
+  ]
+}

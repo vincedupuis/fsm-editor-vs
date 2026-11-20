@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "initial": { "x": 40, "y": 60 },
+  "elements": [
+    {
+      "name": "comment1*",
+      "x": 120,
+      "y": 200,
+      "width": 160,
+      "height": 64,
+      "color": "#0090ff"
+    },
+    {
+      "name": "A",
+      "x": 120,
+      "y": 40,
+      "width": 180,
+      "height": 100,
+      "color": "#e5484d",
+      "itemColors": {
+        "background": "#12a594",
+        "entry": "#0090ff",
+        "exit": "#8e4ec6",
+        "do": "#30a46c",
+        "defer": "#a18072",
+        "invariant": "#d6409f"
+      },
+      "transitions": [
+        {
+          "trigger": "go",
+          "target": "B",
+          "color": "#12a594",
+          "itemColors": {
+            "trigger": "#e5484d",
+            "guard": "#f76b15",
+            "action": "#3e63dd"
+          }
+        },
+        {
+          "trigger": "tick",
+          "color": "#d6409f"
+        }
+      ]
+    },
+    {
+      "name": "B",
+      "x": 400,
+      "y": 40,
+      "width": 140,
+      "height": 60,
+      "itemColors": {
+        "entry": "#f76b15"
+      },
+      "transitions": [
+        {
+          "trigger": "check",
+          "target": "choice1*",
+          "itemColors": {
+            "trigger": "#5b5bd6"
+          }
+        }
+      ]
+    },
+    {
+      "name": "choice1*",
+      "x": 456,
+      "y": 160,
+      "color": "#8e4ec6",
+      "transitions": [
+        {
+          "target": "A",
+          "color": "#8b8d98"
+        }
+      ]
+    }
+  ]
+}

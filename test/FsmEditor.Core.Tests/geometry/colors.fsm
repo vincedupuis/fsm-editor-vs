@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "name": "Colors",
+  "type": "behavioral",
+  "initial": { "target": "A" },
+  "elements": [
+    {
+      "name": "comment1*",
+      "type": "comment",
+      "text": "Colored note",
+      "anchors": [
+        "A"
+      ]
+    },
+    {
+      "name": "A",
+      "type": "state",
+      "entry": "start()",
+      "do": "poll()",
+      "exit": "stop()",
+      "defer": "evD",
+      "invariant": "isOk()",
+      "transitions": [
+        { "type": "external", "trigger": "go", "guard": "canGo()", "action": "log()", "target": "B" },
+        { "type": "internal", "trigger": "tick", "action": "count()" }
+      ]
+    },
+    {
+      "name": "B",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "check", "target": "choice1*" }
+      ]
+    },
+    {
+      "name": "choice1*",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "else", "target": "A" },
+        { "type": "external", "guard": "isB()", "target": "B" }
+      ]
+    }
+  ]
+}

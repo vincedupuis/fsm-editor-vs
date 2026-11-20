@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "initial": { "x": 40, "y": 60 },
+  "elements": [
+    {
+      "name": "comment1*",
+      "x": 100,
+      "y": 260,
+      "width": 160,
+      "height": 64
+    },
+    {
+      "name": "A",
+      "x": 100,
+      "y": 40,
+      "width": 120,
+      "height": 50,
+      "group": "g1"
+    },
+    {
+      "name": "B",
+      "x": 260,
+      "y": 40,
+      "width": 120,
+      "height": 50,
+      "group": "g1"
+    },
+    {
+      "name": "C",
+      "x": 100,
+      "y": 140,
+      "width": 120,
+      "height": 50,
+      "group": "g3"
+    },
+    {
+      "name": "choice1*",
+      "x": 300,
+      "y": 150,
+      "group": "g3"
+    },
+    {
+      "name": "P",
+      "x": 420,
+      "y": 40,
+      "width": 360,
+      "height": 260,
+      "points": [
+        {
+          "name": "in",
+          "x": -8,
+          "y": 110
+        }
+      ],
+      "elements": [
+        {
+          "name": "D",
+          "x": 20,
+          "y": 60,
+          "width": 120,
+          "height": 50,
+          "group": "g2"
+        },
+        {
+          "name": "E",
+          "x": 180,
+          "y": 60,
+          "width": 120,
+          "height": 50,
+          "group": "g2"
+        },
+        {
+          "name": "F",
+          "x": 20,
+          "y": 160,
+          "width": 120,
+          "height": 50
+        }
+      ]
+    }
+  ]
+}

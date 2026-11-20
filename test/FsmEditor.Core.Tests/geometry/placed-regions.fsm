@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "name": "Regions",
+  "type": "behavioral",
+  "regions": [
+    {
+      "name": "left",
+      "initial": { "target": "A" },
+      "elements": [
+        {
+          "name": "A",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "trigger": "go", "target": "O" }
+          ]
+        },
+        {
+          "name": "O",
+          "type": "state",
+          "regions": [
+            {
+              "name": "r1",
+              "elements": [
+                { "name": "X", "type": "state" }
+              ]
+            },
+            {
+              "name": "left",
+              "elements": [
+                { "name": "Y", "type": "state" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "region1*",
+      "history": {},
+      "elements": [
+        { "name": "B", "type": "state" }
+      ]
+    }
+  ]
+}

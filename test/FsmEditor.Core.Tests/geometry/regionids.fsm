@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "name": "RegionIds",
+  "type": "behavioral",
+  "regions": [
+    {
+      "name": "one",
+      "initial": { "target": "A" },
+      "elements": [
+        {
+          "name": "A",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "trigger": "e", "target": "D" }
+          ]
+        },
+        {
+          "name": "D",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "trigger": "e", "target": "E" }
+          ],
+          "elements": []
+        },
+        {
+          "name": "E",
+          "type": "state",
+          "elements": []
+        }
+      ]
+    },
+    {
+      "name": "two",
+      "initial": { "target": "B" },
+      "elements": [
+        {
+          "name": "B",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "trigger": "e", "target": "F" }
+          ]
+        },
+        {
+          "name": "F",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "trigger": "e", "target": "G" }
+          ],
+          "elements": []
+        },
+        {
+          "name": "G",
+          "type": "state",
+          "elements": []
+        }
+      ]
+    },
+    {
+      "name": "three",
+      "elements": [
+        { "name": "C", "type": "state" }
+      ]
+    }
+  ]
+}

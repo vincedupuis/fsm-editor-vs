@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "points": [
+    {
+      "name": "start",
+      "x": 570,
+      "y": 40
+    },
+    {
+      "name": "stop",
+      "x": 626,
+      "y": 40
+    }
+  ],
+  "initial": { "x": 40, "y": 40 },
+  "elements": [
+    {
+      "name": "Simple",
+      "x": 100,
+      "y": 40,
+      "width": 140,
+      "height": 60,
+      "points": [
+        {
+          "name": "in",
+          "x": -8,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "C",
+      "x": 280,
+      "y": 40,
+      "width": 250,
+      "height": 130,
+      "points": [
+        {
+          "name": "in",
+          "x": -8,
+          "y": 10
+        },
+        {
+          "name": "out",
+          "x": 242,
+          "y": 10
+        }
+      ],
+      "initial": { "x": 30, "y": 50 },
+      "elements": [
+        {
+          "name": "Inner",
+          "x": 90,
+          "y": 50,
+          "width": 140,
+          "height": 60
+        }
+      ]
+    }
+  ]
+}

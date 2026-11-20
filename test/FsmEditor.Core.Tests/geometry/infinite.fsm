@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "name": "Infinite",
+  "type": "behavioral",
+  "initial": { "target": "A" },
+  "elements": [
+    {
+      "name": "A",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "go", "target": "B" },
+        { "type": "external", "trigger": "tick", "target": "A" }
+      ]
+    },
+    {
+      "name": "B",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "back", "target": "A" }
+      ]
+    }
+  ]
+}

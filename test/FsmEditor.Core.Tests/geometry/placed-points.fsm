@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "name": "Points",
+  "type": "behavioral",
+  "points": [
+    { "name": "start", "type": "entryPoint" },
+    {
+      "name": "stop",
+      "type": "exitPoint",
+      "transitions": [
+        { "type": "external", "target": "Simple" }
+      ]
+    }
+  ],
+  "initial": { "target": "Simple" },
+  "elements": [
+    {
+      "name": "Simple",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "go", "target": "C" }
+      ],
+      "points": [
+        { "name": "in", "type": "entryPoint" }
+      ]
+    },
+    {
+      "name": "C",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "again", "target": "C.in" }
+      ],
+      "points": [
+        {
+          "name": "in",
+          "type": "entryPoint",
+          "transitions": [
+            { "type": "external", "target": "Simple" }
+          ]
+        },
+        {
+          "name": "out",
+          "type": "exitPoint",
+          "transitions": [
+            { "type": "external", "target": "Inner" }
+          ]
+        }
+      ],
+      "initial": { "target": "Inner" },
+      "elements": [
+        {
+          "name": "Inner",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "trigger": "leave", "target": "C.out" }
+          ]
+        }
+      ]
+    }
+  ]
+}

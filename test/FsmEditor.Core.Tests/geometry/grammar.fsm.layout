@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "initial": { "x": 0, "y": 0 },
+  "elements": [
+    {
+      "name": "A",
+      "x": 100,
+      "y": 0,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "B",
+      "x": 300,
+      "y": 10,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "choice1*",
+      "x": 200,
+      "y": 200
+    }
+  ]
+}

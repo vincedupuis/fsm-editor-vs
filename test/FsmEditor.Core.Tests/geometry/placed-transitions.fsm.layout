@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "initial": { "x": 40, "y": 40 },
+  "elements": [
+    {
+      "name": "A",
+      "x": 100,
+      "y": 40,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "B",
+      "x": 280,
+      "y": 40,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "choice1*",
+      "x": 460,
+      "y": 40
+    },
+    {
+      "name": "C",
+      "x": 528,
+      "y": 40,
+      "width": 250,
+      "height": 130,
+      "initial": { "x": 30, "y": 50 },
+      "elements": [
+        {
+          "name": "Inner",
+          "x": 90,
+          "y": 50,
+          "width": 140,
+          "height": 60
+        }
+      ]
+    }
+  ]
+}

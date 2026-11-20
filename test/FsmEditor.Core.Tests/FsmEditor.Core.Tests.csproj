@@ -22,6 +22,8 @@
     <!-- fsm-editor-common's sidecar and its interface's cases, copied into the VSIX project's cli/ by scripts/fetch-common.sh. -->
     <None Include="..\..\src\FsmEditor.Vsix\cli\fsm-editor-common*" LinkBase="cli" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\FsmEditor.Vsix\cli\api-cases\**" LinkBase="api-cases" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The VS Code edition's geometry fixtures and their reference SVGs (its test/unit/fixtures/geometry). -->
+    <None Update="geometry\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\*.log" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\FsmEditor.Vsix\ItemTemplates\StateMachine\StateMachine.fsm" Link="templates\StateMachine.fsm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\FsmEditor.Vsix\ItemTemplates\StateMachine\StateMachine.fsm.layout" Link="templates\StateMachine.fsm.layout" CopyToOutputDirectory="PreserveNewest" />

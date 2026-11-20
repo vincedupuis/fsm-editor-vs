@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "name": "Loops",
+  "type": "behavioral",
+  "initial": { "target": "A" },
+  "elements": [
+    {
+      "name": "A",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "e1", "target": "A" },
+        { "type": "external", "trigger": "e2", "target": "A" },
+        { "type": "local", "trigger": "e3", "target": "A" },
+        { "type": "external", "trigger": "e7", "target": "A" },
+        { "type": "external", "trigger": "e8", "target": "A" },
+        { "type": "external", "trigger": "e4", "target": "A" },
+        { "type": "local", "trigger": "e5", "target": "A" },
+        { "type": "internal", "trigger": "e6" },
+        { "type": "external", "trigger": "go", "target": "choice1*" }
+      ]
+    },
+    {
+      "name": "choice1*",
+      "type": "choice",
+      "transitions": [
+        { "type": "external", "guard": "again()", "target": "choice1*" },
+        { "type": "external", "guard": "else", "target": "A" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "initial": { "x": 40, "y": 120 },
+  "elements": [
+    {
+      "name": "A",
+      "x": 120,
+      "y": 100,
+      "width": 140,
+      "height": 60,
+      "transitions": [
+        {
+          "trigger": "e2",
+          "target": "A",
+          "bends": [
+            { "x": -60, "y": 140 }
+          ],
+          "label": { "x": 4, "y": 6 }
+        },
+        {
+          "trigger": "e3",
+          "target": "A",
+          "bends": [
+            { "x": 130, "y": 50 }
+          ]
+        },
+        {
+          "trigger": "e7",
+          "target": "A",
+          "bends": [
+            { "x": 30, "y": -50 },
+            { "x": 180, "y": -60 },
+            { "x": 200, "y": 40 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "choice1*",
+      "x": 400,
+      "y": 116,
+      "transitions": [
+        {
+          "target": "choice1*",
+          "bends": [
+            { "x": 460, "y": 80 },
+            { "x": 460, "y": 40 }
+          ]
+        }
+      ]
+    }
+  ]
+}

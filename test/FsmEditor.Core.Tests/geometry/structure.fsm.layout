@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "points": [
+    {
+      "name": "entry1*",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "name": "out",
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "initial": { "x": 0, "y": 0 },
+  "history": { "x": 0, "y": 0 },
+  "elements": [
+    {
+      "name": "comment1*",
+      "x": 0,
+      "y": 0,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "S",
+      "x": 40,
+      "y": 40,
+      "width": 140,
+      "height": 60,
+      "points": [
+        {
+          "name": "entry1*",
+          "x": 180,
+          "y": 0
+        },
+        {
+          "name": "entry2*",
+          "x": -40,
+          "y": -40
+        }
+      ]
+    },
+    {
+      "name": "S2",
+      "x": 200,
+      "y": 10,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "Comp",
+      "x": 0,
+      "y": 200,
+      "width": 400,
+      "height": 300,
+      "regionLayout": "horizontal",
+      "transitions": [
+        {
+          "target": "In2",
+          "bends": [
+            { "x": 100, "y": 300 },
+            { "x": 150.3, "y": 310 }
+          ],
+          "label": { "x": -12.4, "y": 4.9 }
+        }
+      ],
+      "points": [
+        {
+          "name": "exit1*",
+          "x": 0,
+          "y": -200
+        }
+      ],
+      "regions": [
+        {
+          "name": "upper",
+          "size": 200,
+          "elements": [
+            {
+              "name": "In1",
+              "x": 10,
+              "y": 50,
+              "width": 140,
+              "height": 60
+            }
+          ]
+        },
+        {
+          "name": "region1*",
+          "size": 200,
+          "elements": [
+            {
+              "name": "In2",
+              "x": 210,
+              "y": 50,
+              "width": 140,
+              "height": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fork1*",
+      "x": 500,
+      "y": 0,
+      "width": 90,
+      "height": 8
+    },
+    {
+      "name": "join1*",
+      "x": 500,
+      "y": 100,
+      "width": 90,
+      "height": 8
+    },
+    {
+      "name": "final1*",
+      "x": 600,
+      "y": 300
+    },
+    {
+      "name": "terminate1*",
+      "x": 700,
+      "y": 300
+    },
+    {
+      "name": "junction1*",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "name": "Dup",
+      "x": 0,
+      "y": 0,
+      "width": 140,
+      "height": 60,
+      "points": [
+        {
+          "name": "entry1*",
+          "x": 220,
+          "y": 40
+        },
+        {
+          "name": "entry2*",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    }
+  ]
+}

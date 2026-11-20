@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-26.8 20 612.8 294" width="613" height="294">
+<title>Payment</title>
+<style>
+text{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#1f1f1f;font-size:12px}
+.shape{fill:#fdfdfd;stroke:#333;stroke-width:1.4}
+.fill{fill:#333}
+.stroke{fill:none;stroke:#333;stroke-width:1.6}
+.sep{stroke:#333;stroke-width:1;opacity:.8}
+.sep.dashed{stroke-dasharray:7 4}
+.name{font-weight:600}
+.activity,.tlabel{font-size:11px}
+.stereo,.region-name{font-size:10px;font-style:italic;opacity:.8}
+.invariant{font-size:11px;font-style:italic}
+.glyph{font-size:11px;font-weight:700}
+.v-comment .shape{fill:#fbf3cf}
+.v-comment text{font-size:11px}
+.hit{fill:transparent}
+.anchor{fill:none;stroke:#333;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
+.line,.arrow{fill:none;stroke:#333;stroke-width:1.3;stroke-linejoin:round}
+.dangling{fill:#fff;stroke:#c00;stroke-width:1.4}
+.tlabel{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}</style>
+<rect x="-26.8" y="20" width="612.8" height="294" fill="#fff"/>
+<g class="vertex v-initial"><circle class="fill" cx="50" cy="90" r="10"/></g><g class="vertex v-state"><rect class="shape" x="120" y="60" width="140" height="60" rx="10"/><text class="name" x="190" y="76" text-anchor="middle">Authorizing</text><line class="sep" x1="120" y1="84" x2="260" y2="84"/><text class="activity" x="128" y="98" text-anchor="start">entry /</text><text class="activity" x="128" y="112" text-anchor="start">requestAuthorizati</text><text class="activity" x="128" y="126" text-anchor="start">on()</text></g><g class="vertex v-state"><rect class="shape" x="320" y="40" width="140" height="60" rx="10"/><text class="name" x="390" y="56" text-anchor="middle">Captured</text><line class="sep" x1="320" y1="64" x2="460" y2="64"/><text class="activity" x="328" y="78" text-anchor="start">entry / capture()</text></g><g class="vertex v-state"><rect class="shape" x="320" y="160" width="140" height="60" rx="10"/><text class="name" x="390" y="194" text-anchor="middle">Declined</text></g><g class="vertex v-final"><circle class="shape" cx="553" cy="70" r="13"/><circle class="fill" cx="553" cy="70" r="8"/></g><g class="vertex v-entryPoint"><circle class="shape" cx="50" cy="190" r="8"/><text class="activity" x="50" y="210" text-anchor="middle">retry</text></g><g class="vertex v-exitPoint"><circle class="shape" cx="550" cy="190" r="8"/><path class="stroke" d="M545.04,185.04 L554.96,194.96 M554.96,185.04 L545.04,194.96" style="stroke-width:1.3"/><text class="activity" x="550" y="210" text-anchor="middle">failed</text></g><g class="vertex v-exitPoint"><circle class="shape" cx="190" cy="270" r="8"/><path class="stroke" d="M185.04,265.04 L194.96,274.96 M194.96,265.04 L185.04,274.96" style="stroke-width:1.3"/><text class="activity" x="190" y="290" text-anchor="middle">cancelled</text></g><g class="transition"><path class="line" d="M60,90 L120,90"/><path class="arrow" d="M110.9,94.1 L120,90 L110.9,85.9"/></g><g class="transition"><path class="line" d="M260,83 L320,77"/><path class="arrow" d="M311.3,82 L320,77 L310.5,73.9"/><text class="tlabel" x="289.4" y="72" text-anchor="middle"><tspan x="289.4" dy="0">approved</tspan></text></g><g class="transition"><path class="line" d="M250,120 L330,160"/><path class="arrow" d="M320,159.6 L330,160 L323.7,152.3"/><text class="tlabel" x="292.7" y="132.6" text-anchor="middle"><tspan x="292.7" dy="0">declined</tspan></text></g><g class="transition"><path class="line" d="M190,120 L190,262"/><path class="arrow" d="M185.9,252.9 L190,262 L194.1,252.9"/><text class="tlabel" x="184" y="195" text-anchor="end"><tspan x="184" dy="0">cancel</tspan></text></g><g class="transition"><path class="line" d="M460,70 L540,70"/><path class="arrow" d="M530.9,74.1 L540,70 L530.9,65.9"/></g><g class="transition"><path class="line" d="M460,190 L542,190"/><path class="arrow" d="M532.9,194.1 L542,190 L532.9,185.9"/></g><g class="transition"><path class="line" d="M56.5,185.4 L148,120"/><path class="arrow" d="M142.9,128.6 L148,120 L138.2,122"/><text class="tlabel" x="98.8" y="145.8" text-anchor="end"><tspan x="98.8" dy="0">/ resetAttempt()</tspan></text></g>
+</svg>

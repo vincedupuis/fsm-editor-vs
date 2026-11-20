@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-28 -20 22812 700" width="22812" height="700">
+<title>Settle</title>
+<style>
+text{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#1f1f1f;font-size:12px}
+.shape{fill:#fdfdfd;stroke:#333;stroke-width:1.4}
+.fill{fill:#333}
+.stroke{fill:none;stroke:#333;stroke-width:1.6}
+.sep{stroke:#333;stroke-width:1;opacity:.8}
+.sep.dashed{stroke-dasharray:7 4}
+.name{font-weight:600}
+.activity,.tlabel{font-size:11px}
+.stereo,.region-name{font-size:10px;font-style:italic;opacity:.8}
+.invariant{font-size:11px;font-style:italic}
+.glyph{font-size:11px;font-weight:700}
+.v-comment .shape{fill:#fbf3cf}
+.v-comment text{font-size:11px}
+.hit{fill:transparent}
+.anchor{fill:none;stroke:#333;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
+.line,.arrow{fill:none;stroke:#333;stroke-width:1.3;stroke-linejoin:round}
+.dangling{fill:#fff;stroke:#c00;stroke-width:1.4}
+.tlabel{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}</style>
+<rect x="-28" y="-20" width="22812" height="700" fill="#fff"/>
+<g class="vertex v-initial"><circle class="fill" cx="50" cy="50" r="10"/></g><g class="vertex v-comment"><path class="shape" d="M800,40 H948 L960,52 V104 H800 Z"/><path class="stroke" d="M948,40 V52 H960" style="stroke-width:1"/><text class="" x="808" y="57" text-anchor="start">note</text></g><g class="vertex v-state"><rect class="shape" x="11.6" y="0" width="140.2" height="60.1" rx="10"/><text class="name" x="81.7" y="34.1" text-anchor="middle">Near</text></g><g class="vertex v-state"><rect class="shape" x="22624" y="120" width="140" height="60" rx="10"/><text class="name" x="22694" y="154" text-anchor="middle">Far</text></g><g class="vertex v-state"><rect class="shape" x="0" y="200" width="300" height="151" rx="10"/><text class="name" x="150" y="216" text-anchor="middle">Stacked</text><line class="sep" x1="0" y1="224" x2="300" y2="224"/><text class="region-name" x="6" y="236" text-anchor="start">a</text><line class="sep dashed" x1="0" y1="266.3" x2="300" y2="266.3"/><text class="region-name" x="6" y="278.3" text-anchor="start">b</text><line class="sep dashed" x1="0" y1="308.7" x2="300" y2="308.7"/><text class="region-name" x="6" y="320.7" text-anchor="start">c</text></g><g class="vertex v-state"><rect class="shape" x="400" y="200" width="301" height="100" rx="10"/><text class="name" x="550.5" y="216" text-anchor="middle">Wide</text><line class="sep" x1="400" y1="224" x2="701" y2="224"/><line class="sep dashed" x1="500" y1="224" x2="500" y2="300"/><line class="sep dashed" x1="560.1" y1="224" x2="560.1" y2="300"/></g><g class="vertex v-state"><rect class="shape" x="300" y="600" width="140" height="60" rx="10"/><text class="name" x="370" y="634" text-anchor="middle">Flat</text></g><g class="vertex v-state"><rect class="shape" x="0" y="400" width="300" height="160" rx="10"/><text class="name" x="150" y="416" text-anchor="middle">C</text><line class="sep" x1="0" y1="424" x2="300" y2="424"/></g><g class="vertex v-state"><rect class="shape" x="40" y="460" width="140" height="60" rx="10"/><text class="name" x="110" y="476" text-anchor="middle">In</text><line class="sep" x1="40" y1="484" x2="180" y2="484"/><text class="activity" x="48" y="498" text-anchor="start">tick</text></g><g class="vertex v-entryPoint"><circle class="shape" cx="0" cy="438" r="8"/></g><line class="anchor" x1="821.1" y1="104" x2="165.3" y2="460"/><line class="anchor" x1="819.2" y1="104" x2="199.4" y2="430"/><g class="transition"><path class="line" d="M58.5,44.7 L34,60.1"/><path class="arrow" d="M39.5,51.8 L34,60.1 L43.9,58.7"/></g><g class="transition"><path class="line" d="M151.8,30.4 L22624,149.6"/><path class="arrow" d="M22614.8,153.7 L22624,149.6 L22614.9,145.5"/><text class="tlabel" x="11343.9" y="107.9" text-anchor="middle"><tspan x="11343.9" dy="0">go</tspan></text></g><g class="transition"><path class="line" d="M96.1,60.1 L355.6,600"/><path class="arrow" d="M348,593.5 L355.6,600 L355.3,590"/></g><g class="transition"><path class="line" d="M22624,151.5 L11300,400 L151.8,32.4"/><path class="arrow" d="M161.1,28.6 L151.8,32.4 L160.8,36.7"/><text class="tlabel" x="11386.1" y="390.1" text-anchor="middle"><tspan x="11386.1" dy="0">back</tspan></text></g><g class="transition"><path class="line" d="M7.2,441.4 L46.5,460"/><path class="arrow" d="M36.5,459.8 L46.5,460 L40,452.4"/></g>
+</svg>

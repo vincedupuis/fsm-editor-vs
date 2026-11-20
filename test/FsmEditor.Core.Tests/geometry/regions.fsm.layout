@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "initial": { "x": 20, "y": 30 },
+  "elements": [
+    {
+      "name": "Stacked",
+      "x": 80,
+      "y": 20,
+      "width": 320,
+      "height": 330,
+      "regionLayout": "vertical",
+      "regions": [
+        {
+          "name": "top",
+          "size": 60,
+          "elements": [
+            {
+              "name": "S1",
+              "x": 20,
+              "y": 55,
+              "width": 100,
+              "height": 30
+            }
+          ]
+        },
+        {
+          "name": "middle",
+          "size": 132.5,
+          "elements": [
+            {
+              "name": "S2",
+              "x": 20,
+              "y": 130,
+              "width": 100,
+              "height": 40
+            }
+          ]
+        },
+        {
+          "name": "bottom",
+          "size": 93.5,
+          "elements": [
+            {
+              "name": "S3",
+              "x": 20,
+              "y": 270,
+              "width": 100,
+              "height": 40
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Side",
+      "x": 440,
+      "y": 20,
+      "width": 400,
+      "height": 200,
+      "regionLayout": "horizontal",
+      "regions": [
+        {
+          "name": "region1*",
+          "size": 250,
+          "elements": [
+            {
+              "name": "H1",
+              "x": 20,
+              "y": 60,
+              "width": 100,
+              "height": 40
+            }
+          ]
+        },
+        {
+          "name": "region2*",
+          "size": 150,
+          "elements": [
+            {
+              "name": "H2",
+              "x": 270,
+              "y": 60,
+              "width": 100,
+              "height": 40
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Single",
+      "x": 440,
+      "y": 260,
+      "width": 220,
+      "height": 160,
+      "elements": [
+        {
+          "name": "X1",
+          "x": 20,
+          "y": 50,
+          "width": 100,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "name": "Oversized",
+      "x": 700,
+      "y": 260,
+      "width": 200,
+      "height": 160,
+      "regionLayout": "vertical",
+      "regions": [
+        {
+          "name": "region3*",
+          "size": 68
+        },
+        {
+          "name": "region4*",
+          "size": 68
+        }
+      ]
+    }
+  ]
+}

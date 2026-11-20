@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "name": "Structure",
+  "type": "behavioral",
+  "points": [
+    { "name": "entry1*", "type": "entryPoint" },
+    {
+      "name": "out",
+      "type": "exitPoint",
+      "transitions": [
+        { "type": "external", "target": "S" }
+      ]
+    }
+  ],
+  "initial": { "target": "S" },
+  "history": { "target": "S" },
+  "elements": [
+    {
+      "name": "comment1*",
+      "type": "comment",
+      "text": "hello\nworld",
+      "anchors": [
+        "S"
+      ]
+    },
+    {
+      "name": "S",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "target": "Comp" },
+        { "type": "external", "target": "S2" },
+        { "type": "internal" },
+        { "type": "local", "target": "S2" },
+        { "type": "external", "target": "S" }
+      ],
+      "points": [
+        {
+          "name": "entry1*",
+          "type": "entryPoint",
+          "transitions": [
+            { "type": "external", "target": "S2" }
+          ]
+        },
+        {
+          "name": "entry2*",
+          "type": "entryPoint",
+          "transitions": [
+            { "type": "external", "target": "S2" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "S2",
+      "type": "state",
+      "transitions": [
+        { "type": "internal", "trigger": "tick", "action": "count()" },
+        { "type": "external", "target": "S2." }
+      ]
+    },
+    {
+      "name": "Comp",
+      "type": "state",
+      "transitions": [
+        { "type": "local", "target": "In2" }
+      ],
+      "points": [
+        {
+          "name": "exit1*",
+          "type": "exitPoint",
+          "transitions": [
+            { "type": "external", "target": "In1" }
+          ]
+        }
+      ],
+      "regions": [
+        {
+          "name": "upper",
+          "elements": [
+            {
+              "name": "In1",
+              "type": "state",
+              "transitions": [
+                { "type": "external", "trigger": "e", "target": "join1*" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "region1*",
+          "elements": [
+            { "name": "In2", "type": "state" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fork1*",
+      "type": "fork",
+      "transitions": [
+        { "type": "external", "guard": "x()", "target": "In1" }
+      ]
+    },
+    {
+      "name": "join1*",
+      "type": "join",
+      "transitions": [
+        { "type": "external", "target": "S" }
+      ]
+    },
+    { "name": "final1*", "type": "final" },
+    { "name": "terminate1*", "type": "terminate" },
+    {
+      "name": "junction1*",
+      "type": "junction",
+      "transitions": [
+        { "type": "external", "target": "nope" }
+      ]
+    },
+    {
+      "name": "Dup",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "target": "Comp" },
+        { "type": "external", "target": "S2" },
+        { "type": "internal" },
+        { "type": "local", "target": "S2" },
+        { "type": "external", "target": "S" }
+      ],
+      "points": [
+        {
+          "name": "entry1*",
+          "type": "entryPoint",
+          "transitions": [
+            { "type": "external", "target": "S2" }
+          ]
+        },
+        {
+          "name": "entry2*",
+          "type": "entryPoint",
+          "transitions": [
+            { "type": "external", "target": "S2" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 -10 786 300" width="786" height="300">
+<title>Order</title>
+<style>
+text{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#1f1f1f;font-size:12px}
+.shape{fill:#fdfdfd;stroke:#333;stroke-width:1.4}
+.fill{fill:#333}
+.stroke{fill:none;stroke:#333;stroke-width:1.6}
+.sep{stroke:#333;stroke-width:1;opacity:.8}
+.sep.dashed{stroke-dasharray:7 4}
+.name{font-weight:600}
+.activity,.tlabel{font-size:11px}
+.stereo,.region-name{font-size:10px;font-style:italic;opacity:.8}
+.invariant{font-size:11px;font-style:italic}
+.glyph{font-size:11px;font-weight:700}
+.v-comment .shape{fill:#fbf3cf}
+.v-comment text{font-size:11px}
+.hit{fill:transparent}
+.anchor{fill:none;stroke:#333;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
+.line,.arrow{fill:none;stroke:#333;stroke-width:1.3;stroke-linejoin:round}
+.dangling{fill:#fff;stroke:#c00;stroke-width:1.4}
+.tlabel{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}</style>
+<rect x="20" y="-10" width="786" height="300" fill="#fff"/>
+<g class="vertex v-initial"><circle class="fill" cx="50" cy="110" r="10"/></g><g class="vertex v-state"><rect class="shape" x="100" y="80" width="120" height="60" rx="10"/><text class="name" x="160" y="114" text-anchor="middle">Cart</text></g><g class="vertex v-state"><rect class="shape" x="300" y="70" width="180" height="80" rx="10"/><text class="name" x="390" y="114" text-anchor="middle">Payment : Payment</text><rect class="stroke" x="454" y="136" width="8" height="6" rx="2" style="stroke-width:1.2"/><rect class="stroke" x="467" y="136" width="8" height="6" rx="2" style="stroke-width:1.2"/><line class="stroke" x1="462" y1="139" x2="467" y2="139" style="stroke-width:1.2"/></g><g class="vertex v-state"><rect class="shape" x="580" y="10" width="120" height="60" rx="10"/><text class="name" x="640" y="26" text-anchor="middle">Shipped</text><line class="sep" x1="580" y1="34" x2="700" y2="34"/><text class="activity" x="588" y="48" text-anchor="start">entry / ship()</text></g><g class="vertex v-state"><rect class="shape" x="560" y="170" width="140" height="60" rx="10"/><text class="name" x="630" y="186" text-anchor="middle">PaymentFailed</text><line class="sep" x1="560" y1="194" x2="700" y2="194"/><text class="activity" x="568" y="208" text-anchor="start">entry /</text><text class="activity" x="568" y="222" text-anchor="start">notifyCustomer()</text></g><g class="vertex v-final"><circle class="shape" cx="773" cy="40" r="13"/><circle class="fill" cx="773" cy="40" r="8"/></g><g class="vertex v-connectionPointRef"><circle class="shape" cx="300" cy="130" r="8"/><text class="activity" x="300" y="150" text-anchor="middle">retry</text></g><g class="vertex v-connectionPointRef"><circle class="shape" cx="480" cy="114" r="8"/><path class="stroke" d="M475.04,109.04 L484.96,118.96 M484.96,109.04 L475.04,118.96" style="stroke-width:1.3"/><text class="activity" x="480" y="134" text-anchor="middle">failed</text></g><g class="vertex v-connectionPointRef"><circle class="shape" cx="390" cy="70" r="8"/><path class="stroke" d="M385.04,65.04 L394.96,74.96 M394.96,65.04 L385.04,74.96" style="stroke-width:1.3"/><text class="activity" x="390" y="90" text-anchor="middle">cancelled</text></g><g class="transition"><path class="line" d="M60,110 L100,110"/><path class="arrow" d="M90.9,114.1 L100,110 L90.9,105.9"/></g><g class="transition"><path class="line" d="M220,110 L300,110"/><path class="arrow" d="M290.9,114.1 L300,110 L290.9,105.9"/><text class="tlabel" x="260" y="102" text-anchor="middle"><tspan x="260" dy="0">checkout</tspan></text></g><g class="transition"><path class="line" d="M480,84.8 L580,56.8"/><path class="arrow" d="M572.3,63.2 L580,56.8 L570.1,55.3"/></g><g class="transition"><path class="line" d="M486.9,118 L577.7,170"/><path class="arrow" d="M567.7,169 L577.7,170 L571.8,161.9"/></g><g class="transition"><path class="line" d="M390,62 L390,30 L160,30 L160,80"/><path class="arrow" d="M155.9,70.9 L160,80 L164.1,70.9"/></g><g class="transition"><path class="line" d="M700,40 L760,40"/><path class="arrow" d="M750.9,44.1 L760,40 L750.9,35.9"/></g><g class="transition"><path class="line" d="M630,230 L630,270 L260,270 L260,130 L292,130"/><path class="arrow" d="M282.9,134.1 L292,130 L282.9,125.9"/><text class="tlabel" x="379" y="262" text-anchor="middle"><tspan x="379" dy="0">retryPayment</tspan></text></g>
+</svg>

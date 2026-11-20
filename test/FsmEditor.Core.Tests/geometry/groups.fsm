@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "name": "Groups",
+  "type": "behavioral",
+  "initial": { "target": "A" },
+  "elements": [
+    { "name": "comment1*", "type": "comment", "text": "Note" },
+    { "name": "A", "type": "state" },
+    { "name": "B", "type": "state" },
+    { "name": "C", "type": "state" },
+    { "name": "choice1*", "type": "choice" },
+    {
+      "name": "P",
+      "type": "state",
+      "points": [
+        { "name": "in", "type": "entryPoint" }
+      ],
+      "elements": [
+        { "name": "D", "type": "state" },
+        { "name": "E", "type": "state" },
+        { "name": "F", "type": "state" }
+      ]
+    }
+  ]
+}

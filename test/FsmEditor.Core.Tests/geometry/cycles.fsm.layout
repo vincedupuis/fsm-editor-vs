@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "points": [
+    {
+      "name": "mep",
+      "x": 1952,
+      "y": 47
+    }
+  ],
+  "initial": { "x": 90, "y": 45 },
+  "elements": [
+    {
+      "name": "A",
+      "x": 140,
+      "y": 40,
+      "width": 40,
+      "height": 30
+    },
+    {
+      "name": "B",
+      "x": 200,
+      "y": 40,
+      "width": 40,
+      "height": 30
+    },
+    {
+      "name": "c1",
+      "x": 266,
+      "y": 41
+    },
+    {
+      "name": "c2",
+      "x": 326,
+      "y": 41
+    },
+    {
+      "name": "cs",
+      "x": 386,
+      "y": 41
+    },
+    {
+      "name": "choice1*",
+      "x": 446,
+      "y": 41
+    },
+    {
+      "name": "junction1*",
+      "x": 513,
+      "y": 48
+    },
+    {
+      "name": "j1",
+      "x": 573,
+      "y": 48
+    },
+    {
+      "name": "j2",
+      "x": 633,
+      "y": 48
+    },
+    {
+      "name": "j3",
+      "x": 693,
+      "y": 48
+    },
+    {
+      "name": "j4",
+      "x": 753,
+      "y": 48
+    },
+    {
+      "name": "k1",
+      "x": 813,
+      "y": 48
+    },
+    {
+      "name": "k2",
+      "x": 873,
+      "y": 48
+    },
+    {
+      "name": "S",
+      "x": 920,
+      "y": 40,
+      "width": 40,
+      "height": 30,
+      "deepHistory": { "x": 127, "y": 2 },
+      "elements": [
+        {
+          "name": "S1",
+          "x": 60,
+          "y": 0,
+          "width": 40,
+          "height": 30
+        },
+        {
+          "name": "hc",
+          "x": 186,
+          "y": 1
+        }
+      ]
+    },
+    {
+      "name": "E",
+      "x": 1160,
+      "y": 40,
+      "width": 40,
+      "height": 30,
+      "points": [
+        {
+          "name": "ep",
+          "x": 132,
+          "y": 7
+        }
+      ],
+      "elements": [
+        {
+          "name": "E1",
+          "x": 60,
+          "y": 0,
+          "width": 40,
+          "height": 30
+        },
+        {
+          "name": "ec",
+          "x": 186,
+          "y": 1
+        }
+      ]
+    },
+    {
+      "name": "X",
+      "x": 1400,
+      "y": 40,
+      "width": 40,
+      "height": 30,
+      "points": [
+        {
+          "name": "xp",
+          "x": 132,
+          "y": 7
+        }
+      ],
+      "elements": [
+        {
+          "name": "X1",
+          "x": 60,
+          "y": 0,
+          "width": 40,
+          "height": 30
+        }
+      ]
+    },
+    {
+      "name": "xj",
+      "x": 1593,
+      "y": 48
+    },
+    {
+      "name": "P",
+      "x": 1640,
+      "y": 40,
+      "width": 40,
+      "height": 30,
+      "regionLayout": "vertical",
+      "regions": [
+        {
+          "name": "region1*",
+          "size": 10,
+          "elements": [
+            {
+              "name": "P1",
+              "x": 60,
+              "y": 0,
+              "width": 40,
+              "height": 30
+            }
+          ]
+        },
+        {
+          "name": "region2*",
+          "size": 10,
+          "elements": [
+            {
+              "name": "P2",
+              "x": 120,
+              "y": 0,
+              "width": 40,
+              "height": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "f",
+      "x": 1820,
+      "y": 40,
+      "width": 40,
+      "height": 30
+    },
+    {
+      "name": "fc",
+      "x": 1886,
+      "y": 41
+    },
+    {
+      "name": "mj",
+      "x": 2013,
+      "y": 48
+    },
+    {
+      "name": "jn",
+      "x": 2060,
+      "y": 40,
+      "width": 40,
+      "height": 30
+    },
+    {
+      "name": "jc",
+      "x": 2126,
+      "y": 41
+    },
+    {
+      "name": "d1",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "name": "d2",
+      "x": 2246,
+      "y": 41
+    }
+  ]
+}

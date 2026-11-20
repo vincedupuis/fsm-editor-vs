@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "initial": { "x": 40, "y": 40 },
+  "elements": [
+    {
+      "name": "comment1*",
+      "x": 800,
+      "y": 40,
+      "width": 160,
+      "height": 64
+    },
+    {
+      "name": "Near",
+      "x": 11.6,
+      "y": 0,
+      "width": 140.2,
+      "height": 60.1,
+      "transitions": [
+        {
+          "trigger": "go",
+          "target": "Far",
+          "label": { "x": -44, "y": 25.9 }
+        },
+        {
+          "target": "Flat",
+          "label": { "x": 5, "y": 4.9 }
+        }
+      ]
+    },
+    {
+      "name": "Far",
+      "x": 22624,
+      "y": 120,
+      "width": 140,
+      "height": 60,
+      "transitions": [
+        {
+          "trigger": "back",
+          "target": "Near",
+          "bends": [
+            { "x": 11300, "y": 400 }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Stacked",
+      "x": 0,
+      "y": 200,
+      "width": 300,
+      "height": 151,
+      "regions": [
+        {
+          "name": "a"
+        },
+        {
+          "name": "b"
+        },
+        {
+          "name": "c"
+        }
+      ]
+    },
+    {
+      "name": "Wide",
+      "x": 400,
+      "y": 200,
+      "width": 301,
+      "height": 100,
+      "regionLayout": "horizontal",
+      "regions": [
+        {
+          "name": "region1*",
+          "size": 100
+        },
+        {
+          "name": "region2*",
+          "size": 60.1
+        },
+        {
+          "name": "region3*",
+          "size": 140.9
+        }
+      ]
+    },
+    {
+      "name": "Flat",
+      "x": 300,
+      "y": 600,
+      "width": 140,
+      "height": 60
+    },
+    {
+      "name": "C",
+      "x": 0,
+      "y": 400,
+      "width": 300,
+      "height": 160,
+      "points": [
+        {
+          "name": "entry1*",
+          "x": -8,
+          "y": 30,
+          "transitions": [
+            {
+              "target": "In",
+              "label": { "x": 3, "y": 0 }
+            }
+          ]
+        }
+      ],
+      "elements": [
+        {
+          "name": "In",
+          "x": 40,
+          "y": 60,
+          "width": 140,
+          "height": 60
+        }
+      ]
+    }
+  ]
+}

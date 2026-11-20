@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "name": "Edges",
+  "type": "behavioral",
+  "initial": { "target": "A" },
+  "elements": [
+    {
+      "name": "comment1*",
+      "type": "comment",
+      "text": "  indented\nnote\n\n",
+      "anchors": [
+        "B"
+      ]
+    },
+    {
+      "name": "A",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "after(1s)", "target": "B" }
+      ]
+    },
+    {
+      "name": "B",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "after_1s_", "target": "A" },
+        { "type": "external", "guard": "ready()", "target": "C" },
+        { "type": "external", "target": "D" }
+      ]
+    },
+    { "name": "C", "type": "state" },
+    {
+      "name": "D",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "target": "E" },
+        { "type": "external", "target": "F" }
+      ]
+    },
+    { "name": "E", "type": "state" },
+    { "name": "F", "type": "state" }
+  ]
+}

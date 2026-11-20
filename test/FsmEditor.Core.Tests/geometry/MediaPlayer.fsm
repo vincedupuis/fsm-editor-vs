@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "name": "MediaPlayer",
+  "type": "behavioral",
+  "documentation": "Example UML state machine: composite and orthogonal states, deep history, choice, exit point and an internal transition.",
+  "initial": { "target": "Off" },
+  "elements": [
+    {
+      "name": "comment1*",
+      "type": "comment",
+      "text": "Deep history restores the\nlast active playback substates\nafter a fault is reset.",
+      "anchors": [
+        "On.deepHistory"
+      ]
+    },
+    {
+      "name": "Off",
+      "type": "state",
+      "entry": "powerDown()",
+      "transitions": [
+        { "type": "external", "trigger": "powerOn", "target": "On" },
+        { "type": "external", "trigger": "unplug", "target": "final1*" }
+      ]
+    },
+    { "name": "final1*", "type": "final" },
+    {
+      "name": "On",
+      "type": "state",
+      "entry": "ampOn()",
+      "exit": "ampOff()",
+      "transitions": [
+        { "type": "external", "trigger": "powerOff", "target": "Off" }
+      ],
+      "points": [
+        {
+          "name": "fault",
+          "type": "exitPoint",
+          "transitions": [
+            { "type": "external", "target": "Fault" }
+          ]
+        }
+      ],
+      "initial": { "target": "Stopped" },
+      "deepHistory": { "target": "Stopped" },
+      "elements": [
+        {
+          "name": "Stopped",
+          "type": "state",
+          "entry": "rewind()",
+          "transitions": [
+            { "type": "external", "trigger": "play", "target": "Playing" },
+            { "type": "external", "trigger": "eject", "target": "choice1*" }
+          ]
+        },
+        {
+          "name": "Paused",
+          "type": "state",
+          "do": "blinkLed()",
+          "transitions": [
+            { "type": "external", "trigger": "play", "target": "Playing" },
+            { "type": "external", "trigger": "stop", "target": "Stopped" },
+            { "type": "internal", "trigger": "volumeChanged", "action": "updateVolume()" },
+            { "type": "external", "trigger": "after(5m)", "action": "saveBookmark()", "target": "Stopped" }
+          ]
+        },
+        {
+          "name": "choice1*",
+          "type": "choice",
+          "transitions": [
+            { "type": "external", "guard": "else", "action": "openTray()", "target": "Stopped" },
+            { "type": "external", "guard": "isTrayJammed()", "target": "On.fault" }
+          ]
+        },
+        {
+          "name": "Playing",
+          "type": "state",
+          "transitions": [
+            { "type": "external", "trigger": "pause", "target": "Paused" }
+          ],
+          "regions": [
+            {
+              "name": "audio",
+              "initial": { "target": "Stereo" },
+              "elements": [
+                {
+                  "name": "Stereo",
+                  "type": "state",
+                  "transitions": [
+                    { "type": "external", "trigger": "toggleAudio", "target": "Mono" }
+                  ]
+                },
+                {
+                  "name": "Mono",
+                  "type": "state",
+                  "transitions": [
+                    { "type": "external", "trigger": "toggleAudio", "target": "Stereo" }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "video",
+              "initial": { "target": "HD" },
+              "elements": [
+                {
+                  "name": "HD",
+                  "type": "state",
+                  "transitions": [
+                    { "type": "external", "trigger": "lowBandwidth", "target": "SD" }
+                  ]
+                },
+                {
+                  "name": "SD",
+                  "type": "state",
+                  "transitions": [
+                    { "type": "external", "trigger": "highBandwidth", "target": "HD" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fault",
+      "type": "state",
+      "entry": "showError()",
+      "transitions": [
+        { "type": "external", "trigger": "reset", "target": "On.deepHistory" }
+      ]
+    }
+  ]
+}

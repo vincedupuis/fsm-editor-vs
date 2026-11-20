@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 -43 540 327" width="540" height="327">
+<title>Colors</title>
+<style>
+text{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#1f1f1f;font-size:12px}
+.shape{fill:#fdfdfd;stroke:#333;stroke-width:1.4}
+.fill{fill:#333}
+.stroke{fill:none;stroke:#333;stroke-width:1.6}
+.sep{stroke:#333;stroke-width:1;opacity:.8}
+.sep.dashed{stroke-dasharray:7 4}
+.name{font-weight:600}
+.activity,.tlabel{font-size:11px}
+.stereo,.region-name{font-size:10px;font-style:italic;opacity:.8}
+.invariant{font-size:11px;font-style:italic}
+.glyph{font-size:11px;font-weight:700}
+.v-comment .shape{fill:#fbf3cf}
+.v-comment text{font-size:11px}
+.hit{fill:transparent}
+.anchor{fill:none;stroke:#333;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
+.line,.arrow{fill:none;stroke:#333;stroke-width:1.3;stroke-linejoin:round}
+.dangling{fill:#fff;stroke:#c00;stroke-width:1.4}
+.tlabel{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}</style>
+<rect x="20" y="-43" width="540" height="327" fill="#fff"/>
+<g class="vertex v-initial"><circle class="fill" cx="50" cy="70" r="10"/></g><g class="vertex v-comment"><path class="shape" d="M120,200 H268 L280,212 V264 H120 Z" style="fill:#d5ecfd;stroke:#0090ff"/><path class="stroke" d="M268,200 V212 H280" style="stroke:#0090ff;stroke-width:1"/><text class="" x="128" y="217" text-anchor="start" style="fill:#0090ff">Colored note</text></g><g class="vertex v-state"><rect class="shape" x="120" y="40" width="180" height="100" rx="10" style="fill:#f9e0e1;stroke:#e5484d"/><text class="name" x="210" y="56" text-anchor="middle" style="fill:#e5484d">A</text><line class="sep" x1="120" y1="64" x2="300" y2="64" style="stroke:#e5484d"/><text class="activity" x="128" y="78" text-anchor="start" style="fill:#0090ff">entry / start()</text><text class="activity" x="128" y="92" text-anchor="start" style="fill:#8e4ec6">exit / stop()</text><text class="activity" x="128" y="106" text-anchor="start" style="fill:#30a46c">do / poll()</text><text class="activity" x="128" y="120" text-anchor="start" style="fill:#a18072">evD / defer</text><text class="activity" x="128" y="134" text-anchor="start" style="fill:#d6409f">tick / count()</text><text class="invariant" x="124" y="154" text-anchor="start" style="fill:#d6409f">{isOk()}</text></g><g class="vertex v-state"><rect class="shape" x="400" y="40" width="140" height="60" rx="10"/><text class="name" x="470" y="74" text-anchor="middle">B</text></g><g class="vertex v-choice"><path class="shape" d="M470,160 L484,174 L470,188 L456,174 Z" style="fill:#ebe1f4;stroke:#8e4ec6"/></g><line class="anchor" x1="202.3" y1="200" x2="206.5" y2="140"/><g class="transition"><path class="line" d="M59.9,71.2 L120,78.8"/><path class="arrow" d="M110.4,81.7 L120,78.8 L111.4,73.6"/></g><g class="transition"><path class="line" d="M300,83.1 L400,75.4" style="stroke:#12a594"/><path class="arrow" d="M391.2,80.2 L400,75.4 L390.6,72" style="stroke:#12a594"/><text class="tlabel" x="349.5" y="45.2" text-anchor="middle"><tspan x="349.5" dy="0" style="fill:#e5484d">go</tspan><tspan x="349.5" dy="13" style="fill:#f76b15">[canGo()]</tspan><tspan x="349.5" dy="13" style="fill:#3e63dd">/ log()</tspan></text></g><g class="transition"><path class="line" d="M470,100 L470,160"/><path class="arrow" d="M465.9,150.9 L470,160 L474.1,150.9"/><text class="tlabel" x="464" y="134" text-anchor="end"><tspan x="464" dy="0" style="fill:#5b5bd6">check</tspan></text></g><g class="transition"><path class="line" d="M459.4,170.6 L300,119.1" style="stroke:#8b8d98"/><path class="arrow" d="M309.9,118 L300,119.1 L307.4,125.8" style="stroke:#8b8d98"/><text class="tlabel" x="381.6" y="137.1" text-anchor="middle"><tspan x="381.6" dy="0" style="fill:#8b8d98">[else]</tspan></text></g><g class="transition"><path class="line" d="M470,160 L470,100"/><path class="arrow" d="M474.1,109.1 L470,100 L465.9,109.1"/><text class="tlabel" x="464" y="134" text-anchor="end"><tspan x="464" dy="0">[isB()]</tspan></text></g>
+</svg>

@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "regions": [
+    {
+      "name": "one",
+      "initial": { "x": 20, "y": 20 },
+      "elements": [
+        {
+          "name": "A",
+          "x": 80,
+          "y": 0,
+          "width": 120,
+          "height": 60
+        },
+        {
+          "name": "D",
+          "x": 260,
+          "y": 0,
+          "width": 160,
+          "height": 120
+        },
+        {
+          "name": "E",
+          "x": 460,
+          "y": 0,
+          "width": 160,
+          "height": 120
+        }
+      ]
+    },
+    {
+      "name": "two",
+      "initial": { "x": 20, "y": 220 },
+      "elements": [
+        {
+          "name": "B",
+          "x": 260,
+          "y": 224,
+          "width": 160,
+          "height": 96
+        },
+        {
+          "name": "F",
+          "x": 260,
+          "y": 200,
+          "width": 160,
+          "height": 120
+        },
+        {
+          "name": "G",
+          "x": 460,
+          "y": 200,
+          "width": 160,
+          "height": 120
+        }
+      ]
+    },
+    {
+      "name": "three",
+      "elements": [
+        {
+          "name": "C",
+          "x": 80,
+          "y": 400,
+          "width": 120,
+          "height": 60
+        }
+      ]
+    }
+  ]
+}

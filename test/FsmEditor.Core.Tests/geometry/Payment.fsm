@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "name": "Payment",
+  "type": "behavioral",
+  "documentation": "Payment submachine. Its entry point \"retry\" and exit points \"failed\" and \"cancelled\" are referenced by the Payment state in Order.fsm.",
+  "points": [
+    {
+      "name": "retry",
+      "type": "entryPoint",
+      "transitions": [
+        { "type": "external", "action": "resetAttempt()", "target": "Authorizing" }
+      ]
+    },
+    { "name": "failed", "type": "exitPoint" },
+    { "name": "cancelled", "type": "exitPoint" }
+  ],
+  "initial": { "target": "Authorizing" },
+  "elements": [
+    {
+      "name": "Authorizing",
+      "type": "state",
+      "entry": "requestAuthorization()",
+      "transitions": [
+        { "type": "external", "trigger": "approved", "target": "Captured" },
+        { "type": "external", "trigger": "declined", "target": "Declined" },
+        { "type": "external", "trigger": "cancel", "target": "Payment.cancelled" }
+      ]
+    },
+    {
+      "name": "Captured",
+      "type": "state",
+      "entry": "capture()",
+      "transitions": [
+        { "type": "external", "target": "final1*" }
+      ]
+    },
+    {
+      "name": "Declined",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "target": "Payment.failed" }
+      ]
+    },
+    { "name": "final1*", "type": "final" }
+  ]
+}

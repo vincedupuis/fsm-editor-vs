@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "name": "Settle",
+  "type": "behavioral",
+  "initial": { "target": "Near" },
+  "elements": [
+    {
+      "name": "comment1*",
+      "type": "comment",
+      "text": "note",
+      "anchors": [
+        "In",
+        { "source": "In", "trigger": "tick" }
+      ]
+    },
+    {
+      "name": "Near",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "go", "target": "Far" },
+        { "type": "external", "target": "Flat" }
+      ]
+    },
+    {
+      "name": "Far",
+      "type": "state",
+      "transitions": [
+        { "type": "external", "trigger": "back", "target": "Near" }
+      ]
+    },
+    {
+      "name": "Stacked",
+      "type": "state",
+      "regions": [
+        { "name": "a" },
+        { "name": "b" },
+        { "name": "c" }
+      ]
+    },
+    {
+      "name": "Wide",
+      "type": "state",
+      "regions": [
+        { "name": "region1*" },
+        { "name": "region2*" },
+        { "name": "region3*" }
+      ]
+    },
+    { "name": "Flat", "type": "state" },
+    {
+      "name": "C",
+      "type": "state",
+      "points": [
+        {
+          "name": "entry1*",
+          "type": "entryPoint",
+          "transitions": [
+            { "type": "external", "target": "In" }
+          ]
+        }
+      ],
+      "elements": [
+        {
+          "name": "In",
+          "type": "state",
+          "transitions": [
+            { "type": "internal", "trigger": "tick" }
+          ]
+        }
+      ]
+    }
+  ]
+}
