@@ -93,7 +93,7 @@ A machine `Order` is `Order.fsm`, the model, and `Order.fsm.layout` beside it, t
 
 ```json
 {
-  "format": 1,
+  "version": 1,
   "name": "Order",
   "type": "behavioral",
   "initial": { "target": "Cart" },

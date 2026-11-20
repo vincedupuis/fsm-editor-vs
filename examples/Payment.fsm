@@ -1,5 +1,5 @@
 {
-  "format": 1,
+  "version": 1,
   "name": "Payment",
   "type": "behavioral",
   "documentation": "Payment submachine. Its entry point \"retry\" and exit points \"failed\" and \"cancelled\" are referenced by the Payment state in Order.fsm.",

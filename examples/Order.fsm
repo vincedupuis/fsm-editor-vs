@@ -1,5 +1,5 @@
 {
-  "format": 1,
+  "version": 1,
   "name": "Order",
   "type": "behavioral",
   "documentation": "Uses the Payment state machine as a submachine, entering and leaving it through connection point references.",

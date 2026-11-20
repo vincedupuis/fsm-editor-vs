@@ -1,18 +1,32 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/vincedupuis/fsm-editor-vscode/blob/main/schemas/fsm-layout.schema.json",
-  "title": "FSM Editor state machine layout (.fsm.layout), format 1",
+  "title": "FSM Editor state machine layout (.fsm.layout), version 1",
   "description": "The drawing of the state machine of the .fsm file beside it: the same nesting and names. Coordinates are relative to the owning state (the origin at the top level).",
   "type": "object",
-  "required": [
-    "format"
+  "anyOf": [
+    {
+      "required": [
+        "version"
+      ]
+    },
+    {
+      "required": [
+        "format"
+      ]
+    }
   ],
   "properties": {
     "$schema": {
       "type": "string"
     },
-    "format": {
+    "version": {
       "const": 1
+    },
+    "format": {
+      "const": 1,
+      "description": "Deprecated: the name of 'version' in earlier files, read the same way. Write 'version'.",
+      "deprecated": true
     },
     "points": {
       "type": "array",
