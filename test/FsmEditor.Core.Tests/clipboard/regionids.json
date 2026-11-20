@@ -1,0 +1,192 @@
+{
+  "machine": "regionids",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "one.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "one",
+        "x": 20,
+        "y": 20,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "one",
+        "x": 80,
+        "y": 0,
+        "w": 120,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "D",
+        "type": "state",
+        "name": "D",
+        "parent": "one",
+        "x": 260,
+        "y": 0,
+        "w": 160,
+        "h": 120,
+        "regions": [
+          {
+            "id": "D.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "E",
+        "type": "state",
+        "name": "E",
+        "parent": "one",
+        "x": 460,
+        "y": 0,
+        "w": 160,
+        "h": 120,
+        "regions": [
+          {
+            "id": "E.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "two.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "two",
+        "x": 20,
+        "y": 220,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "B",
+        "type": "state",
+        "name": "B",
+        "parent": "two",
+        "x": 260,
+        "y": 224,
+        "w": 160,
+        "h": 96,
+        "regions": []
+      },
+      {
+        "id": "F",
+        "type": "state",
+        "name": "F",
+        "parent": "two",
+        "x": 260,
+        "y": 200,
+        "w": 160,
+        "h": 120,
+        "regions": [
+          {
+            "id": "F.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "G",
+        "type": "state",
+        "name": "G",
+        "parent": "two",
+        "x": 460,
+        "y": 200,
+        "w": 160,
+        "h": 120,
+        "regions": [
+          {
+            "id": "G.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "C",
+        "type": "state",
+        "name": "C",
+        "parent": "three",
+        "x": 80,
+        "y": 400,
+        "w": 120,
+        "h": 60,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "one.initial#1",
+        "source": "one.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "D",
+        "kind": "external",
+        "triggers": [
+          "e"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "D#1",
+        "source": "D",
+        "target": "E",
+        "kind": "external",
+        "triggers": [
+          "e"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "two.initial#1",
+        "source": "two.initial",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "B#1",
+        "source": "B",
+        "target": "F",
+        "kind": "external",
+        "triggers": [
+          "e"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "F#1",
+        "source": "F",
+        "target": "G",
+        "kind": "external",
+        "triggers": [
+          "e"
+        ],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

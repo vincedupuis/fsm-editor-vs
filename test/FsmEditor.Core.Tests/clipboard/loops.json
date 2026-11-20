@@ -1,0 +1,210 @@
+{
+  "machine": "loops",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Loops.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Loops.",
+        "x": 40,
+        "y": 120,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "Loops.",
+        "x": 120,
+        "y": 100,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "choice1*",
+        "type": "choice",
+        "name": "choice1*",
+        "parent": "Loops.",
+        "x": 400,
+        "y": 116,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Loops.initial#1",
+        "source": "Loops.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "e1"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#2",
+        "source": "A",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "e2"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 60,
+            "y": 240
+          }
+        ],
+        "labelOffset": {
+          "x": 4,
+          "y": 6
+        }
+      },
+      {
+        "id": "A#3",
+        "source": "A",
+        "target": "A",
+        "kind": "local",
+        "triggers": [
+          "e3"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 250,
+            "y": 150
+          }
+        ]
+      },
+      {
+        "id": "A#4",
+        "source": "A",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "e7"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 150,
+            "y": 50
+          },
+          {
+            "x": 300,
+            "y": 40
+          },
+          {
+            "x": 320,
+            "y": 140
+          }
+        ]
+      },
+      {
+        "id": "A#5",
+        "source": "A",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "e8"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#6",
+        "source": "A",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "e4"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#7",
+        "source": "A",
+        "target": "A",
+        "kind": "local",
+        "triggers": [
+          "e5"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#8",
+        "source": "A",
+        "target": "A",
+        "kind": "internal",
+        "triggers": [
+          "e6"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#9",
+        "source": "A",
+        "target": "choice1*",
+        "kind": "external",
+        "triggers": [
+          "go"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "choice1*#1",
+        "source": "choice1*",
+        "target": "choice1*",
+        "kind": "external",
+        "triggers": [],
+        "guard": "again()",
+        "action": "",
+        "points": [
+          {
+            "x": 460,
+            "y": 80
+          },
+          {
+            "x": 460,
+            "y": 40
+          }
+        ]
+      },
+      {
+        "id": "choice1*#2",
+        "source": "choice1*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      }
+    ]
+  }
+}

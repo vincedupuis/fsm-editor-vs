@@ -1,0 +1,61 @@
+{
+  "machine": "Order",
+  "select": "Payment",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Payment",
+        "type": "state",
+        "name": "Payment",
+        "parent": "Order.",
+        "x": 300,
+        "y": 70,
+        "w": 180,
+        "h": 80,
+        "regions": [],
+        "submachine": "Payment.fsm"
+      },
+      {
+        "id": "Payment.retry",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Payment",
+        "x": 292,
+        "y": 122,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "retry",
+        "pointKind": "entry"
+      },
+      {
+        "id": "Payment.failed",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Payment",
+        "x": 472,
+        "y": 106,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "failed",
+        "pointKind": "exit"
+      },
+      {
+        "id": "Payment.cancelled",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Payment",
+        "x": 382,
+        "y": 62,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "cancelled",
+        "pointKind": "exit"
+      }
+    ],
+    "transitions": []
+  }
+}

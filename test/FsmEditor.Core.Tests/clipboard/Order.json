@@ -1,0 +1,210 @@
+{
+  "machine": "Order",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Order.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Order.",
+        "x": 40,
+        "y": 100,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Cart",
+        "type": "state",
+        "name": "Cart",
+        "parent": "Order.",
+        "x": 100,
+        "y": 80,
+        "w": 120,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "Payment",
+        "type": "state",
+        "name": "Payment",
+        "parent": "Order.",
+        "x": 300,
+        "y": 70,
+        "w": 180,
+        "h": 80,
+        "regions": [],
+        "submachine": "Payment.fsm"
+      },
+      {
+        "id": "Payment.retry",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Payment",
+        "x": 292,
+        "y": 122,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "retry",
+        "pointKind": "entry"
+      },
+      {
+        "id": "Payment.failed",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Payment",
+        "x": 472,
+        "y": 106,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "failed",
+        "pointKind": "exit"
+      },
+      {
+        "id": "Payment.cancelled",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Payment",
+        "x": 382,
+        "y": 62,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "cancelled",
+        "pointKind": "exit"
+      },
+      {
+        "id": "Shipped",
+        "type": "state",
+        "name": "Shipped",
+        "parent": "Order.",
+        "x": 580,
+        "y": 10,
+        "w": 120,
+        "h": 60,
+        "regions": [],
+        "entry": "ship()"
+      },
+      {
+        "id": "PaymentFailed",
+        "type": "state",
+        "name": "PaymentFailed",
+        "parent": "Order.",
+        "x": 560,
+        "y": 170,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "entry": "notifyCustomer()"
+      },
+      {
+        "id": "final1*",
+        "type": "final",
+        "name": "final1*",
+        "parent": "Order.",
+        "x": 760,
+        "y": 27,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Order.initial#1",
+        "source": "Order.initial",
+        "target": "Cart",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Cart#1",
+        "source": "Cart",
+        "target": "Payment",
+        "kind": "external",
+        "triggers": [
+          "checkout"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Payment#1",
+        "source": "Payment",
+        "target": "Shipped",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Payment.failed#1",
+        "source": "Payment.failed",
+        "target": "PaymentFailed",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Payment.cancelled#1",
+        "source": "Payment.cancelled",
+        "target": "Cart",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 390,
+            "y": 30
+          },
+          {
+            "x": 160,
+            "y": 30
+          }
+        ]
+      },
+      {
+        "id": "Shipped#1",
+        "source": "Shipped",
+        "target": "final1*",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "PaymentFailed#1",
+        "source": "PaymentFailed",
+        "target": "Payment.retry",
+        "kind": "external",
+        "triggers": [
+          "retryPayment"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 630,
+            "y": 270
+          },
+          {
+            "x": 260,
+            "y": 270
+          },
+          {
+            "x": 260,
+            "y": 130
+          }
+        ]
+      }
+    ]
+  }
+}

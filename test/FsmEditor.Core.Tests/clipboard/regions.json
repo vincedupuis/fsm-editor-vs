@@ -1,0 +1,188 @@
+{
+  "machine": "regions",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Regions.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Regions.",
+        "x": 20,
+        "y": 30,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Stacked",
+        "type": "state",
+        "name": "Stacked",
+        "parent": "Regions.",
+        "x": 80,
+        "y": 20,
+        "w": 320,
+        "h": 330,
+        "regions": [
+          {
+            "id": "top",
+            "name": "top",
+            "size": 60
+          },
+          {
+            "id": "middle",
+            "name": "middle",
+            "size": 132.5
+          },
+          {
+            "id": "bottom",
+            "name": "bottom",
+            "size": 93.5
+          }
+        ],
+        "regionLayout": "vertical",
+        "entry": "start(); log()"
+      },
+      {
+        "id": "S1",
+        "type": "state",
+        "name": "S1",
+        "parent": "top",
+        "x": 100,
+        "y": 75,
+        "w": 100,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "S2",
+        "type": "state",
+        "name": "S2",
+        "parent": "middle",
+        "x": 100,
+        "y": 150,
+        "w": 100,
+        "h": 40,
+        "regions": []
+      },
+      {
+        "id": "S3",
+        "type": "state",
+        "name": "S3",
+        "parent": "bottom",
+        "x": 100,
+        "y": 290,
+        "w": 100,
+        "h": 40,
+        "regions": []
+      },
+      {
+        "id": "Side",
+        "type": "state",
+        "name": "Side",
+        "parent": "Regions.",
+        "x": 440,
+        "y": 20,
+        "w": 400,
+        "h": 200,
+        "regions": [
+          {
+            "id": "region1*",
+            "name": "region1*",
+            "size": 250
+          },
+          {
+            "id": "region2*",
+            "name": "region2*",
+            "size": 150
+          }
+        ],
+        "regionLayout": "horizontal"
+      },
+      {
+        "id": "H1",
+        "type": "state",
+        "name": "H1",
+        "parent": "region1*",
+        "x": 460,
+        "y": 80,
+        "w": 100,
+        "h": 40,
+        "regions": []
+      },
+      {
+        "id": "H2",
+        "type": "state",
+        "name": "H2",
+        "parent": "region2*",
+        "x": 710,
+        "y": 80,
+        "w": 100,
+        "h": 40,
+        "regions": []
+      },
+      {
+        "id": "Single",
+        "type": "state",
+        "name": "Single",
+        "parent": "Regions.",
+        "x": 440,
+        "y": 260,
+        "w": 220,
+        "h": 160,
+        "regions": [
+          {
+            "id": "Single.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "X1",
+        "type": "state",
+        "name": "X1",
+        "parent": "Single.",
+        "x": 460,
+        "y": 310,
+        "w": 100,
+        "h": 40,
+        "regions": []
+      },
+      {
+        "id": "Oversized",
+        "type": "state",
+        "name": "Oversized",
+        "parent": "Regions.",
+        "x": 700,
+        "y": 260,
+        "w": 200,
+        "h": 160,
+        "regions": [
+          {
+            "id": "region3*",
+            "name": "region3*",
+            "size": 68
+          },
+          {
+            "id": "region4*",
+            "name": "region4*",
+            "size": 68
+          }
+        ],
+        "regionLayout": "vertical"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Regions.initial#1",
+        "source": "Regions.initial",
+        "target": "Stacked",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

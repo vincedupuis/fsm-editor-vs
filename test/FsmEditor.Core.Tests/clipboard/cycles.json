@@ -1,0 +1,980 @@
+{
+  "machine": "cycles",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Cycles.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Cycles.",
+        "x": 90,
+        "y": 45,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "Cycles.",
+        "x": 140,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "B",
+        "type": "state",
+        "name": "B",
+        "parent": "Cycles.",
+        "x": 200,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "c1",
+        "type": "choice",
+        "name": "c1",
+        "parent": "Cycles.",
+        "x": 266,
+        "y": 41,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "c2",
+        "type": "choice",
+        "name": "c2",
+        "parent": "Cycles.",
+        "x": 326,
+        "y": 41,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "cs",
+        "type": "choice",
+        "name": "cs",
+        "parent": "Cycles.",
+        "x": 386,
+        "y": 41,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "choice1*",
+        "type": "choice",
+        "name": "choice1*",
+        "parent": "Cycles.",
+        "x": 446,
+        "y": 41,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "junction1*",
+        "type": "junction",
+        "name": "junction1*",
+        "parent": "Cycles.",
+        "x": 513,
+        "y": 48,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "j1",
+        "type": "junction",
+        "name": "j1",
+        "parent": "Cycles.",
+        "x": 573,
+        "y": 48,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "j2",
+        "type": "junction",
+        "name": "j2",
+        "parent": "Cycles.",
+        "x": 633,
+        "y": 48,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "j3",
+        "type": "junction",
+        "name": "j3",
+        "parent": "Cycles.",
+        "x": 693,
+        "y": 48,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "j4",
+        "type": "junction",
+        "name": "j4",
+        "parent": "Cycles.",
+        "x": 753,
+        "y": 48,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "k1",
+        "type": "junction",
+        "name": "k1",
+        "parent": "Cycles.",
+        "x": 813,
+        "y": 48,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "k2",
+        "type": "junction",
+        "name": "k2",
+        "parent": "Cycles.",
+        "x": 873,
+        "y": 48,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "S",
+        "type": "state",
+        "name": "S",
+        "parent": "Cycles.",
+        "x": 920,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": [
+          {
+            "id": "S.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "S.deepHistory",
+        "type": "deepHistory",
+        "name": "",
+        "parent": "S.",
+        "x": 1047,
+        "y": 42,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      },
+      {
+        "id": "S1",
+        "type": "state",
+        "name": "S1",
+        "parent": "S.",
+        "x": 980,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "hc",
+        "type": "choice",
+        "name": "hc",
+        "parent": "S.",
+        "x": 1106,
+        "y": 41,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "E",
+        "type": "state",
+        "name": "E",
+        "parent": "Cycles.",
+        "x": 1160,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": [
+          {
+            "id": "E.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "E.ep",
+        "type": "entryPoint",
+        "name": "ep",
+        "parent": "E",
+        "x": 1292,
+        "y": 47,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "E1",
+        "type": "state",
+        "name": "E1",
+        "parent": "E.",
+        "x": 1220,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "ec",
+        "type": "choice",
+        "name": "ec",
+        "parent": "E.",
+        "x": 1346,
+        "y": 41,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "X",
+        "type": "state",
+        "name": "X",
+        "parent": "Cycles.",
+        "x": 1400,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": [
+          {
+            "id": "X.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "X.xp",
+        "type": "exitPoint",
+        "name": "xp",
+        "parent": "X",
+        "x": 1532,
+        "y": 47,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "X1",
+        "type": "state",
+        "name": "X1",
+        "parent": "X.",
+        "x": 1460,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "xj",
+        "type": "junction",
+        "name": "xj",
+        "parent": "Cycles.",
+        "x": 1593,
+        "y": 48,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "P",
+        "type": "state",
+        "name": "P",
+        "parent": "Cycles.",
+        "x": 1640,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": [
+          {
+            "id": "region1*",
+            "name": "region1*",
+            "size": 10
+          },
+          {
+            "id": "region2*",
+            "name": "region2*",
+            "size": 10
+          }
+        ],
+        "regionLayout": "vertical"
+      },
+      {
+        "id": "P1",
+        "type": "state",
+        "name": "P1",
+        "parent": "region1*",
+        "x": 1700,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "P2",
+        "type": "state",
+        "name": "P2",
+        "parent": "region2*",
+        "x": 1760,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "f",
+        "type": "fork",
+        "name": "f",
+        "parent": "Cycles.",
+        "x": 1820,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "fc",
+        "type": "choice",
+        "name": "fc",
+        "parent": "Cycles.",
+        "x": 1886,
+        "y": 41,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "mj",
+        "type": "junction",
+        "name": "mj",
+        "parent": "Cycles.",
+        "x": 2013,
+        "y": 48,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "jn",
+        "type": "join",
+        "name": "jn",
+        "parent": "Cycles.",
+        "x": 2060,
+        "y": 40,
+        "w": 40,
+        "h": 30,
+        "regions": []
+      },
+      {
+        "id": "jc",
+        "type": "choice",
+        "name": "jc",
+        "parent": "Cycles.",
+        "x": 2126,
+        "y": 41,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "d1",
+        "type": "junction",
+        "name": "d1",
+        "parent": "Cycles.",
+        "x": 40,
+        "y": 40,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "d2",
+        "type": "choice",
+        "name": "d2",
+        "parent": "Cycles.",
+        "x": 2246,
+        "y": 41,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "Cycles.mep",
+        "type": "entryPoint",
+        "name": "mep",
+        "parent": "Cycles.",
+        "x": 1952,
+        "y": 47,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Cycles.initial#1",
+        "source": "Cycles.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "c1",
+        "kind": "external",
+        "triggers": [
+          "e1"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#2",
+        "source": "A",
+        "target": "cs",
+        "kind": "external",
+        "triggers": [
+          "e2"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#3",
+        "source": "A",
+        "target": "junction1*",
+        "kind": "external",
+        "triggers": [
+          "e3"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#4",
+        "source": "A",
+        "target": "j1",
+        "kind": "external",
+        "triggers": [
+          "e4"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#5",
+        "source": "A",
+        "target": "k1",
+        "kind": "external",
+        "triggers": [
+          "e5"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#6",
+        "source": "A",
+        "target": "S.deepHistory",
+        "kind": "external",
+        "triggers": [
+          "e6"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#7",
+        "source": "A",
+        "target": "E.ep",
+        "kind": "external",
+        "triggers": [
+          "e7"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#8",
+        "source": "A",
+        "target": "X",
+        "kind": "external",
+        "triggers": [
+          "e8"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#9",
+        "source": "A",
+        "target": "fc",
+        "kind": "external",
+        "triggers": [
+          "e10"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#10",
+        "source": "A",
+        "target": "d1",
+        "kind": "external",
+        "triggers": [
+          "e11"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "c1#1",
+        "source": "c1",
+        "target": "c2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "c1#2",
+        "source": "c1",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "c2#1",
+        "source": "c2",
+        "target": "c1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "h()",
+        "action": ""
+      },
+      {
+        "id": "c2#2",
+        "source": "c2",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "cs#1",
+        "source": "cs",
+        "target": "cs",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "cs#2",
+        "source": "cs",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "cs#3",
+        "source": "cs",
+        "target": "cs",
+        "kind": "internal",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "choice1*#1",
+        "source": "choice1*",
+        "target": "junction1*",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "choice1*#2",
+        "source": "choice1*",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "junction1*#1",
+        "source": "junction1*",
+        "target": "choice1*",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "j1#1",
+        "source": "j1",
+        "target": "j2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "a()",
+        "action": ""
+      },
+      {
+        "id": "j1#2",
+        "source": "j1",
+        "target": "j3",
+        "kind": "external",
+        "triggers": [],
+        "guard": "b()",
+        "action": ""
+      },
+      {
+        "id": "j1#3",
+        "source": "j1",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "j2#1",
+        "source": "j2",
+        "target": "j4",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "j3#1",
+        "source": "j3",
+        "target": "j1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "j4#1",
+        "source": "j4",
+        "target": "j1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "k1#1",
+        "source": "k1",
+        "target": "k1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "a()",
+        "action": ""
+      },
+      {
+        "id": "k1#2",
+        "source": "k1",
+        "target": "k2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "k2#1",
+        "source": "k2",
+        "target": "k2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "a()",
+        "action": ""
+      },
+      {
+        "id": "k2#2",
+        "source": "k2",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "S.deepHistory#1",
+        "source": "S.deepHistory",
+        "target": "hc",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "hc#1",
+        "source": "hc",
+        "target": "S.deepHistory",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "hc#2",
+        "source": "hc",
+        "target": "S1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "E.ep#1",
+        "source": "E.ep",
+        "target": "ec",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "ec#1",
+        "source": "ec",
+        "target": "E1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "ec#2",
+        "source": "ec",
+        "target": "E.ep",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "X.xp#1",
+        "source": "X.xp",
+        "target": "xj",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "X1#1",
+        "source": "X1",
+        "target": "X.xp",
+        "kind": "external",
+        "triggers": [
+          "e9"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "xj#1",
+        "source": "xj",
+        "target": "X.xp",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "xj#2",
+        "source": "xj",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "P1#1",
+        "source": "P1",
+        "target": "jn",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "P2#1",
+        "source": "P2",
+        "target": "jn",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "f#1",
+        "source": "f",
+        "target": "P1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "f#2",
+        "source": "f",
+        "target": "fc",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "fc#1",
+        "source": "fc",
+        "target": "f",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "fc#2",
+        "source": "fc",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "mj#1",
+        "source": "mj",
+        "target": "Cycles.mep",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "mj#2",
+        "source": "mj",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "jn#1",
+        "source": "jn",
+        "target": "jc",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "jc#1",
+        "source": "jc",
+        "target": "jn",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "jc#2",
+        "source": "jc",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "d1#1",
+        "source": "d1",
+        "target": "d1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "d1#2",
+        "source": "d1",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "d2#1",
+        "source": "d2",
+        "target": "d1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "d2#2",
+        "source": "d2",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "Cycles.mep#1",
+        "source": "Cycles.mep",
+        "target": "mj",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

@@ -6,7 +6,7 @@ Visual Studio 2022+ extension (VSIX): a visual editor for UML 2.5.1 state machin
 
 ```sh
 dotnet build                 # all projects; VSIX packaging (VSSDK, vsct) only on Windows
-dotnet test                  # test/FsmEditor.Core.Tests; GeometryTests compares SvgExport with geometry/, a copy of the VS Code edition's reference SVGs (its test/unit/fixtures/geometry)
+dotnet test                  # test/FsmEditor.Core.Tests; GeometryTests compares SvgExport with geometry/, a copy of the VS Code edition's reference SVGs (its test/unit/fixtures/geometry); ClipboardTests copies and reads the clipboard JSON of clipboard/, a copy of its test/unit/fixtures/clipboard; ListingTests checks the Marketplace listing (vsixmanifest limits, VSPackage.resx, the overview's links)
 scripts/fetch-common.sh      # or scripts\fetch-common.ps1: copy fsm-editor-common's sidecar, fsm-cli's templates, schemas/ and api-cases/ (from ../fsm-editor-common + ../fsm-cli, --build to build it first, or unpacked release archives) into src/FsmEditor.Vsix/cli (gitignored); the tests need the sidecar
 ```
 

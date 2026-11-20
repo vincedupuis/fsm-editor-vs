@@ -1,0 +1,92 @@
+{
+  "machine": "infinite",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Infinite.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Infinite.",
+        "x": 20,
+        "y": 40,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "Infinite.",
+        "x": 80,
+        "y": 20,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "B",
+        "type": "state",
+        "name": "B",
+        "parent": "Infinite.",
+        "x": 400,
+        "y": 20,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Infinite.initial#1",
+        "source": "Infinite.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "B",
+        "kind": "external",
+        "triggers": [
+          "go"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#2",
+        "source": "A",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "tick"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 250,
+            "y": -10
+          }
+        ]
+      },
+      {
+        "id": "B#1",
+        "source": "B",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "back"
+        ],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

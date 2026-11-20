@@ -1,0 +1,170 @@
+{
+  "machine": "Payment",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Payment.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Payment.",
+        "x": 40,
+        "y": 80,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Authorizing",
+        "type": "state",
+        "name": "Authorizing",
+        "parent": "Payment.",
+        "x": 120,
+        "y": 60,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "entry": "requestAuthorization()"
+      },
+      {
+        "id": "Captured",
+        "type": "state",
+        "name": "Captured",
+        "parent": "Payment.",
+        "x": 320,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "entry": "capture()"
+      },
+      {
+        "id": "Declined",
+        "type": "state",
+        "name": "Declined",
+        "parent": "Payment.",
+        "x": 320,
+        "y": 160,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "final1*",
+        "type": "final",
+        "name": "final1*",
+        "parent": "Payment.",
+        "x": 540,
+        "y": 57,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      },
+      {
+        "id": "Payment.retry",
+        "type": "entryPoint",
+        "name": "retry",
+        "parent": "Payment.",
+        "x": 42,
+        "y": 182,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "Payment.failed",
+        "type": "exitPoint",
+        "name": "failed",
+        "parent": "Payment.",
+        "x": 542,
+        "y": 182,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "Payment.cancelled",
+        "type": "exitPoint",
+        "name": "cancelled",
+        "parent": "Payment.",
+        "x": 182,
+        "y": 262,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Payment.initial#1",
+        "source": "Payment.initial",
+        "target": "Authorizing",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Authorizing#1",
+        "source": "Authorizing",
+        "target": "Captured",
+        "kind": "external",
+        "triggers": [
+          "approved"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Authorizing#2",
+        "source": "Authorizing",
+        "target": "Declined",
+        "kind": "external",
+        "triggers": [
+          "declined"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Authorizing#3",
+        "source": "Authorizing",
+        "target": "Payment.cancelled",
+        "kind": "external",
+        "triggers": [
+          "cancel"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Captured#1",
+        "source": "Captured",
+        "target": "final1*",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Declined#1",
+        "source": "Declined",
+        "target": "Payment.failed",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Payment.retry#1",
+        "source": "Payment.retry",
+        "target": "Authorizing",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": "resetAttempt()"
+      }
+    ]
+  }
+}

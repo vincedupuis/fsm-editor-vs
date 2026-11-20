@@ -1,0 +1,162 @@
+{
+  "machine": "colors",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Colors.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Colors.",
+        "x": 40,
+        "y": 60,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "comment1*",
+        "type": "comment",
+        "name": "comment1*",
+        "parent": "Colors.",
+        "x": 120,
+        "y": 200,
+        "w": 160,
+        "h": 64,
+        "regions": [],
+        "text": "Colored note",
+        "anchors": [
+          "A"
+        ],
+        "color": "#0090ff"
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "Colors.",
+        "x": 120,
+        "y": 40,
+        "w": 180,
+        "h": 100,
+        "regions": [],
+        "entry": "start()",
+        "exit": "stop()",
+        "doActivity": "poll()",
+        "deferrable": [
+          "evD"
+        ],
+        "invariant": "isOk()",
+        "color": "#e5484d",
+        "itemColors": {
+          "background": "#12a594",
+          "deferrable": "#a18072",
+          "doActivity": "#30a46c",
+          "entry": "#0090ff",
+          "exit": "#8e4ec6",
+          "invariant": "#d6409f"
+        }
+      },
+      {
+        "id": "B",
+        "type": "state",
+        "name": "B",
+        "parent": "Colors.",
+        "x": 400,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "itemColors": {
+          "entry": "#f76b15"
+        }
+      },
+      {
+        "id": "choice1*",
+        "type": "choice",
+        "name": "choice1*",
+        "parent": "Colors.",
+        "x": 456,
+        "y": 160,
+        "w": 28,
+        "h": 28,
+        "regions": [],
+        "color": "#8e4ec6"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Colors.initial#1",
+        "source": "Colors.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "B",
+        "kind": "external",
+        "triggers": [
+          "go"
+        ],
+        "guard": "canGo()",
+        "action": "log()",
+        "color": "#12a594",
+        "itemColors": {
+          "action": "#3e63dd",
+          "guard": "#f76b15",
+          "triggers": "#e5484d"
+        }
+      },
+      {
+        "id": "A#2",
+        "source": "A",
+        "target": "A",
+        "kind": "internal",
+        "triggers": [
+          "tick"
+        ],
+        "guard": "",
+        "action": "count()",
+        "color": "#d6409f"
+      },
+      {
+        "id": "B#1",
+        "source": "B",
+        "target": "choice1*",
+        "kind": "external",
+        "triggers": [
+          "check"
+        ],
+        "guard": "",
+        "action": "",
+        "itemColors": {
+          "triggers": "#5b5bd6"
+        }
+      },
+      {
+        "id": "choice1*#1",
+        "source": "choice1*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": "",
+        "color": "#8b8d98"
+      },
+      {
+        "id": "choice1*#2",
+        "source": "choice1*",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "isB()",
+        "action": ""
+      }
+    ]
+  }
+}

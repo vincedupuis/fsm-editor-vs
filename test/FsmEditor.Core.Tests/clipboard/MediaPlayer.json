@@ -1,0 +1,550 @@
+{
+  "machine": "MediaPlayer",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "MediaPlayer.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "MediaPlayer.",
+        "x": 40,
+        "y": 100,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "comment1*",
+        "type": "comment",
+        "name": "comment1*",
+        "parent": "MediaPlayer.",
+        "x": 30,
+        "y": 480,
+        "w": 210,
+        "h": 64,
+        "regions": [],
+        "text": "Deep history restores the\nlast active playback substates\nafter a fault is reset.",
+        "anchors": [
+          "On.deepHistory"
+        ]
+      },
+      {
+        "id": "Off",
+        "type": "state",
+        "name": "Off",
+        "parent": "MediaPlayer.",
+        "x": 100,
+        "y": 80,
+        "w": 150,
+        "h": 60,
+        "regions": [],
+        "entry": "powerDown()"
+      },
+      {
+        "id": "final1*",
+        "type": "final",
+        "name": "final1*",
+        "parent": "MediaPlayer.",
+        "x": 162,
+        "y": 260,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      },
+      {
+        "id": "On",
+        "type": "state",
+        "name": "On",
+        "parent": "MediaPlayer.",
+        "x": 340,
+        "y": 20,
+        "w": 780,
+        "h": 500,
+        "regions": [
+          {
+            "id": "On.",
+            "name": ""
+          }
+        ],
+        "entry": "ampOn()",
+        "exit": "ampOff()"
+      },
+      {
+        "id": "On.fault",
+        "type": "exitPoint",
+        "name": "fault",
+        "parent": "On",
+        "x": 467,
+        "y": 512,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "On.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "On.",
+        "x": 355,
+        "y": 138,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "On.deepHistory",
+        "type": "deepHistory",
+        "name": "",
+        "parent": "On.",
+        "x": 355,
+        "y": 400,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      },
+      {
+        "id": "Stopped",
+        "type": "state",
+        "name": "Stopped",
+        "parent": "On.",
+        "x": 400,
+        "y": 120,
+        "w": 150,
+        "h": 56,
+        "regions": [],
+        "entry": "rewind()"
+      },
+      {
+        "id": "Paused",
+        "type": "state",
+        "name": "Paused",
+        "parent": "On.",
+        "x": 600,
+        "y": 360,
+        "w": 200,
+        "h": 70,
+        "regions": [],
+        "doActivity": "blinkLed()"
+      },
+      {
+        "id": "choice1*",
+        "type": "choice",
+        "name": "choice1*",
+        "parent": "On.",
+        "x": 461,
+        "y": 300,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "Playing",
+        "type": "state",
+        "name": "Playing",
+        "parent": "On.",
+        "x": 760,
+        "y": 96,
+        "w": 330,
+        "h": 230,
+        "regions": [
+          {
+            "id": "audio",
+            "name": "audio",
+            "size": 103
+          },
+          {
+            "id": "video",
+            "name": "video",
+            "size": 103
+          }
+        ],
+        "regionLayout": "vertical"
+      },
+      {
+        "id": "audio.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "audio",
+        "x": 780,
+        "y": 160,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Stereo",
+        "type": "state",
+        "name": "Stereo",
+        "parent": "audio",
+        "x": 825,
+        "y": 145,
+        "w": 100,
+        "h": 50,
+        "regions": []
+      },
+      {
+        "id": "Mono",
+        "type": "state",
+        "name": "Mono",
+        "parent": "audio",
+        "x": 965,
+        "y": 145,
+        "w": 100,
+        "h": 50,
+        "regions": []
+      },
+      {
+        "id": "video.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "video",
+        "x": 780,
+        "y": 265,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "HD",
+        "type": "state",
+        "name": "HD",
+        "parent": "video",
+        "x": 825,
+        "y": 250,
+        "w": 100,
+        "h": 50,
+        "regions": []
+      },
+      {
+        "id": "SD",
+        "type": "state",
+        "name": "SD",
+        "parent": "video",
+        "x": 965,
+        "y": 250,
+        "w": 100,
+        "h": 50,
+        "regions": []
+      },
+      {
+        "id": "Fault",
+        "type": "state",
+        "name": "Fault",
+        "parent": "MediaPlayer.",
+        "x": 400,
+        "y": 580,
+        "w": 150,
+        "h": 60,
+        "regions": [],
+        "entry": "showError()"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "MediaPlayer.initial#1",
+        "source": "MediaPlayer.initial",
+        "target": "Off",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Off#1",
+        "source": "Off",
+        "target": "On",
+        "kind": "external",
+        "triggers": [
+          "powerOn"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 300,
+            "y": 95
+          }
+        ]
+      },
+      {
+        "id": "Off#2",
+        "source": "Off",
+        "target": "final1*",
+        "kind": "external",
+        "triggers": [
+          "unplug"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "On#1",
+        "source": "On",
+        "target": "Off",
+        "kind": "external",
+        "triggers": [
+          "powerOff"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 300,
+            "y": 125
+          }
+        ]
+      },
+      {
+        "id": "On.fault#1",
+        "source": "On.fault",
+        "target": "Fault",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "On.initial#1",
+        "source": "On.initial",
+        "target": "Stopped",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "On.deepHistory#1",
+        "source": "On.deepHistory",
+        "target": "Stopped",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 368,
+            "y": 165
+          }
+        ]
+      },
+      {
+        "id": "Stopped#1",
+        "source": "Stopped",
+        "target": "Playing",
+        "kind": "external",
+        "triggers": [
+          "play"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Stopped#2",
+        "source": "Stopped",
+        "target": "choice1*",
+        "kind": "external",
+        "triggers": [
+          "eject"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Paused#1",
+        "source": "Paused",
+        "target": "Playing",
+        "kind": "external",
+        "triggers": [
+          "play"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Paused#2",
+        "source": "Paused",
+        "target": "Stopped",
+        "kind": "external",
+        "triggers": [
+          "stop"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Paused#3",
+        "source": "Paused",
+        "target": "Paused",
+        "kind": "internal",
+        "triggers": [
+          "volumeChanged"
+        ],
+        "guard": "",
+        "action": "updateVolume()"
+      },
+      {
+        "id": "Paused#4",
+        "source": "Paused",
+        "target": "Stopped",
+        "kind": "external",
+        "triggers": [
+          "after(5m)"
+        ],
+        "guard": "",
+        "action": "saveBookmark()",
+        "points": [
+          {
+            "x": 700,
+            "y": 250
+          }
+        ]
+      },
+      {
+        "id": "choice1*#1",
+        "source": "choice1*",
+        "target": "Stopped",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": "openTray()",
+        "points": [
+          {
+            "x": 430,
+            "y": 314
+          },
+          {
+            "x": 430,
+            "y": 190
+          }
+        ]
+      },
+      {
+        "id": "choice1*#2",
+        "source": "choice1*",
+        "target": "On.fault",
+        "kind": "external",
+        "triggers": [],
+        "guard": "isTrayJammed()",
+        "action": "",
+        "labelOffset": {
+          "x": 98,
+          "y": 0
+        }
+      },
+      {
+        "id": "Playing#1",
+        "source": "Playing",
+        "target": "Paused",
+        "kind": "external",
+        "triggers": [
+          "pause"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 870,
+            "y": 380
+          }
+        ]
+      },
+      {
+        "id": "audio.initial#1",
+        "source": "audio.initial",
+        "target": "Stereo",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Stereo#1",
+        "source": "Stereo",
+        "target": "Mono",
+        "kind": "external",
+        "triggers": [
+          "toggleAudio"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Mono#1",
+        "source": "Mono",
+        "target": "Stereo",
+        "kind": "external",
+        "triggers": [
+          "toggleAudio"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 945,
+            "y": 210
+          }
+        ]
+      },
+      {
+        "id": "video.initial#1",
+        "source": "video.initial",
+        "target": "HD",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "HD#1",
+        "source": "HD",
+        "target": "SD",
+        "kind": "external",
+        "triggers": [
+          "lowBandwidth"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "SD#1",
+        "source": "SD",
+        "target": "HD",
+        "kind": "external",
+        "triggers": [
+          "highBandwidth"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 945,
+            "y": 313
+          }
+        ]
+      },
+      {
+        "id": "Fault#1",
+        "source": "Fault",
+        "target": "On.deepHistory",
+        "kind": "external",
+        "triggers": [
+          "reset"
+        ],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 300,
+            "y": 610
+          },
+          {
+            "x": 300,
+            "y": 413
+          }
+        ]
+      }
+    ]
+  }
+}

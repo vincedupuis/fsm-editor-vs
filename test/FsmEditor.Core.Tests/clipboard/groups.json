@@ -1,0 +1,154 @@
+{
+  "machine": "groups",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Groups.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Groups.",
+        "x": 40,
+        "y": 60,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "comment1*",
+        "type": "comment",
+        "name": "comment1*",
+        "parent": "Groups.",
+        "x": 100,
+        "y": 260,
+        "w": 160,
+        "h": 64,
+        "regions": [],
+        "text": "Note",
+        "anchors": []
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "Groups.",
+        "x": 100,
+        "y": 40,
+        "w": 120,
+        "h": 50,
+        "regions": [],
+        "group": "g1"
+      },
+      {
+        "id": "B",
+        "type": "state",
+        "name": "B",
+        "parent": "Groups.",
+        "x": 260,
+        "y": 40,
+        "w": 120,
+        "h": 50,
+        "regions": [],
+        "group": "g1"
+      },
+      {
+        "id": "C",
+        "type": "state",
+        "name": "C",
+        "parent": "Groups.",
+        "x": 100,
+        "y": 140,
+        "w": 120,
+        "h": 50,
+        "regions": [],
+        "group": "g3"
+      },
+      {
+        "id": "choice1*",
+        "type": "choice",
+        "name": "choice1*",
+        "parent": "Groups.",
+        "x": 300,
+        "y": 150,
+        "w": 28,
+        "h": 28,
+        "regions": [],
+        "group": "g3"
+      },
+      {
+        "id": "P",
+        "type": "state",
+        "name": "P",
+        "parent": "Groups.",
+        "x": 420,
+        "y": 40,
+        "w": 360,
+        "h": 260,
+        "regions": [
+          {
+            "id": "P.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "P.in",
+        "type": "entryPoint",
+        "name": "in",
+        "parent": "P",
+        "x": 412,
+        "y": 150,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "D",
+        "type": "state",
+        "name": "D",
+        "parent": "P.",
+        "x": 440,
+        "y": 100,
+        "w": 120,
+        "h": 50,
+        "regions": [],
+        "group": "g2"
+      },
+      {
+        "id": "E",
+        "type": "state",
+        "name": "E",
+        "parent": "P.",
+        "x": 600,
+        "y": 100,
+        "w": 120,
+        "h": 50,
+        "regions": [],
+        "group": "g2"
+      },
+      {
+        "id": "F",
+        "type": "state",
+        "name": "F",
+        "parent": "P.",
+        "x": 440,
+        "y": 200,
+        "w": 120,
+        "h": 50,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Groups.initial#1",
+        "source": "Groups.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

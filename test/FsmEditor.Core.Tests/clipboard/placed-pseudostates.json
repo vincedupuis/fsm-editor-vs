@@ -1,0 +1,504 @@
+{
+  "machine": "placed-pseudostates",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Pseudostates.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Pseudostates.",
+        "x": 40,
+        "y": 40,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Pseudostates.history",
+        "type": "shallowHistory",
+        "name": "",
+        "parent": "Pseudostates.",
+        "x": 100,
+        "y": 40,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "Pseudostates.",
+        "x": 166,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "fork1*",
+        "type": "fork",
+        "name": "fork1*",
+        "parent": "Pseudostates.",
+        "x": 346,
+        "y": 40,
+        "w": 90,
+        "h": 8,
+        "regions": []
+      },
+      {
+        "id": "join1*",
+        "type": "join",
+        "name": "join1*",
+        "parent": "Pseudostates.",
+        "x": 476,
+        "y": 40,
+        "w": 90,
+        "h": 8,
+        "regions": []
+      },
+      {
+        "id": "choice1*",
+        "type": "choice",
+        "name": "choice1*",
+        "parent": "Pseudostates.",
+        "x": 606,
+        "y": 40,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "choice2*",
+        "type": "choice",
+        "name": "choice2*",
+        "parent": "Pseudostates.",
+        "x": 674,
+        "y": 40,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "junction1*",
+        "type": "junction",
+        "name": "junction1*",
+        "parent": "Pseudostates.",
+        "x": 742,
+        "y": 40,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "O",
+        "type": "state",
+        "name": "O",
+        "parent": "Pseudostates.",
+        "x": 796,
+        "y": 40,
+        "w": 250,
+        "h": 210,
+        "regions": [
+          {
+            "id": "r1",
+            "name": "r1"
+          },
+          {
+            "id": "r2",
+            "name": "r2"
+          }
+        ]
+      },
+      {
+        "id": "r1.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "r1",
+        "x": 826,
+        "y": 90,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "X",
+        "type": "state",
+        "name": "X",
+        "parent": "r1",
+        "x": 886,
+        "y": 90,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "r2.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "r2",
+        "x": 826,
+        "y": 170,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Y",
+        "type": "state",
+        "name": "Y",
+        "parent": "r2",
+        "x": 886,
+        "y": 170,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "final1*",
+        "type": "final",
+        "name": "final1*",
+        "parent": "Pseudostates.",
+        "x": 1086,
+        "y": 40,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      },
+      {
+        "id": "terminate1*",
+        "type": "terminate",
+        "name": "terminate1*",
+        "parent": "Pseudostates.",
+        "x": 1152,
+        "y": 40,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "fork2*",
+        "type": "fork",
+        "name": "fork2*",
+        "parent": "Pseudostates.",
+        "x": 1212,
+        "y": 40,
+        "w": 90,
+        "h": 8,
+        "regions": []
+      },
+      {
+        "id": "Two",
+        "type": "state",
+        "name": "Two",
+        "parent": "Pseudostates.",
+        "x": 1342,
+        "y": 40,
+        "w": 560,
+        "h": 130,
+        "regions": [
+          {
+            "id": "Two.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "Two.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Two.",
+        "x": 1372,
+        "y": 90,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "P",
+        "type": "state",
+        "name": "P",
+        "parent": "Two.",
+        "x": 1432,
+        "y": 90,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "Q",
+        "type": "state",
+        "name": "Q",
+        "parent": "Two.",
+        "x": 1612,
+        "y": 90,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "join2*",
+        "type": "join",
+        "name": "join2*",
+        "parent": "Two.",
+        "x": 1792,
+        "y": 90,
+        "w": 90,
+        "h": 8,
+        "regions": []
+      },
+      {
+        "id": "fork3*",
+        "type": "fork",
+        "name": "fork3*",
+        "parent": "Pseudostates.",
+        "x": 1942,
+        "y": 40,
+        "w": 90,
+        "h": 8,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Pseudostates.initial#1",
+        "source": "Pseudostates.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Pseudostates.history#1",
+        "source": "Pseudostates.history",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "fork1*",
+        "kind": "external",
+        "triggers": [
+          "split"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#2",
+        "source": "A",
+        "target": "choice1*",
+        "kind": "external",
+        "triggers": [
+          "pick"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#3",
+        "source": "A",
+        "target": "junction1*",
+        "kind": "external",
+        "triggers": [
+          "j"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "fork1*#1",
+        "source": "fork1*",
+        "target": "X",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "fork1*#2",
+        "source": "fork1*",
+        "target": "Y",
+        "kind": "external",
+        "triggers": [
+          "t"
+        ],
+        "guard": "g()",
+        "action": ""
+      },
+      {
+        "id": "join1*#1",
+        "source": "join1*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "join1*#2",
+        "source": "join1*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "choice1*#1",
+        "source": "choice1*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "a()",
+        "action": ""
+      },
+      {
+        "id": "choice1*#2",
+        "source": "choice1*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "junction1*#1",
+        "source": "junction1*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "junction1*#2",
+        "source": "junction1*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "b()",
+        "action": ""
+      },
+      {
+        "id": "O#1",
+        "source": "O",
+        "target": "join1*",
+        "kind": "external",
+        "triggers": [
+          "e"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "r1.initial#1",
+        "source": "r1.initial",
+        "target": "X",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "r2.initial#1",
+        "source": "r2.initial",
+        "target": "Y",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Y#1",
+        "source": "Y",
+        "target": "join1*",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "fork2*#1",
+        "source": "fork2*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Two#1",
+        "source": "Two",
+        "target": "fork3*",
+        "kind": "external",
+        "triggers": [
+          "both"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Two.initial#1",
+        "source": "Two.initial",
+        "target": "P",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "P#1",
+        "source": "P",
+        "target": "join2*",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Q#1",
+        "source": "Q",
+        "target": "join2*",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "join2*#1",
+        "source": "join2*",
+        "target": "Two",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "fork3*#1",
+        "source": "fork3*",
+        "target": "P",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "fork3*#2",
+        "source": "fork3*",
+        "target": "Q",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

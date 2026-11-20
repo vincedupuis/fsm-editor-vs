@@ -1,0 +1,112 @@
+{
+  "machine": "protocol",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Door.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Door.",
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Open",
+        "type": "state",
+        "name": "Open",
+        "parent": "Door.",
+        "x": 0,
+        "y": 0,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "entry": "light()",
+        "stereotype": "Critical"
+      },
+      {
+        "id": "Closed",
+        "type": "state",
+        "name": "Closed",
+        "parent": "Door.",
+        "x": 300,
+        "y": 0,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "invariant": "!isOpen() && (isShut() || (isLocked()))",
+        "stereotype": "Critical"
+      },
+      {
+        "id": "Locked",
+        "type": "state",
+        "name": "Locked",
+        "parent": "Door.",
+        "x": 300,
+        "y": 200,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "deferrable": [
+          "knock"
+        ],
+        "stereotype": "Safe"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Door.initial#1",
+        "source": "Door.initial",
+        "target": "Open",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Open#1",
+        "source": "Open",
+        "target": "Closed",
+        "kind": "external",
+        "triggers": [
+          "close"
+        ],
+        "guard": "",
+        "action": "",
+        "precondition": "isClear()",
+        "postcondition": "isShut()"
+      },
+      {
+        "id": "Closed#1",
+        "source": "Closed",
+        "target": "Open",
+        "kind": "external",
+        "triggers": [
+          "open"
+        ],
+        "guard": "",
+        "action": "e()"
+      },
+      {
+        "id": "Closed#2",
+        "source": "Closed",
+        "target": "Locked",
+        "kind": "external",
+        "triggers": [
+          "lock",
+          "after(1.5s)"
+        ],
+        "guard": "",
+        "action": "",
+        "labelOffset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    ]
+  }
+}

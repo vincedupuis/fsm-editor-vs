@@ -1,0 +1,217 @@
+{
+  "machine": "placed-transitions",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Transitions.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Transitions.",
+        "x": 40,
+        "y": 40,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "Transitions.",
+        "x": 100,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "B",
+        "type": "state",
+        "name": "B",
+        "parent": "Transitions.",
+        "x": 280,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "choice1*",
+        "type": "choice",
+        "name": "choice1*",
+        "parent": "Transitions.",
+        "x": 460,
+        "y": 40,
+        "w": 28,
+        "h": 28,
+        "regions": []
+      },
+      {
+        "id": "C",
+        "type": "state",
+        "name": "C",
+        "parent": "Transitions.",
+        "x": 528,
+        "y": 40,
+        "w": 250,
+        "h": 130,
+        "regions": [
+          {
+            "id": "C.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "C.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "C.",
+        "x": 558,
+        "y": 90,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Inner",
+        "type": "state",
+        "name": "Inner",
+        "parent": "C.",
+        "x": 618,
+        "y": 90,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Transitions.initial#1",
+        "source": "Transitions.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#2",
+        "source": "A",
+        "target": "B",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#3",
+        "source": "A",
+        "target": "A",
+        "kind": "internal",
+        "triggers": [
+          "tick"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#4",
+        "source": "A",
+        "target": "B",
+        "kind": "local",
+        "triggers": [
+          "l"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#5",
+        "source": "A",
+        "target": "B",
+        "kind": "external",
+        "triggers": [
+          "e"
+        ],
+        "guard": "",
+        "action": "",
+        "precondition": "p()",
+        "postcondition": "q()"
+      },
+      {
+        "id": "B#1",
+        "source": "B",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "after(1s)"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "B#2",
+        "source": "B",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "after(2x)"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "choice1*#1",
+        "source": "choice1*",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "after(1s)"
+        ],
+        "guard": "else",
+        "action": ""
+      },
+      {
+        "id": "choice1*#2",
+        "source": "choice1*",
+        "target": "choice1*",
+        "kind": "internal",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "C#2",
+        "source": "C",
+        "target": "Inner",
+        "kind": "local",
+        "triggers": [
+          "y"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "C.initial#1",
+        "source": "C.initial",
+        "target": "Inner",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

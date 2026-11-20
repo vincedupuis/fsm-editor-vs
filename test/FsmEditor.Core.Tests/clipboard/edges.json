@@ -1,0 +1,170 @@
+{
+  "machine": "edges",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Edges.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Edges.",
+        "x": -5,
+        "y": -5,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "comment1*",
+        "type": "comment",
+        "name": "comment1*",
+        "parent": "Edges.",
+        "x": 540,
+        "y": 40,
+        "w": 160,
+        "h": 64,
+        "regions": [],
+        "text": "  indented\nnote\n\n",
+        "anchors": [
+          "B"
+        ]
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "Edges.",
+        "x": 140,
+        "y": 40,
+        "w": 120,
+        "h": 50,
+        "regions": []
+      },
+      {
+        "id": "B",
+        "type": "state",
+        "name": "B",
+        "parent": "Edges.",
+        "x": 340,
+        "y": 40,
+        "w": 120,
+        "h": 50,
+        "regions": []
+      },
+      {
+        "id": "C",
+        "type": "state",
+        "name": "C",
+        "parent": "Edges.",
+        "x": 340,
+        "y": 160,
+        "w": 120,
+        "h": 50,
+        "regions": []
+      },
+      {
+        "id": "D",
+        "type": "state",
+        "name": "D",
+        "parent": "Edges.",
+        "x": 140,
+        "y": 280,
+        "w": 120,
+        "h": 50,
+        "regions": []
+      },
+      {
+        "id": "E",
+        "type": "state",
+        "name": "E",
+        "parent": "Edges.",
+        "x": 340,
+        "y": 280,
+        "w": 120,
+        "h": 50,
+        "regions": []
+      },
+      {
+        "id": "F",
+        "type": "state",
+        "name": "F",
+        "parent": "Edges.",
+        "x": 540,
+        "y": 280,
+        "w": 120,
+        "h": 50,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Edges.initial#1",
+        "source": "Edges.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "B",
+        "kind": "external",
+        "triggers": [
+          "after(1s)"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "B#1",
+        "source": "B",
+        "target": "A",
+        "kind": "external",
+        "triggers": [
+          "after_1s_"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "B#2",
+        "source": "B",
+        "target": "C",
+        "kind": "external",
+        "triggers": [],
+        "guard": "ready()",
+        "action": ""
+      },
+      {
+        "id": "B#3",
+        "source": "B",
+        "target": "D",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "D#1",
+        "source": "D",
+        "target": "E",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "D#2",
+        "source": "D",
+        "target": "F",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

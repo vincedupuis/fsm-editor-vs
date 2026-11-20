@@ -24,6 +24,8 @@
     <None Include="..\..\src\FsmEditor.Vsix\cli\api-cases\**" LinkBase="api-cases" CopyToOutputDirectory="PreserveNewest" />
     <!-- The VS Code edition's geometry fixtures and their reference SVGs (its test/unit/fixtures/geometry). -->
     <None Update="geometry\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The VS Code edition's clipboard fixtures (its test/unit/fixtures/clipboard): the JSON it copies for selections of the geometry fixtures. -->
+    <None Update="clipboard\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\*.log" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\FsmEditor.Vsix\ItemTemplates\StateMachine\StateMachine.fsm" Link="templates\StateMachine.fsm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\FsmEditor.Vsix\ItemTemplates\StateMachine\StateMachine.fsm.layout" Link="templates\StateMachine.fsm.layout" CopyToOutputDirectory="PreserveNewest" />

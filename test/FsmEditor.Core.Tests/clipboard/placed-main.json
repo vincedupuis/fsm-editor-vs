@@ -1,0 +1,284 @@
+{
+  "machine": "placed-main",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Main.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Main.",
+        "x": 40,
+        "y": 40,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "Main.",
+        "x": 100,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "Run",
+        "type": "state",
+        "name": "Run",
+        "parent": "Main.",
+        "x": 280,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "submachine": "Sub.fsm"
+      },
+      {
+        "id": "Run.again",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Run",
+        "x": 272,
+        "y": 50,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "again",
+        "pointKind": "entry"
+      },
+      {
+        "id": "Run.done",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Run",
+        "x": 412,
+        "y": 74,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "done",
+        "pointKind": "exit"
+      },
+      {
+        "id": "Run.nothere",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Run",
+        "x": 412,
+        "y": 84,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "nothere",
+        "pointKind": "exit"
+      },
+      {
+        "id": "Run.quit",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Run",
+        "x": 272,
+        "y": 84,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "quit",
+        "pointKind": "entry"
+      },
+      {
+        "id": "Run.",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Run",
+        "x": 412,
+        "y": 84,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "",
+        "pointKind": "exit"
+      },
+      {
+        "id": "Run.done~2",
+        "type": "connectionPointRef",
+        "name": "",
+        "parent": "Run",
+        "x": 412,
+        "y": 84,
+        "w": 16,
+        "h": 16,
+        "regions": [],
+        "ref": "done",
+        "pointKind": "exit"
+      },
+      {
+        "id": "Gone",
+        "type": "state",
+        "name": "Gone",
+        "parent": "Main.",
+        "x": 460,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "submachine": "Missing.fsm"
+      },
+      {
+        "id": "Broken",
+        "type": "state",
+        "name": "Broken",
+        "parent": "Main.",
+        "x": 640,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "submachine": "Broken.fsm"
+      },
+      {
+        "id": "Both",
+        "type": "state",
+        "name": "Both",
+        "parent": "Main.",
+        "x": 820,
+        "y": 40,
+        "w": 250,
+        "h": 130,
+        "regions": [
+          {
+            "id": "Both.",
+            "name": ""
+          }
+        ],
+        "submachine": "Sub.fsm"
+      },
+      {
+        "id": "Both.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Both.",
+        "x": 850,
+        "y": 90,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Z",
+        "type": "state",
+        "name": "Z",
+        "parent": "Both.",
+        "x": 910,
+        "y": 90,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Main.initial#1",
+        "source": "Main.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "Run",
+        "kind": "external",
+        "triggers": [
+          "go"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#2",
+        "source": "A",
+        "target": "Run.again",
+        "kind": "external",
+        "triggers": [
+          "retry"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#3",
+        "source": "A",
+        "target": "Run.done",
+        "kind": "external",
+        "triggers": [
+          "bad"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Run#1",
+        "source": "Run",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Run#2",
+        "source": "Run",
+        "target": "Run.again",
+        "kind": "external",
+        "triggers": [
+          "self"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Run.again#1",
+        "source": "Run.again",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Run.done#1",
+        "source": "Run.done",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Run.nothere#1",
+        "source": "Run.nothere",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Both.initial#1",
+        "source": "Both.initial",
+        "target": "Z",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

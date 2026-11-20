@@ -1,0 +1,117 @@
+{
+  "machine": "placed-regions",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "left.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "left",
+        "x": 40,
+        "y": 40,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "A",
+        "type": "state",
+        "name": "A",
+        "parent": "left",
+        "x": 100,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "O",
+        "type": "state",
+        "name": "O",
+        "parent": "left",
+        "x": 280,
+        "y": 40,
+        "w": 190,
+        "h": 210,
+        "regions": [
+          {
+            "id": "r1",
+            "name": "r1"
+          },
+          {
+            "id": "left~2",
+            "name": "left"
+          }
+        ]
+      },
+      {
+        "id": "X",
+        "type": "state",
+        "name": "X",
+        "parent": "r1",
+        "x": 310,
+        "y": 90,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "Y",
+        "type": "state",
+        "name": "Y",
+        "parent": "left~2",
+        "x": 310,
+        "y": 170,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "region1*.history",
+        "type": "shallowHistory",
+        "name": "",
+        "parent": "region1*",
+        "x": 40,
+        "y": 40,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      },
+      {
+        "id": "B",
+        "type": "state",
+        "name": "B",
+        "parent": "region1*",
+        "x": 106,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "left.initial#1",
+        "source": "left.initial",
+        "target": "A",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "A#1",
+        "source": "A",
+        "target": "O",
+        "kind": "external",
+        "triggers": [
+          "go"
+        ],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

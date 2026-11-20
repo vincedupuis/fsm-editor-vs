@@ -1,0 +1,483 @@
+{
+  "machine": "structure",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Structure.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Structure.",
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Structure.history",
+        "type": "shallowHistory",
+        "name": "",
+        "parent": "Structure.",
+        "x": 0,
+        "y": 0,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      },
+      {
+        "id": "comment1*",
+        "type": "comment",
+        "name": "comment1*",
+        "parent": "Structure.",
+        "x": 0,
+        "y": 0,
+        "w": 140,
+        "h": 60,
+        "regions": [],
+        "text": "hello\nworld",
+        "anchors": [
+          "S"
+        ]
+      },
+      {
+        "id": "S",
+        "type": "state",
+        "name": "S",
+        "parent": "Structure.",
+        "x": 40,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "S.entry1*",
+        "type": "entryPoint",
+        "name": "entry1*",
+        "parent": "S",
+        "x": 220,
+        "y": 40,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "S.entry2*",
+        "type": "entryPoint",
+        "name": "entry2*",
+        "parent": "S",
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "S2",
+        "type": "state",
+        "name": "S2",
+        "parent": "Structure.",
+        "x": 200,
+        "y": 10,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "Comp",
+        "type": "state",
+        "name": "Comp",
+        "parent": "Structure.",
+        "x": 0,
+        "y": 200,
+        "w": 400,
+        "h": 300,
+        "regions": [
+          {
+            "id": "upper",
+            "name": "upper",
+            "size": 200
+          },
+          {
+            "id": "region1*",
+            "name": "region1*",
+            "size": 200
+          }
+        ],
+        "regionLayout": "horizontal"
+      },
+      {
+        "id": "Comp.exit1*",
+        "type": "exitPoint",
+        "name": "exit1*",
+        "parent": "Comp",
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "In1",
+        "type": "state",
+        "name": "In1",
+        "parent": "upper",
+        "x": 10,
+        "y": 250,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "In2",
+        "type": "state",
+        "name": "In2",
+        "parent": "region1*",
+        "x": 210,
+        "y": 250,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "fork1*",
+        "type": "fork",
+        "name": "fork1*",
+        "parent": "Structure.",
+        "x": 500,
+        "y": 0,
+        "w": 90,
+        "h": 8,
+        "regions": []
+      },
+      {
+        "id": "join1*",
+        "type": "join",
+        "name": "join1*",
+        "parent": "Structure.",
+        "x": 500,
+        "y": 100,
+        "w": 90,
+        "h": 8,
+        "regions": []
+      },
+      {
+        "id": "final1*",
+        "type": "final",
+        "name": "final1*",
+        "parent": "Structure.",
+        "x": 600,
+        "y": 300,
+        "w": 26,
+        "h": 26,
+        "regions": []
+      },
+      {
+        "id": "terminate1*",
+        "type": "terminate",
+        "name": "terminate1*",
+        "parent": "Structure.",
+        "x": 700,
+        "y": 300,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "junction1*",
+        "type": "junction",
+        "name": "junction1*",
+        "parent": "Structure.",
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 14,
+        "regions": []
+      },
+      {
+        "id": "Dup",
+        "type": "state",
+        "name": "Dup",
+        "parent": "Structure.",
+        "x": 0,
+        "y": 0,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "Dup.entry1*",
+        "type": "entryPoint",
+        "name": "entry1*",
+        "parent": "Dup",
+        "x": 220,
+        "y": 40,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "Dup.entry2*",
+        "type": "entryPoint",
+        "name": "entry2*",
+        "parent": "Dup",
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "Structure.entry1*",
+        "type": "entryPoint",
+        "name": "entry1*",
+        "parent": "Structure.",
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "Structure.out",
+        "type": "exitPoint",
+        "name": "out",
+        "parent": "Structure.",
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Structure.initial#1",
+        "source": "Structure.initial",
+        "target": "S",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Structure.history#1",
+        "source": "Structure.history",
+        "target": "S",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "S#1",
+        "source": "S",
+        "target": "Comp",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "S#2",
+        "source": "S",
+        "target": "S2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "S#3",
+        "source": "S",
+        "target": "S",
+        "kind": "internal",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "S#4",
+        "source": "S",
+        "target": "S2",
+        "kind": "local",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "S#5",
+        "source": "S",
+        "target": "S",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "S.entry1*#1",
+        "source": "S.entry1*",
+        "target": "S2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "S.entry2*#1",
+        "source": "S.entry2*",
+        "target": "S2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "S2#1",
+        "source": "S2",
+        "target": "S2",
+        "kind": "internal",
+        "triggers": [
+          "tick"
+        ],
+        "guard": "",
+        "action": "count()"
+      },
+      {
+        "id": "Comp#1",
+        "source": "Comp",
+        "target": "In2",
+        "kind": "local",
+        "triggers": [],
+        "guard": "",
+        "action": "",
+        "points": [
+          {
+            "x": 100,
+            "y": 500
+          },
+          {
+            "x": 150.3,
+            "y": 510
+          }
+        ],
+        "labelOffset": {
+          "x": -12.4,
+          "y": 4.9
+        }
+      },
+      {
+        "id": "Comp.exit1*#1",
+        "source": "Comp.exit1*",
+        "target": "In1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "In1#1",
+        "source": "In1",
+        "target": "join1*",
+        "kind": "external",
+        "triggers": [
+          "e"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "fork1*#1",
+        "source": "fork1*",
+        "target": "In1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "x()",
+        "action": ""
+      },
+      {
+        "id": "join1*#1",
+        "source": "join1*",
+        "target": "S",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Dup#1",
+        "source": "Dup",
+        "target": "Comp",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Dup#2",
+        "source": "Dup",
+        "target": "S2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Dup#3",
+        "source": "Dup",
+        "target": "Dup",
+        "kind": "internal",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Dup#4",
+        "source": "Dup",
+        "target": "S2",
+        "kind": "local",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Dup#5",
+        "source": "Dup",
+        "target": "S",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Dup.entry1*#1",
+        "source": "Dup.entry1*",
+        "target": "S2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Dup.entry2*#1",
+        "source": "Dup.entry2*",
+        "target": "S2",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Structure.out#1",
+        "source": "Structure.out",
+        "target": "S",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "machine": "placed-points",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Points.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Points.",
+        "x": 40,
+        "y": 40,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Simple",
+        "type": "state",
+        "name": "Simple",
+        "parent": "Points.",
+        "x": 100,
+        "y": 40,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "Simple.in",
+        "type": "entryPoint",
+        "name": "in",
+        "parent": "Simple",
+        "x": 92,
+        "y": 50,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "C",
+        "type": "state",
+        "name": "C",
+        "parent": "Points.",
+        "x": 280,
+        "y": 40,
+        "w": 250,
+        "h": 130,
+        "regions": [
+          {
+            "id": "C.",
+            "name": ""
+          }
+        ]
+      },
+      {
+        "id": "C.in",
+        "type": "entryPoint",
+        "name": "in",
+        "parent": "C",
+        "x": 272,
+        "y": 50,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "C.out",
+        "type": "exitPoint",
+        "name": "out",
+        "parent": "C",
+        "x": 522,
+        "y": 50,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "C.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "C.",
+        "x": 310,
+        "y": 90,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "Inner",
+        "type": "state",
+        "name": "Inner",
+        "parent": "C.",
+        "x": 370,
+        "y": 90,
+        "w": 140,
+        "h": 60,
+        "regions": []
+      },
+      {
+        "id": "Points.start",
+        "type": "entryPoint",
+        "name": "start",
+        "parent": "Points.",
+        "x": 570,
+        "y": 40,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      },
+      {
+        "id": "Points.stop",
+        "type": "exitPoint",
+        "name": "stop",
+        "parent": "Points.",
+        "x": 626,
+        "y": 40,
+        "w": 16,
+        "h": 16,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Points.initial#1",
+        "source": "Points.initial",
+        "target": "Simple",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Simple#1",
+        "source": "Simple",
+        "target": "C",
+        "kind": "external",
+        "triggers": [
+          "go"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "C#1",
+        "source": "C",
+        "target": "C.in",
+        "kind": "external",
+        "triggers": [
+          "again"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "C.in#1",
+        "source": "C.in",
+        "target": "Simple",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "C.out#1",
+        "source": "C.out",
+        "target": "Inner",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "C.initial#1",
+        "source": "C.initial",
+        "target": "Inner",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Inner#1",
+        "source": "Inner",
+        "target": "C.out",
+        "kind": "external",
+        "triggers": [
+          "leave"
+        ],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "Points.stop#1",
+        "source": "Points.stop",
+        "target": "Simple",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}
