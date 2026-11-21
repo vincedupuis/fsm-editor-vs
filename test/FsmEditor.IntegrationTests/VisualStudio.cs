@@ -23,13 +23,36 @@ namespace FsmEditor.IntegrationTests
         private readonly StaThread _sta = new StaThread();
         private EnvDTE.DTE _dte;
 
-        public VisualStudio()
+        /// <summary>Whether <see cref="Dispose"/> deletes the folder (not when another instance opens it next).</summary>
+        public bool KeepFolder { get; set; }
+
+        public VisualStudio() : this(null) { }
+
+        /// <summary>Visual Studio on a folder as it is (one an earlier instance had open).</summary>
+        public static VisualStudio StartOn(string folder) => new VisualStudio(folder);
+
+        // Screen coordinates in pixels, as UI Automation gives them and the mouse takes them (per-monitor DPI aware).
+        static VisualStudio() => SetProcessDpiAwarenessContext(new IntPtr(-4));
+
+        [DllImport("user32.dll")]
+        private static extern bool SetProcessDpiAwarenessContext(IntPtr value);
+
+        /// <summary>On <paramref name="folder"/> as it is, or on a new folder holding copies of the examples (null).</summary>
+        private VisualStudio(string folder)
         {
-            Folder = Path.Combine(Path.GetTempPath(), "fsm-vs-" + Guid.NewGuid().ToString("N").Substring(0, 8));
-            Directory.CreateDirectory(Folder);
-            foreach (var f in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "examples")))
-                File.Copy(f, Path.Combine(Folder, Path.GetFileName(f)));
-            _process = Process.Start(new ProcessStartInfo(DevenvPath(), $"/rootsuffix Exp /log \"{Folder}\"") { UseShellExecute = false });
+            // fsm-editor-common's sidecar, for the tests that read the machines as the diagram does (where it draws them).
+            Core.Common.ExecutablePath = Environment.GetEnvironmentVariable("FSM_EDITOR_COMMON") ?? Path.Combine(AppContext.BaseDirectory, "cli", "fsm-editor-common.exe");
+            if (folder == null)
+            {
+                folder = Path.Combine(Path.GetTempPath(), "fsm-vs-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+                Directory.CreateDirectory(folder);
+                foreach (var f in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "examples")))
+                    File.Copy(f, Path.Combine(folder, Path.GetFileName(f)));
+            }
+            Folder = folder;
+            // The folder first: /log takes an optional file name, and would take the folder for it (no folder opened,
+            // no ActivityLog.xml where integration.yml reads it).
+            _process = Process.Start(new ProcessStartInfo(DevenvPath(), $"\"{Folder}\" /rootsuffix Exp /log") { UseShellExecute = false });
             var deadline = DateTime.UtcNow.AddMinutes(3);
             while ((_dte = _sta.Invoke(() => FindDte(_process.Id))) == null)
             {
@@ -38,6 +61,36 @@ namespace FsmEditor.IntegrationTests
                 Thread.Sleep(1000);
             }
             Until("Visual Studio ready", () => Do(d => d.MainWindow != null && d.MainWindow.Visible), TimeSpan.FromMinutes(3));
+            MainWindow = Do(d => (IntPtr)d.MainWindow.HWnd);
+        }
+
+        /// <summary>Visual Studio's main window.</summary>
+        public IntPtr MainWindow { get; }
+
+        public int ProcessId => _process.Id;
+
+        /// <summary>Whether Visual Studio is still running.</summary>
+        public bool Running => !_process.HasExited;
+
+        /// <summary>
+        /// Starts a call on the DTE that doesn't return until a modal dialog it opens is closed (Visual Studio runs
+        /// a command synchronously until it awaits): the test closes the dialog through UI Automation, then waits for
+        /// the task. Calls through <see cref="Do{T}"/> wait behind it meanwhile.
+        /// </summary>
+        public System.Threading.Tasks.Task Begin(Action<EnvDTE.DTE> f) => _sta.Post(() => f(_dte));
+
+        /// <summary>Ends Visual Studio as a crash would (no saving, no questions).</summary>
+        public void Kill()
+        {
+            try
+            {
+                _process.Kill();
+            }
+            catch (InvalidOperationException)
+            {
+                // exited already
+            }
+            _process.WaitForExit(30000);
         }
 
         /// <summary>A call on the DTE, on its thread; when Visual Studio is gone, says so (and its exit code).</summary>
@@ -87,7 +140,9 @@ namespace FsmEditor.IntegrationTests
         public bool ActiveIsText() => Do(d => d.ActiveDocument?.Object("TextDocument") != null);
 
         /// <summary>The name Visual Studio gives a command of the extension (VSCommandTable.vsct), by its id.</summary>
-        public string CommandName(int id) => Do(d => d.Commands.Item("{17a524b9-398e-41e9-a5c4-83d740321394}", id).Name);
+        public const string CommandSet = "{17a524b9-398e-41e9-a5c4-83d740321394}";
+
+        public string CommandName(int id) => Do(d => d.Commands.Item(CommandSet, id).Name);
 
         /// <summary>Runs a command of the extension by its id (through its name, as the Command Window does).</summary>
         public void Raise(int id)
@@ -99,7 +154,45 @@ namespace FsmEditor.IntegrationTests
         /// <summary>Runs a command of Visual Studio by its name (Edit.Undo, File.SaveAll...).</summary>
         public void Execute(string name) => Do(d => d.ExecuteCommand(name));
 
-        public void CloseAll() => Do(d => d.Documents.CloseAll(EnvDTE.vsSaveChanges.vsSaveChangesNo));
+        /// <summary>
+        /// Closes every document without saving, after the dialogs a failed test may have left open (which would keep
+        /// Visual Studio from answering).
+        /// </summary>
+        public void CloseAll()
+        {
+            CloseDialogs();
+            Do(d => d.Documents.CloseAll(EnvDTE.vsSaveChanges.vsSaveChangesNo));
+            CloseDialogs();
+        }
+
+        /// <summary>Closes the modal dialogs Visual Studio shows (as their Close button does); their titles.</summary>
+        public System.Collections.Generic.List<string> CloseDialogs()
+        {
+            var closed = new System.Collections.Generic.List<string>();
+            for (var round = 0; round < 5; round++)
+            {
+                var modal = AutomationElement.RootElement.FindAll(TreeScope.Children, new PropertyCondition(AutomationElement.ProcessIdProperty, _process.Id)).Cast<AutomationElement>()
+                    .Where(w => w.Current.NativeWindowHandle != MainWindow.ToInt32())
+                    .Concat(AutomationElement.FromHandle(MainWindow).FindAll(TreeScope.Children, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window)).Cast<AutomationElement>())
+                    .Where(w => w.TryGetCurrentPattern(WindowPattern.Pattern, out var p) && ((WindowPattern)p).Current.IsModal)
+                    .ToList();
+                if (modal.Count == 0) break;
+                foreach (var w in modal)
+                {
+                    try
+                    {
+                        closed.Add(w.Current.Name);
+                        ((WindowPattern)w.GetCurrentPattern(WindowPattern.Pattern)).Close();
+                    }
+                    catch (ElementNotAvailableException)
+                    {
+                        // closed meanwhile
+                    }
+                }
+                Thread.Sleep(500);
+            }
+            return closed;
+        }
 
         /// <summary>The diagram of the active document, as UI Automation sees it.</summary>
         public AutomationElement Diagram()
@@ -123,10 +216,122 @@ namespace FsmEditor.IntegrationTests
             Input.Click((int)(r.Left + r.Width * fx), (int)(r.Top + r.Height * fy));
         }
 
+        /// <summary>
+        /// Where the active diagram draws a vertex (by name; <paramref name="fx"/>, <paramref name="fy"/>: a fraction of
+        /// its box), in screen pixels: its files on disk read as the diagram reads them, in the view the diagram fits
+        /// them to (Fit: what it does when it opens, and on F, which this presses first, in a corner of the diagram).
+        /// </summary>
+        public System.Drawing.Point VertexOnScreen(string machine, string vertex, double fx = 0.5, double fy = 0.5)
+        {
+            var model = PathOf(machine);
+            var layout = model + ".layout";
+            var read = Core.Format.ReadMachine(File.ReadAllText(model), File.Exists(layout) ? File.ReadAllText(layout) : null);
+            if (read.Failed) throw new InvalidOperationException($"{machine}: {string.Join("; ", read.Problems)}");
+            var v = read.Model.Vertices.FirstOrDefault(x => x.Name == vertex) ?? throw new InvalidOperationException($"{machine} has no {vertex}");
+            var r = Diagram().Current.BoundingRectangle;
+            Input.Foreground(MainWindow);
+            Input.Click((int)r.Left + 4, (int)r.Top + 4);
+            Input.Key(0x46); // F: Fit
+            var scale = Input.Scale(MainWindow);
+            double w = r.Width / scale, h = r.Height / scale;
+            var b = Core.Geometry.ContentBounds(new Core.ModelIndex(read.Model));
+            const double pad = 40;
+            var z = Core.Geometry.Clamp(Math.Min((w - pad * 2) / Math.Max(b.W, 1), (h - pad * 2) / Math.Max(b.H, 1)), 0.2, 1.5);
+            double viewX = (w - b.W * z) / 2 - b.X * z, viewY = (h - b.H * z) / 2 - b.Y * z;
+            return new System.Drawing.Point((int)Math.Round(r.Left + (viewX + (v.X + v.W * fx) * z) * scale), (int)Math.Round(r.Top + (viewY + (v.Y + v.H * fy) * z) * scale));
+        }
+
+        /// <summary>The texts Visual Studio's main window shows (UI Automation: its Text elements), with their tooltips.</summary>
+        public System.Collections.Generic.List<(string Text, string Tip)> Texts()
+        {
+            var main = AutomationElement.FromHandle(MainWindow);
+            return main.FindAll(TreeScope.Descendants, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Text))
+                .Cast<AutomationElement>().Select(e => (e.Current.Name ?? "", e.Current.HelpText ?? "")).ToList();
+        }
+
+        /// <summary>Waits for a text of the main window matching <paramref name="match"/> (a toast, a diff's bar...).</summary>
+        public string WaitText(string what, Func<string, bool> match, TimeSpan? timeout = null)
+        {
+            string found = null;
+            Until(what, () => (found = Texts().Select(t => t.Text).FirstOrDefault(match)) != null, timeout);
+            return found;
+        }
+
+        /// <summary>A dialog of Visual Studio (a top-level window of its process, or one its main window holds), by its title.</summary>
+        public AutomationElement WaitDialog(string title, TimeSpan? timeout = null)
+        {
+            AutomationElement found = null;
+            var condition = new AndCondition(new PropertyCondition(AutomationElement.ProcessIdProperty, _process.Id), new PropertyCondition(AutomationElement.NameProperty, title),
+                new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window));
+            Until($"the dialog \"{title}\"", () =>
+            {
+                found = AutomationElement.RootElement.FindFirst(TreeScope.Children, condition) ?? AutomationElement.FromHandle(MainWindow).FindFirst(TreeScope.Children, condition);
+                return found != null;
+            }, timeout);
+            return found;
+        }
+
+        /// <summary>The texts of a dialog (a message box's message among them).</summary>
+        public static string TextOf(AutomationElement dialog) => string.Join("\n", dialog.FindAll(TreeScope.Descendants, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Text))
+            .Cast<AutomationElement>().Select(e => e.Current.Name));
+
+        /// <summary>Presses a button of a dialog, by its name.</summary>
+        public static void Press(AutomationElement dialog, string button)
+        {
+            AutomationElement b = null;
+            Until($"the button {button}", () => (b = dialog.FindFirst(TreeScope.Descendants, new AndCondition(
+                new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button), new PropertyCondition(AutomationElement.NameProperty, button)))) != null);
+            ((InvokePattern)b.GetCurrentPattern(InvokePattern.Pattern)).Invoke();
+        }
+
+        /// <summary>Answers Windows' file dialog (Save As, Open) with a path.</summary>
+        public static void AnswerFileDialog(AutomationElement dialog, string path, string button)
+        {
+            AutomationElement name = null;
+            // The file name box: an edit (Open) or the edit of a combo box (Save As), automation id 1001 or 1148.
+            Until("the file name box", () => (name = dialog.FindAll(TreeScope.Descendants, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Edit))
+                .Cast<AutomationElement>().FirstOrDefault(e => e.Current.AutomationId == "1001" || e.Current.AutomationId == "1148")) != null);
+            // Typed, as the dialog takes only what it is typed (a value set through UI Automation isn't used).
+            Input.Foreground(new IntPtr(dialog.Current.NativeWindowHandle));
+            name.SetFocus();
+            Input.Ctrl(0x41);
+            Input.Type(path);
+            Thread.Sleep(300);
+            Input.Key(0x0D);
+        }
+
+        /// <summary>The Error List's items, as (file, line, description).</summary>
+        public System.Collections.Generic.List<(string File, int Line, string Description)> Errors() => Do(d =>
+        {
+            var list = new System.Collections.Generic.List<(string, int, string)>();
+            var items = ((EnvDTE80.DTE2)d).ToolWindows.ErrorList.ErrorItems;
+            for (var i = 1; i <= items.Count; i++)
+            {
+                var e = items.Item(i);
+                list.Add((e.FileName ?? "", e.Line, e.Description ?? ""));
+            }
+            return list;
+        });
+
+        /// <summary>The Error List's items on a file of the folder.</summary>
+        public System.Collections.Generic.List<(string File, int Line, string Description)> ErrorsOn(string name) =>
+            Errors().Where(e => string.Equals(e.File, PathOf(name), StringComparison.OrdinalIgnoreCase)).ToList();
+
+        /// <summary>The document of a file, if open.</summary>
+        public bool IsOpen(string name)
+        {
+            var path = PathOf(name);
+            return Do(d => d.Documents.Cast<EnvDTE.Document>().Any(x => string.Equals(x.FullName, path, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        /// <summary>Whether an open document is unchanged (Visual Studio's dirty mark).</summary>
+        public bool Saved(string path) => Do(d => d.Documents.Cast<EnvDTE.Document>().First(x => string.Equals(x.FullName, path, StringComparison.OrdinalIgnoreCase)).Saved);
+
         public void Dispose()
         {
             try
             {
+                CloseDialogs();
                 Do(d =>
                 {
                     d.Documents.CloseAll(EnvDTE.vsSaveChanges.vsSaveChangesNo);
@@ -149,8 +354,11 @@ namespace FsmEditor.IntegrationTests
                 }
             }
             _sta.Dispose();
+            if (KeepFolder) return;
             try
             {
+                // Git's objects are read-only.
+                foreach (var f in Directory.EnumerateFiles(Folder, "*", SearchOption.AllDirectories)) File.SetAttributes(f, FileAttributes.Normal);
                 Directory.Delete(Folder, true);
             }
             catch
@@ -158,6 +366,40 @@ namespace FsmEditor.IntegrationTests
                 // a file still open: left in the temp folder
             }
         }
+
+        /// <summary>
+        /// A DWORD of the experimental instance's user registry (its private hive, which only Visual Studio's VsRegEdit
+        /// opens without administrator rights), relative to its root: its value, or null when it has none. Read with
+        /// Visual Studio closed: it writes its hive when it exits.
+        /// </summary>
+        public static int? ExpRegistry(string key, string name)
+        {
+            var output = VsRegEdit($"read \"{InstallDir()}\" Exp HKCU \"{key}\" \"{name}\" dword", out var exit);
+            var m = System.Text.RegularExpressions.Regex.Match(output, @"Value: (\d+)");
+            return exit == 0 && m.Success ? int.Parse(m.Groups[1].Value) : (int?)null;
+        }
+
+        /// <summary>Sets (or, with null, removes) a DWORD of the experimental instance's user registry (see <see cref="ExpRegistry(string, string)"/>).</summary>
+        public static void ExpRegistry(string key, string name, int? value)
+        {
+            var args = value == null
+                ? $"remove \"{InstallDir()}\" Exp HKCU \"{key}\" \"{name}\""
+                : $"set \"{InstallDir()}\" Exp HKCU \"{key}\" \"{name}\" dword {value}";
+            var output = VsRegEdit(args, out var exit);
+            if (exit != 0 && value != null) throw new InvalidOperationException($"VsRegEdit {args}: {output}");
+        }
+
+        private static string VsRegEdit(string args, out int exit)
+        {
+            var p = Process.Start(new ProcessStartInfo(Path.Combine(Path.GetDirectoryName(DevenvPath()), "VsRegEdit.exe"), args) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true });
+            var output = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
+            p.WaitForExit();
+            exit = p.ExitCode;
+            return output;
+        }
+
+        /// <summary>The installation folder of the Visual Studio the tests start (devenv.exe is in its Common7\IDE).</summary>
+        private static string InstallDir() => Path.GetFullPath(Path.Combine(Path.GetDirectoryName(DevenvPath()), "..", ".."));
 
         private static string DevenvPath()
         {
@@ -213,26 +455,48 @@ namespace FsmEditor.IntegrationTests
             _thread.Start();
         }
 
+        /// <summary>Runs <paramref name="a"/> on the thread without waiting for it.</summary>
+        public System.Threading.Tasks.Task Post(Action a)
+        {
+            var done = new System.Threading.Tasks.TaskCompletionSource<bool>();
+            _work.Add(() =>
+            {
+                try
+                {
+                    a();
+                    done.SetResult(true);
+                }
+                catch (Exception e)
+                {
+                    done.SetException(e);
+                }
+            });
+            return done.Task;
+        }
+
+        /// <summary>
+        /// Runs <paramref name="f"/> on the thread and waits for it, at most two minutes: a call that Visual Studio
+        /// doesn't answer (a modal dialog nobody closes, a call queued behind one) fails instead of waiting forever.
+        /// </summary>
         public T Invoke<T>(Func<T> f)
         {
             T result = default;
             Exception error = null;
-            using (var done = new ManualResetEventSlim())
+            // Not disposed: a call that times out still sets it when it ends.
+            var done = new ManualResetEventSlim();
+            _work.Add(() =>
             {
-                _work.Add(() =>
+                try
                 {
-                    try
-                    {
-                        result = f();
-                    }
-                    catch (Exception e)
-                    {
-                        error = e;
-                    }
-                    done.Set();
-                });
-                done.Wait();
-            }
+                    result = f();
+                }
+                catch (Exception e)
+                {
+                    error = e;
+                }
+                done.Set();
+            });
+            if (!done.Wait(TimeSpan.FromMinutes(2))) throw new TimeoutException("Visual Studio didn't answer a call in 2 minutes (a dialog open?)");
             if (error != null) throw new InvalidOperationException(error.Message, error);
             return result;
         }
@@ -301,6 +565,83 @@ namespace FsmEditor.IntegrationTests
             Thread.Sleep(300);
         }
 
+        public static void Click(System.Drawing.Point p) => Click(p.X, p.Y);
+
+        /// <summary>Types a text, character by character (Unicode input, whatever the keyboard layout).</summary>
+        public static void Type(string text)
+        {
+            foreach (var c in text)
+            {
+                var inputs = new[]
+                {
+                    new INPUT { type = 1, ki = new KEYBDINPUT { wScan = (ushort)c, dwFlags = 0x0004 } },
+                    new INPUT { type = 1, ki = new KEYBDINPUT { wScan = (ushort)c, dwFlags = 0x0004 | 0x0002 } },
+                };
+                SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
+                Thread.Sleep(5);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct KEYBDINPUT
+        {
+            public ushort wVk;
+            public ushort wScan;
+            public uint dwFlags;
+            public uint time;
+            public UIntPtr dwExtraInfo;
+        }
+
+        /// <summary>INPUT with its union sized for MOUSEINPUT, the largest member.</summary>
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
+        private struct INPUT
+        {
+            [FieldOffset(0)] public uint type;
+            [FieldOffset(8)] public KEYBDINPUT ki;
+        }
+
+        [DllImport("user32.dll")] private static extern uint SendInput(uint count, INPUT[] inputs, int size);
+
+        /// <summary>A double-click with Alt held (what opens a submachine state's machine).</summary>
+        public static void AltDoubleClick(System.Drawing.Point p)
+        {
+            SetCursorPos(p.X, p.Y);
+            Thread.Sleep(100);
+            keybd_event(0x12, 0, 0, UIntPtr.Zero);
+            for (var i = 0; i < 2; i++)
+            {
+                mouse_event(0x0002, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero);
+                Thread.Sleep(60);
+            }
+            keybd_event(0x12, 0, 2, UIntPtr.Zero);
+            Thread.Sleep(300);
+        }
+
+        /// <summary>A drag with the left button, in steps.</summary>
+        public static void Drag(System.Drawing.Point from, System.Drawing.Point to)
+        {
+            SetCursorPos(from.X, from.Y);
+            Thread.Sleep(100);
+            mouse_event(0x0002, 0, 0, 0, UIntPtr.Zero);
+            Thread.Sleep(100);
+            for (var i = 1; i <= 10; i++)
+            {
+                SetCursorPos(from.X + (to.X - from.X) * i / 10, from.Y + (to.Y - from.Y) * i / 10);
+                Thread.Sleep(30);
+            }
+            mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero);
+            Thread.Sleep(300);
+        }
+
+        /// <summary>Screen pixels per WPF unit in a window (its monitor's scale).</summary>
+        public static double Scale(IntPtr window)
+        {
+            var dpi = GetDpiForWindow(window);
+            return dpi > 0 ? dpi / 96.0 : 1;
+        }
+
+        [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr hWnd);
         [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32.dll")] private static extern bool SetCursorPos(int x, int y);
         [DllImport("user32.dll")] private static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);

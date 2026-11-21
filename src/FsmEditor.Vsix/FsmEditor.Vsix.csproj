@@ -54,6 +54,24 @@
   <ItemGroup>
     <ProjectReference Include="..\FsmEditor.Core\FsmEditor.Core.csproj" />
   </ItemGroup>
+  <!--
+    Visual Studio's JSON editor, for the files' schemas (Services/JsonSchemas.cs): referenced from the Visual Studio whose
+    MSBuild builds (VsInstallRoot), not packaged. Visual Studio redirects earlier versions of it to its own, so a VSIX
+    built with Visual Studio 17's loads in 18. Without it (dotnet build), the schemas are left out.
+  -->
+  <PropertyGroup>
+    <WebToolsJson>$(VsInstallRoot)\Common7\IDE\Extensions\Microsoft\Web Tools\Languages\Microsoft.WebTools.Languages.Json.dll</WebToolsJson>
+    <DefineConstants Condition="'$(VsInstallRoot)' != '' And Exists('$(WebToolsJson)')">$(DefineConstants);JSON_SCHEMAS</DefineConstants>
+    <!-- It references that Visual Studio's own assemblies (Threading), newer than the SDK package's: none of them is
+         packaged, Visual Studio loads its own. -->
+    <MSBuildWarningsAsMessages Condition="'$(VsInstallRoot)' != '' And Exists('$(WebToolsJson)')">$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(VsInstallRoot)' != '' And Exists('$(WebToolsJson)')">
+    <Reference Include="Microsoft.WebTools.Languages.Json">
+      <HintPath>$(WebToolsJson)</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="source.extension.vsixmanifest" SubType="Designer" />
@@ -72,7 +90,10 @@
     <ItemTemplatesDir>$(BaseIntermediateOutputPath)ItemTemplates\</ItemTemplatesDir>
   </PropertyGroup>
   <ItemGroup>
-    <ItemTemplateProjectType Include="General;CSharp;VisualBasic;VC" />
+    <!-- The New File dialog (General) names each file of a template on its own: it creates the model file only, whose
+         layout file the editor writes beside it at the first save. Projects get both. -->
+    <ItemTemplateProjectType Include="General" LayoutItem="" />
+    <ItemTemplateProjectType Include="CSharp;VisualBasic;VC" LayoutItem="&lt;ProjectItem ReplaceParameters=&quot;false&quot; TargetFileName=&quot;%24fileinputname%24.fsm.layout&quot;&gt;StateMachine.fsm.layout&lt;/ProjectItem&gt;" />
     <Content Include="$(ItemTemplatesDir)General\StateMachine.zip" IncludeInVSIX="true" VSIXSubPath="ItemTemplates\General" />
     <Content Include="$(ItemTemplatesDir)CSharp\StateMachine.zip" IncludeInVSIX="true" VSIXSubPath="ItemTemplates\CSharp" />
     <Content Include="$(ItemTemplatesDir)VisualBasic\StateMachine.zip" IncludeInVSIX="true" VSIXSubPath="ItemTemplates\VisualBasic" />
@@ -84,7 +105,7 @@
     </PropertyGroup>
     <Copy SourceFiles="ItemTemplates\StateMachine\StateMachine.fsm;ItemTemplates\StateMachine\StateMachine.fsm.layout;Resources\icon.png" DestinationFolder="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\files" />
     <WriteLinesToFile File="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\files\StateMachine.vstemplate"
-                      Lines="$([MSBuild]::Escape($(_StateMachineVstemplate.Replace('@ProjectType@', '%(ItemTemplateProjectType.Identity)'))))"
+                      Lines="$([MSBuild]::Escape($(_StateMachineVstemplate.Replace('@ProjectType@', '%(ItemTemplateProjectType.Identity)').Replace('@LayoutItem@', '%(ItemTemplateProjectType.LayoutItem)'))))"
                       Overwrite="true" WriteOnlyWhenDifferent="true" />
     <ZipDirectory SourceDirectory="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\files"
                   DestinationFile="$(ItemTemplatesDir)%(ItemTemplateProjectType.Identity)\StateMachine.zip" Overwrite="true" />

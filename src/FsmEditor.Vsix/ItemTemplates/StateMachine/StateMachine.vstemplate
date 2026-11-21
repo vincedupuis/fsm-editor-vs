@@ -2,7 +2,8 @@
 <!--
   Item template of a new state machine. The build writes one copy per project
   type, filling in the type below (General: File › New › File and solution
-  items; CSharp, VisualBasic, VC: Add › New Item in those projects).
+  items; CSharp, VisualBasic, VC: Add › New Item in those projects), and its
+  layout file's item for the projects only (see the project file).
 -->
 <VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
@@ -16,6 +17,6 @@
   </TemplateData>
   <TemplateContent>
     <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.fsm" OpenInEditor="true">StateMachine.fsm</ProjectItem>
-    <ProjectItem ReplaceParameters="false" TargetFileName="$fileinputname$.fsm.layout">StateMachine.fsm.layout</ProjectItem>
+    @LayoutItem@
   </TemplateContent>
 </VSTemplate>

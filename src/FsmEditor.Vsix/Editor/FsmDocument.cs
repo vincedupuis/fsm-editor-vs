@@ -47,7 +47,7 @@ namespace FsmEditor.Editor
     /// merge conflicts split into its sides, in memory; saving is what writes them. Without changes of its own, the
     /// document follows its files when they change on disk.
     /// </summary>
-    internal sealed class FsmDocument : IVsPersistDocData2, IPersistFileFormat, IVsFileChangeEvents
+    internal sealed class FsmDocument : IVsPersistDocData2, IPersistFileFormat, IVsFileChangeEvents, Microsoft.VisualStudio.TextManager.Interop.IVsFileBackup
     {
         private static readonly UTF8Encoding Utf8 = new UTF8Encoding(false);
         private readonly List<MachineState> _undo = new List<MachineState>();
@@ -604,6 +604,35 @@ namespace FsmEditor.Editor
         public int GetFormatList(out string ppszFormatList)
         {
             ppszFormatList = "FSM State Machine (*.fsm)\n*.fsm\n";
+            return VSConstants.S_OK;
+        }
+
+        // ---------------------------------------------------------------- IVsFileBackup (AutoRecover)
+
+        /// <summary>The state last backed up, or null.</summary>
+        private MachineState _backedUp;
+
+        /// <summary>
+        /// AutoRecover's backup: the model file's text of the unsaved state, which Visual Studio writes over the file when
+        /// it recovers it after a crash. The layout file isn't recovered: the machine's elements keep the places it has.
+        /// </summary>
+        public int BackupFile(string pszBackupFileName)
+        {
+            try
+            {
+                File.WriteAllText(pszBackupFileName, State.ModelText, Utf8);
+                _backedUp = State;
+                return VSConstants.S_OK;
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                return VSConstants.E_FAIL;
+            }
+        }
+
+        public int IsBackupFileObsolete(out int pbObsolete)
+        {
+            pbObsolete = Dirty && State != _backedUp ? 1 : 0;
             return VSConstants.S_OK;
         }
 

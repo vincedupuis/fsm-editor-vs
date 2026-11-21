@@ -27,11 +27,21 @@
     <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationTypes" />
     <Reference Include="WindowsBase" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- To read the machines as the diagram does, where a test clicks or drags their elements. -->
+    <ProjectReference Include="..\..\src\FsmEditor.Core\FsmEditor.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\examples\*.fsm" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\*.fsm.layout" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\examples\*.log" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
+    <!-- fsm-editor-common's sidecar, which Core runs (scripts/fetch-common.sh copies it). -->
+    <None Include="..\..\src\FsmEditor.Vsix\cli\fsm-editor-common.exe" Link="cli\fsm-editor-common.exe" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

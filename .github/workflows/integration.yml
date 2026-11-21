@@ -75,6 +75,9 @@ jobs:
           $devenv = & $vswhere -latest -prerelease -products * -property productPath
           & ($devenv -replace 'devenv\.exe$', 'devenv.com') /rootsuffix Exp /updateconfiguration
           Write-Host "updateconfiguration: $LASTEXITCODE"
+          # The ActivityLog of an earlier start removed: the check after the tests reads only this run's.
+          Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object { Join-Path $_.FullName 'ActivityLog.xml' } |
+            Where-Object { Test-Path $_ } | ForEach-Object { Write-Host "Removing $_"; Remove-Item -Force $_ }
 
       - name: Tests inside Visual Studio
         env:
