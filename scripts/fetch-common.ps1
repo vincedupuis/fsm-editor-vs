@@ -6,8 +6,8 @@
 
 .DESCRIPTION
   It is taken from:
-  - a folder of an fsm-editor-common release's archives, unpacked: fsm-editor-common.exe (windows-x64), templates\,
-    schemas\ and api-cases\;
+  - a folder of an fsm-editor-common release's archives, unpacked: fsm-editor-common.exe (the windows-x64 zip's, in
+    its folder fsm-editor-common-<version>-windows-x64\ or beside the others), templates\, schemas\ and api-cases\;
   - or clones of fsm-editor-common and fsm-cli side by side (by default the siblings ..\fsm-editor-common and
     ..\fsm-cli): target\release\fsm-editor-common.exe, fsm-cli's templates\ and schemas\, fsm-editor-common's
     schemas\ and api-cases\.
@@ -39,8 +39,10 @@ if (Test-Path (Join-Path $Source 'Cargo.toml')) {
   Copy-Item (Join-Path $Source 'schemas\*.json') (Join-Path $out 'schemas')
   Copy-Item -Recurse (Join-Path $Source 'api-cases') (Join-Path $out 'api-cases')
 } else {
-  $exe = Join-Path $Source 'fsm-editor-common.exe'
-  if (Test-Path $exe) { Copy-Item $exe $out }
+  $exe = @(Join-Path $Source 'fsm-editor-common.exe') +
+    @(Get-ChildItem $Source -Directory -Filter 'fsm-editor-common-*-windows-x64' | ForEach-Object { Join-Path $_.FullName 'fsm-editor-common.exe' }) |
+    Where-Object { Test-Path $_ } | Select-Object -First 1
+  if ($exe) { Copy-Item $exe $out }
   Copy-Item -Recurse (Join-Path $Source 'templates') (Join-Path $out 'templates')
   Copy-Item (Join-Path $Source 'schemas\*.json') (Join-Path $out 'schemas')
   Copy-Item -Recurse (Join-Path $Source 'api-cases') (Join-Path $out 'api-cases')
