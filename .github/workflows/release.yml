@@ -90,5 +90,10 @@ jobs:
           $packages = (dotnet nuget locals global-packages -l) -replace '^global-packages:\s*', ''
           $publisher = Join-Path $packages "microsoft.vssdk.buildtools\$version\tools\vssdk\bin\VsixPublisher.exe"
           if (-not (Test-Path $publisher)) { throw "VsixPublisher not found: $publisher" }
-          & $publisher publish -payload src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix -publishManifest vs-publish.json -personalAccessToken $env:VS_MARKETPLACE_PAT
-          if ($LASTEXITCODE -ne 0) { throw "VsixPublisher failed" }
+          & $publisher publish -payload src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix -publishManifest vs-publish.json -personalAccessToken $env:VS_MARKETPLACE_PAT 2>&1 |
+            ForEach-Object { "$_" } | Tee-Object -Variable lines
+          # Its telemetry can fail after the upload (a System.Runtime.CompilerServices.Unsafe it can't load), which
+          # makes it exit with an error: the upload's own message (VsixPub0038) says the extension was published.
+          $uploaded = $lines -match 'VsixPub0038'
+          if ($LASTEXITCODE -ne 0 -and -not $uploaded) { throw "VsixPublisher failed" }
+          if ($LASTEXITCODE -ne 0) { Write-Warning "VsixPublisher exited with $LASTEXITCODE after the upload (VsixPub0038)" }
