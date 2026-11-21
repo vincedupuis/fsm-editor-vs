@@ -57,8 +57,10 @@ jobs:
           Get-ChildItem "$env:LOCALAPPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object {
             $ext = Join-Path $_.FullName 'Extensions'
             if (Test-Path $ext) {
-              Get-ChildItem $ext -Recurse -Filter extension.vsixmanifest | Where-Object { (Get-Content $_.FullName -Raw) -match [regex]::Escape($id) } |
-                ForEach-Object { Write-Host "Removing $($_.DirectoryName)"; Remove-Item -Recurse -Force $_.DirectoryName }
+              # Listed first, then removed: removing folders while listing them breaks the listing.
+              $dirs = @(Get-ChildItem $ext -Recurse -Filter extension.vsixmanifest | Where-Object { (Get-Content $_.FullName -Raw) -match [regex]::Escape($id) } |
+                ForEach-Object { $_.DirectoryName } | Sort-Object -Unique)
+              foreach ($d in $dirs) { Write-Host "Removing $d"; Remove-Item -Recurse -Force $d }
             }
           }
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
