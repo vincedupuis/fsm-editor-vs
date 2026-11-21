@@ -85,11 +85,11 @@ See **[docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blo
 - **Shortcuts**: S state, X final, I initial, H history, C choice, J junction, N comment, T transition, R region, G group/ungroup, V/Esc select. Shift+click a tool to keep it active.
 - **Submachines**: Alt+double-click a submachine state, or use the button in its properties, to open the referenced machine.
 
-Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Solution Explorer and of the document tab): *New State Machine...*, *Generate Code...*, *Export as SVG...*, *Export as PNG...*, *Open as Text*, *Open in FSM Editor*, *Compare as Diagrams*. *New State Machine...* is also on the context menu of projects and folders. **File › New › File...** and **Add › New Item...** (General, C#, Visual Basic and C++ projects) also list a *State Machine* template, which adds both files.
+Commands (**Tools › FSM Editor**, and the context menus of `.fsm` files in Solution Explorer and of the document tab): *New State Machine...*, *Generate Code...*, *Export as SVG...*, *Export as PNG...*, *Open as Text*, *Open in FSM Editor*, *Compare as Diagrams*. *New State Machine...* is also on the context menu of projects and folders. **File › New › File...** and **Add › New Item...** (General, C#, Visual Basic and C++ projects) also list a *State Machine* template: in a project it adds both files; **File › New › File...** creates the model file, and the layout file is written beside it at the first save.
 
 ## Files
 
-A machine `Order` is `Order.fsm`, the model, and `Order.fsm.layout` beside it, the drawing. Both are JSON, and the diagram edits them together: moving an element changes only the layout file, and undo and save cover both. Renaming `Order.fsm` in Solution Explorer takes `Order.fsm.layout` with it. The model file is meant to be read, reviewed and edited by hand:
+A machine `Order` is `Order.fsm`, the model, and `Order.fsm.layout` beside it, the drawing. Both are JSON, and the diagram edits them together: moving an element changes only the layout file, and undo and save cover both. Renaming `Order.fsm` in Solution Explorer, or in the Folder View of an open folder, takes `Order.fsm.layout` with it. AutoRecover (**Tools › Options › Environment › AutoRecover**) backs up a diagram's unsaved changes, and offers them back when Visual Studio ended without saving them. The model file is meant to be read, reviewed and edited by hand:
 
 ```json
 {
@@ -108,7 +108,7 @@ A machine `Order` is `Order.fsm`, the model, and `Order.fsm.layout` beside it, t
     …
 ```
 
-Elements are identified by their names, which are unique in the machine and have no spaces. Elements you don't name (choices, final states, comments…) get a generated name ending with `*`, which the diagram doesn't show. *Open as Text* opens the model file in Visual Studio's JSON editor (when the diagram has unsaved changes, which the file doesn't hold yet, it offers to save them first; the diagram closes, as the two can't share the document), and *Open in FSM Editor* brings the diagram back. A file that isn't valid JSON, or has the wrong shape, shows its problems with their lines instead of the diagram, and in the Error List. A model and a layout file that disagree (a hand edit, a merge, a lost layout file) are reconciled: elements without a place are placed automatically, and nothing in the model is ever dropped. The format is described in [fsm-cli's README](https://github.com/vincedupuis/fsm-cli#the-fsm-file-format) and in [docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blob/main/docs/UML-CONFORMANCE.md#file-format).
+Elements are identified by their names, which are unique in the machine and have no spaces. Elements you don't name (choices, final states, comments…) get a generated name ending with `*`, which the diagram doesn't show. *Open as Text* opens the model file in Visual Studio's JSON editor, checked and completed against the format's JSON Schema, as a `.fsm.layout` file is against the layout file's (when the diagram has unsaved changes, which the file doesn't hold yet, it offers to save them first; the diagram closes, as the two can't share the document), and *Open in FSM Editor* brings the diagram back. A file that isn't valid JSON, or has the wrong shape, shows its problems with their lines instead of the diagram, and in the Error List. A model and a layout file that disagree (a hand edit, a merge, a lost layout file) are reconciled: elements without a place are placed automatically, and nothing in the model is ever dropped. The format is described in [fsm-cli's README](https://github.com/vincedupuis/fsm-cli#the-fsm-file-format) and in [docs/UML-CONFORMANCE.md](https://github.com/vincedupuis/fsm-editor-vs/blob/main/docs/UML-CONFORMANCE.md#file-format).
 
 Files of earlier versions (XMI 2.5.1 with UML DI) still open, unchanged (opening one doesn't mark it as changed): saving one after a change writes the new format, converting the files linked to it by submachine states at the same time, and says what was renamed or left out. *Open as Text* opens them in the XML editor.
 
@@ -153,7 +153,7 @@ On macOS or Linux, `dotnet build` compiles every project (the VSIX packaging ste
   - `Editor/FsmEditorFactory.cs`, `Editor/FsmEditorPane.cs`: the document window; syncs the document and the diagram
   - `Editor/DiagramSessions.cs`: the diagram diff and merge panes
   - `Editor/EditorControl.cs`, `Editor/DiagramCanvas.cs`, `Editor/PropertiesPanel.cs`: the WPF diagram editor
-  - `Services/`: open documents, the solution's machines, the Error List, dialogs, Git, the JSON text view, layout files renamed with their models
+  - `Services/`: open documents, the solution's machines, the Error List, dialogs, Git, the JSON text view and the files' JSON Schemas, layout files renamed with their models
   - `CodeGen/`: code generation through fsm-editor-common, and its dialog
   - `TracePlayer/`: the Trace Player tool window and the service following the logs
   - `Commands/`, `VSCommandTable.vsct`: menu commands

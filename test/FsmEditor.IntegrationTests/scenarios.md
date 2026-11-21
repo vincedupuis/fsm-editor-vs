@@ -80,12 +80,12 @@ them; `Order.fsm` is unchanged. (Not into `Order` itself: its initial pseudostat
 which the file can't hold, and the paste is refused.) Then, in `Order` (put back afterwards), Cut removes a selected
 state, and Delete (where the IDE has a Delete command for the diagram) removes another. In VS Code, Copy, Cut and
 Paste go through the diagram's context menu: the IDE runs its own in a webview as the browser's `execCommand`, which
-Chromium ignores without a real key press or click. In VS Code for the Web: not run.
+Chromium ignores without a real key press or click.
 
 ### undo-redo-save-both-files
 Right after that paste into `Empty`, the IDE's Undo brings the document back to the files' text (and, where the IDE
 does so, it is no longer marked changed), Redo brings the paste back, and saving writes both files: the model file
-holds `Cart`, the layout file changed. In VS Code for the Web: not run, as above.
+holds `Cart`, the layout file changed.
 
 ### move-changes-layout-only
 Moving a state and saving changes `MediaPlayer.fsm.layout` only; `MediaPlayer.fsm` is unchanged.
