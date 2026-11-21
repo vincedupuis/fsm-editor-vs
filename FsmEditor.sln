@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{56C8B379-6
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FsmEditor.Core.Tests", "test\FsmEditor.Core.Tests\FsmEditor.Core.Tests.csproj", "{570F5E3E-115B-4C80-98A2-0BFDCD8BB654}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FsmEditor.IntegrationTests", "test\FsmEditor.IntegrationTests\FsmEditor.IntegrationTests.csproj", "{34850F18-D60B-476F-8AFA-3A634F21C84F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +36,15 @@ Global
 		{570F5E3E-115B-4C80-98A2-0BFDCD8BB654}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{570F5E3E-115B-4C80-98A2-0BFDCD8BB654}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{570F5E3E-115B-4C80-98A2-0BFDCD8BB654}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34850F18-D60B-476F-8AFA-3A634F21C84F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34850F18-D60B-476F-8AFA-3A634F21C84F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34850F18-D60B-476F-8AFA-3A634F21C84F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34850F18-D60B-476F-8AFA-3A634F21C84F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E6DB245A-1120-4401-9553-D4FE01DA0F4C} = {68B9ECF8-3755-4FC5-8AD8-CD33F4807178}
 		{F6F794B0-8007-4C48-B048-14384037820A} = {68B9ECF8-3755-4FC5-8AD8-CD33F4807178}
 		{570F5E3E-115B-4C80-98A2-0BFDCD8BB654} = {56C8B379-60AD-4DAE-BD3F-2FBF259E7C8C}
+		{34850F18-D60B-476F-8AFA-3A634F21C84F} = {56C8B379-60AD-4DAE-BD3F-2FBF259E7C8C}
 	EndGlobalSection
 EndGlobal

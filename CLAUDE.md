@@ -10,6 +10,8 @@ dotnet test                  # test/FsmEditor.Core.Tests; GeometryTests compares
 scripts/fetch-common.sh      # or scripts\fetch-common.ps1: copy fsm-editor-common's sidecar, fsm-cli's templates, schemas/ and api-cases/ (from ../fsm-editor-common + ../fsm-cli, --build to build it first, or unpacked release archives) into src/FsmEditor.Vsix/cli (gitignored); the tests need the sidecar
 ```
 
+`test/FsmEditor.IntegrationTests` (net48, Windows only, skipped unless `FSM_VS_INTEGRATION=1`): tests inside Visual Studio. `VisualStudio.cs` starts the latest Visual Studio's experimental instance (`/rootsuffix Exp`) on copies of the examples, reaches its DTE through the Running Object Table (an STA thread with a message filter), gives real mouse and keyboard input, and finds the diagram through UI Automation (`DiagramCanvas`'s automation id `FsmDiagramCanvas`). `.github/workflows/integration.yml` runs them on the self-hosted Windows runner (a logged-in desktop) after installing this commit's VSIX into the experimental instance; never for pull requests. Microsoft's `[IdeFact]` harness (vs-extension-testing) is archived and stops at Visual Studio 2022.
+
 `.github/workflows/ci.yml` runs on every push: the Core tests, the VSIX build, and the VSIX installed quietly into the runner's Visual Studio (VSIXInstaller), found among its extensions, and uninstalled.
 
 F5 in Visual Studio (startup project FsmEditor.Vsix) starts the experimental instance; try `examples/MediaPlayer.fsm` and `examples/Order.fsm` (uses `Payment.fsm` as a submachine).

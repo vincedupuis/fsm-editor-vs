@@ -39,6 +39,9 @@ namespace FsmEditor.Editor
             _editor = editor;
             Geo.TextMeasure = LabelWidth;
             Focusable = true;
+            // Found by UI Automation (screen readers, the integration tests) as the diagram.
+            System.Windows.Automation.AutomationProperties.SetAutomationId(this, "FsmDiagramCanvas");
+            System.Windows.Automation.AutomationProperties.SetName(this, "Diagram");
             FocusVisualStyle = null;
             AllowDrop = true;
             ClipToBounds = true;
@@ -174,6 +177,10 @@ namespace FsmEditor.Editor
 
         /// <summary>The Trace Player's highlights, not in exports.</summary>
         private TraceView Trace => _exporting ? null : _editor.Trace;
+
+        /// <summary>A peer, so that UI Automation sees the diagram (a FrameworkElement has none of its own).</summary>
+        protected override System.Windows.Automation.Peers.AutomationPeer OnCreateAutomationPeer() =>
+            new System.Windows.Automation.Peers.FrameworkElementAutomationPeer(this);
 
         protected override void OnRender(DrawingContext dc)
         {
