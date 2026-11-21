@@ -29,7 +29,7 @@ namespace FsmEditor.IntegrationTests
             Directory.CreateDirectory(Folder);
             foreach (var f in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "examples")))
                 File.Copy(f, Path.Combine(Folder, Path.GetFileName(f)));
-            _process = Process.Start(new ProcessStartInfo(DevenvPath(), $"/rootsuffix Exp \"{Folder}\"") { UseShellExecute = false });
+            _process = Process.Start(new ProcessStartInfo(DevenvPath(), $"/rootsuffix Exp /log \"{Folder}\"") { UseShellExecute = false });
             var deadline = DateTime.UtcNow.AddMinutes(3);
             while ((_dte = _sta.Invoke(() => FindDte(_process.Id))) == null)
             {
@@ -40,12 +40,16 @@ namespace FsmEditor.IntegrationTests
             Until("Visual Studio ready", () => Do(d => d.MainWindow != null && d.MainWindow.Visible), TimeSpan.FromMinutes(3));
         }
 
-        /// <summary>A call on the DTE, on its thread.</summary>
-        public T Do<T>(Func<EnvDTE.DTE, T> f) => _sta.Invoke(() => f(_dte));
-
-        public void Do(Action<EnvDTE.DTE> f) => _sta.Invoke(() =>
+        /// <summary>A call on the DTE, on its thread; when Visual Studio is gone, says so (and its exit code).</summary>
+        public T Do<T>(Func<EnvDTE.DTE, T> f)
         {
-            f(_dte);
+            if (_process.HasExited) throw new InvalidOperationException($"Visual Studio exited (code {_process.ExitCode}); see its ActivityLog.xml");
+            return _sta.Invoke(() => f(_dte));
+        }
+
+        public void Do(Action<EnvDTE.DTE> f) => Do(d =>
+        {
+            f(d);
             return 0;
         });
 
@@ -82,14 +86,14 @@ namespace FsmEditor.IntegrationTests
         /// <summary>Whether the active document is shown by a text editor (rather than the diagram).</summary>
         public bool ActiveIsText() => Do(d => d.ActiveDocument?.Object("TextDocument") != null);
 
-        /// <summary>Runs a command of the extension (VSCommandTable.vsct) by its id.</summary>
+        /// <summary>The name Visual Studio gives a command of the extension (VSCommandTable.vsct), by its id.</summary>
+        public string CommandName(int id) => Do(d => d.Commands.Item("{17a524b9-398e-41e9-a5c4-83d740321394}", id).Name);
+
+        /// <summary>Runs a command of the extension by its id (through its name, as the Command Window does).</summary>
         public void Raise(int id)
         {
-            Do(d =>
-            {
-                object input = null, output = null;
-                d.Commands.Raise("{17a524b9-398e-41e9-a5c4-83d740321394}", id, ref input, ref output);
-            });
+            var name = CommandName(id);
+            Do(d => d.ExecuteCommand(name));
         }
 
         /// <summary>Runs a command of Visual Studio by its name (Edit.Undo, File.SaveAll...).</summary>

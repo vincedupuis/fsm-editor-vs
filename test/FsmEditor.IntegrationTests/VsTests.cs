@@ -81,8 +81,8 @@ namespace FsmEditor.IntegrationTests
         {
             foreach (var id in new[] { NewStateMachine, GenerateCode, ExportSvg, OpenAsText, OpenDiagram, ExportPng, OpenTrace, ShowTracePlayer, CompareAsDiagrams })
             {
-                var name = _vs.Do(d => d.Commands.Item("{17a524b9-398e-41e9-a5c4-83d740321394}", id)?.Name);
-                Assert.False(name == null, $"command 0x{id:x4} is registered");
+                var name = _vs.CommandName(id);
+                Assert.False(string.IsNullOrEmpty(name), $"command 0x{id:x4} has a name");
             }
         }
 

@@ -70,3 +70,21 @@ jobs:
         env:
           FSM_VS_INTEGRATION: '1'
         run: dotnet test test\FsmEditor.IntegrationTests --logger "console;verbosity=normal"
+
+      # What Visual Studio logged, when a test failed: its ActivityLog, and the crashes Windows recorded.
+      - name: Visual Studio's logs
+        if: failure()
+        shell: pwsh
+        run: |
+          Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object {
+            $log = Join-Path $_.FullName 'ActivityLog.xml'
+            if (Test-Path $log) {
+              Write-Host "== $log"
+              [xml]$x = Get-Content $log
+              $x.activity.entry | Where-Object { $_.type -ne 'Information' } | Select-Object -Last 40 |
+                ForEach-Object { Write-Host "$($_.type) $($_.source): $($_.description)" }
+            }
+          }
+          Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Level = 2; StartTime = (Get-Date).AddHours(-1) } -ErrorAction SilentlyContinue |
+            Where-Object { $_.Message -match 'devenv' } | Select-Object -First 5 | ForEach-Object { Write-Host "== $($_.TimeCreated) $($_.ProviderName)"; Write-Host $_.Message }
+
