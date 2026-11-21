@@ -103,11 +103,12 @@ namespace FsmEditor.IntegrationTests
             var layout = model + ".layout";
             var before = File.ReadAllText(model);
             _vs.Open("Order.fsm");
-            // The diagram has the focus; Visual Studio's Select All, Copy and Paste (its keys) reach it.
-            _vs.ClickDiagram(0.97, 0.97);
-            Input.Ctrl((byte)'A');
-            Input.Ctrl((byte)'C');
-            Input.Ctrl((byte)'V');
+            // Visual Studio's Select All, Copy and Paste (what its keys and Edit menu run) reach the active diagram.
+            _vs.Diagram();
+            _vs.Do(d => d.ActiveDocument.Activate());
+            _vs.Execute("Edit.SelectAll");
+            _vs.Execute("Edit.Copy");
+            _vs.Execute("Edit.Paste");
             VisualStudio.Until("the document changed", () => !_vs.Do(d => d.ActiveDocument.Saved));
             _vs.Execute("Edit.Undo");
             VisualStudio.Until("undone", () => _vs.Do(d => d.ActiveDocument.Saved));

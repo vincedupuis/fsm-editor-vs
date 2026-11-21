@@ -40,9 +40,15 @@ jobs:
             tar xzf "$tmp\$part.tar.gz" -C src\FsmEditor.Vsix\cli
           }
 
+      # A version of its own for each run (0.7.1.<run>): installed over the last run's, it is an upgrade into a folder
+      # of its own. Reinstalling the same version after an uninstall leaves files that Visual Studio deletes at start.
       - name: Build the VSIX
         shell: pwsh
         run: |
+          $m = 'src\FsmEditor.Vsix\source.extension.vsixmanifest'
+          [xml]$x = Get-Content $m
+          $v = $x.PackageManifest.Metadata.Identity.Version
+          (Get-Content $m -Raw) -replace "Version=`"$([regex]::Escape($v))`"", "Version=`"$v.$env:GITHUB_RUN_NUMBER`"" | Set-Content $m -NoNewline
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           $msbuild = & $vswhere -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
           & $msbuild src\FsmEditor.Vsix\FsmEditor.Vsix.csproj /restore /p:Configuration=Release /v:minimal
@@ -56,10 +62,7 @@ jobs:
             ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
           $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -products * -property installationPath
           $installer = "$vs\Common7\IDE\VSIXInstaller.exe"
-          [xml]$manifest = Get-Content src\FsmEditor.Vsix\source.extension.vsixmanifest
-          $id = $manifest.PackageManifest.Metadata.Identity.Id
           $vsix = (Resolve-Path src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix).Path
-          Start-Process $installer -ArgumentList '/quiet', '/rootSuffix:Exp', "/uninstall:$id" -Wait
           $p = Start-Process $installer -ArgumentList '/quiet', '/rootSuffix:Exp', "/logFile:fsm-exp-install.log", "`"$vsix`"" -Wait -PassThru
           if ($p.ExitCode -ne 0) {
             Get-Content "$env:TEMP\fsm-exp-install.log" -Tail 60
@@ -70,6 +73,22 @@ jobs:
         env:
           FSM_VS_INTEGRATION: '1'
         run: dotnet test test\FsmEditor.IntegrationTests --logger "console;verbosity=normal"
+
+      # The tests passing on another copy of the extension (one F5 deployed, a broken install) would prove nothing:
+      # the package must have loaded, from this run's version.
+      - name: The package loaded, from this run's VSIX
+        shell: pwsh
+        run: |
+          $logs = Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object { Join-Path $_.FullName 'ActivityLog.xml' } | Where-Object { Test-Path $_ }
+          foreach ($log in $logs) {
+            [xml]$x = Get-Content $log
+            $bad = $x.activity.entry | Where-Object { $_.type -eq 'Error' -and $_.description -match 'FsmEditorPackage' }
+            if ($bad) { $bad | ForEach-Object { Write-Host $_.description }; throw "FsmEditorPackage failed to load ($log)" }
+          }
+          $dll = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\VisualStudio" -Recurse -Filter FsmEditor.dll -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'Exp\\Extensions' -and $_.DirectoryName -match "\.$env:GITHUB_RUN_NUMBER$" }
+          if (-not $dll) { throw "this run's version (.$env:GITHUB_RUN_NUMBER) is not in the experimental instance's extensions" }
+          Write-Host "Loaded from $($dll[0].DirectoryName)"
 
       # What Visual Studio logged, when a test failed: its ActivityLog, and the crashes Windows recorded.
       - name: Visual Studio's logs
