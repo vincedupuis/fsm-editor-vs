@@ -40,34 +40,31 @@ jobs:
             tar xzf "$tmp\$part.tar.gz" -C src\FsmEditor.Vsix\cli
           }
 
-      # A version of its own for each run (0.7.1.<run>): installed over the last run's, it is an upgrade into a folder
-      # of its own. Reinstalling the same version after an uninstall leaves files that Visual Studio deletes at start.
-      - name: Build the VSIX
+      # As F5 does it: the build deploys the extension into the experimental instance (DeployExtension), after the
+      # copies of earlier runs are removed. (VSIXInstaller's per-user install into the experimental instance of
+      # Visual Studio 2026 fails when Visual Studio applies it at start.) A version of its own for each run
+      # (0.7.1.<run>), which the check after the tests finds.
+      - name: Deploy the extension into the experimental instance
         shell: pwsh
         run: |
-          $m = 'src\FsmEditor.Vsix\source.extension.vsixmanifest'
-          [xml]$x = Get-Content $m
-          $v = $x.PackageManifest.Metadata.Identity.Version
-          (Get-Content $m -Raw) -replace "Version=`"$([regex]::Escape($v))`"", "Version=`"$v.$env:GITHUB_RUN_NUMBER`"" | Set-Content $m -NoNewline
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          $msbuild = & $vswhere -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
-          & $msbuild src\FsmEditor.Vsix\FsmEditor.Vsix.csproj /restore /p:Configuration=Release /v:minimal
-          if ($LASTEXITCODE -ne 0) { throw 'the VSIX build failed' }
-
-      - name: Install the VSIX into the experimental instance
-        shell: pwsh
-        run: |
-          # An experimental instance left open by an earlier run would hold the extension's files.
           Get-CimInstance Win32_Process -Filter "Name = 'devenv.exe'" | Where-Object { $_.CommandLine -match '/rootsuffix Exp' } |
             ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
-          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -products * -property installationPath
-          $installer = "$vs\Common7\IDE\VSIXInstaller.exe"
-          $vsix = (Resolve-Path src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix).Path
-          $p = Start-Process $installer -ArgumentList '/quiet', '/rootSuffix:Exp', "/logFile:fsm-exp-install.log", "`"$vsix`"" -Wait -PassThru
-          if ($p.ExitCode -ne 0) {
-            Get-Content "$env:TEMP\fsm-exp-install.log" -Tail 60
-            throw "VSIXInstaller exited with $($p.ExitCode)"
+          $m = 'src\FsmEditor.Vsix\source.extension.vsixmanifest'
+          [xml]$x = Get-Content $m
+          $id = $x.PackageManifest.Metadata.Identity.Id
+          $v = $x.PackageManifest.Metadata.Identity.Version
+          (Get-Content $m -Raw) -replace "Version=`"$([regex]::Escape($v))`"", "Version=`"$v.$env:GITHUB_RUN_NUMBER`"" | Set-Content $m -NoNewline
+          Get-ChildItem "$env:LOCALAPPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object {
+            $ext = Join-Path $_.FullName 'Extensions'
+            if (Test-Path $ext) {
+              Get-ChildItem $ext -Recurse -Filter extension.vsixmanifest | Where-Object { (Get-Content $_.FullName -Raw) -match [regex]::Escape($id) } |
+                ForEach-Object { Write-Host "Removing $($_.DirectoryName)"; Remove-Item -Recurse -Force $_.DirectoryName }
+            }
           }
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $msbuild = & $vswhere -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+          & $msbuild src\FsmEditor.Vsix\FsmEditor.Vsix.csproj /restore /p:Configuration=Release /p:DeployExtension=true /p:VSSDKTargetPlatformRegRootSuffix=Exp /v:minimal
+          if ($LASTEXITCODE -ne 0) { throw 'the build or the deployment failed' }
 
       - name: Tests inside Visual Studio
         env:
