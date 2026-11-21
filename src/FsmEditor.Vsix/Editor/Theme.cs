@@ -1,4 +1,5 @@
 using System;
+using FsmEditor.Core;
 using System.Windows;
 using System.Windows.Media;
 using Microsoft.VisualStudio.PlatformUI;
@@ -122,6 +123,19 @@ namespace FsmEditor.Editor
         {
             if (FsmEditor.Core.ElementColors.Of(hex) == null) return null;
             var (r, g, b) = FsmEditor.Core.ElementColors.Rgb(hex);
+            return Rgb((byte)r, (byte)g, (byte)b);
+        }
+
+        /// <summary>A signal color for a line or shape (a problem, a trace mark), readable on this theme's background (<see cref="Contrast.Mark"/>).</summary>
+        public Color Mark(Color c) => Readable(c, Contrast.Mark);
+
+        /// <summary>A signal color for text (a taken transition's label), readable on this theme's background (<see cref="Contrast.Text"/>).</summary>
+        public Color TextOf(Color c) => Readable(c, Contrast.Text);
+
+        // Against a state's fill, between the background and the foreground: the closer of the two to a signal color.
+        private Color Readable(Color c, double min)
+        {
+            var (r, g, b) = Contrast.Readable((c.R, c.G, c.B), (StateFill.R, StateFill.G, StateFill.B), (Foreground.R, Foreground.G, Foreground.B), min);
             return Rgb((byte)r, (byte)g, (byte)b);
         }
 

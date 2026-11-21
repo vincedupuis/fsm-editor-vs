@@ -1,0 +1,26 @@
+{
+  "machine": "Order",
+  "steps": [
+    {
+      "op": "select",
+      "ids": [
+        "Payment"
+      ]
+    },
+    {
+      "op": "duplicate"
+    },
+    {
+      "op": "select",
+      "ids": [
+        "Cart",
+        "Shipped"
+      ]
+    },
+    {
+      "op": "duplicate"
+    }
+  ],
+  "fsm": "{\n  \"version\": 1,\n  \"name\": \"Order\",\n  \"type\": \"behavioral\",\n  \"documentation\": \"Uses the Payment state machine as a submachine, entering and leaving it through connection point references.\",\n  \"initial\": { \"target\": \"Cart\" },\n  \"elements\": [\n    {\n      \"name\": \"Cart\",\n      \"type\": \"state\",\n      \"transitions\": [\n        { \"type\": \"external\", \"trigger\": \"checkout\", \"target\": \"Payment\" }\n      ]\n    },\n    {\n      \"name\": \"Payment\",\n      \"type\": \"state\",\n      \"submachine\": \"Payment.fsm\",\n      \"transitions\": [\n        { \"type\": \"external\", \"target\": \"Shipped\" }\n      ],\n      \"points\": [\n        { \"name\": \"retry\", \"type\": \"entryPoint\" },\n        {\n          \"name\": \"failed\",\n          \"type\": \"exitPoint\",\n          \"transitions\": [\n            { \"type\": \"external\", \"target\": \"PaymentFailed\" }\n          ]\n        },\n        {\n          \"name\": \"cancelled\",\n          \"type\": \"exitPoint\",\n          \"transitions\": [\n            { \"type\": \"external\", \"target\": \"Cart\" }\n          ]\n        }\n      ]\n    },\n    {\n      \"name\": \"Shipped\",\n      \"type\": \"state\",\n      \"entry\": \"ship()\",\n      \"transitions\": [\n        { \"type\": \"external\", \"target\": \"final1*\" }\n      ]\n    },\n    {\n      \"name\": \"PaymentFailed\",\n      \"type\": \"state\",\n      \"entry\": \"notifyCustomer()\",\n      \"transitions\": [\n        { \"type\": \"external\", \"trigger\": \"retryPayment\", \"target\": \"Payment.retry\" }\n      ]\n    },\n    { \"name\": \"final1*\", \"type\": \"final\" },\n    {\n      \"name\": \"Payment2\",\n      \"type\": \"state\",\n      \"submachine\": \"Payment.fsm\",\n      \"points\": [\n        { \"name\": \"retry\", \"type\": \"entryPoint\" },\n        { \"name\": \"failed\", \"type\": \"exitPoint\" },\n        { \"name\": \"cancelled\", \"type\": \"exitPoint\" }\n      ]\n    },\n    { \"name\": \"Cart2\", \"type\": \"state\" },\n    { \"name\": \"Shipped2\", \"type\": \"state\", \"entry\": \"ship()\" }\n  ]\n}\n",
+  "layout": "{\n  \"version\": 1,\n  \"initial\": { \"x\": 40, \"y\": 100 },\n  \"elements\": [\n    {\n      \"name\": \"Cart\",\n      \"x\": 100,\n      \"y\": 80,\n      \"width\": 120,\n      \"height\": 60\n    },\n    {\n      \"name\": \"Payment\",\n      \"x\": 300,\n      \"y\": 70,\n      \"width\": 180,\n      \"height\": 80,\n      \"points\": [\n        {\n          \"name\": \"retry\",\n          \"x\": -8,\n          \"y\": 52\n        },\n        {\n          \"name\": \"failed\",\n          \"x\": 172,\n          \"y\": 36\n        },\n        {\n          \"name\": \"cancelled\",\n          \"x\": 82,\n          \"y\": -8,\n          \"transitions\": [\n            {\n              \"target\": \"Cart\",\n              \"bends\": [\n                { \"x\": 390, \"y\": 30 },\n                { \"x\": 160, \"y\": 30 }\n              ]\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"name\": \"Shipped\",\n      \"x\": 580,\n      \"y\": 10,\n      \"width\": 120,\n      \"height\": 60\n    },\n    {\n      \"name\": \"PaymentFailed\",\n      \"x\": 560,\n      \"y\": 170,\n      \"width\": 140,\n      \"height\": 60,\n      \"transitions\": [\n        {\n          \"trigger\": \"retryPayment\",\n          \"target\": \"Payment.retry\",\n          \"bends\": [\n            { \"x\": 630, \"y\": 270 },\n            { \"x\": 260, \"y\": 270 },\n            { \"x\": 260, \"y\": 130 }\n          ]\n        }\n      ]\n    },\n    {\n      \"name\": \"final1*\",\n      \"x\": 760,\n      \"y\": 27\n    },\n    {\n      \"name\": \"Payment2\",\n      \"x\": 320,\n      \"y\": 90,\n      \"width\": 180,\n      \"height\": 80,\n      \"points\": [\n        {\n          \"name\": \"retry\",\n          \"x\": -8,\n          \"y\": 52\n        },\n        {\n          \"name\": \"failed\",\n          \"x\": 172,\n          \"y\": 36\n        },\n        {\n          \"name\": \"cancelled\",\n          \"x\": 82,\n          \"y\": -8\n        }\n      ]\n    },\n    {\n      \"name\": \"Cart2\",\n      \"x\": 120,\n      \"y\": 100,\n      \"width\": 120,\n      \"height\": 60\n    },\n    {\n      \"name\": \"Shipped2\",\n      \"x\": 600,\n      \"y\": 30,\n      \"width\": 120,\n      \"height\": 60\n    }\n  ]\n}\n"
+}

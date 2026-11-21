@@ -1,0 +1,35 @@
+{
+  "machine": "groups",
+  "steps": [
+    {
+      "op": "select",
+      "ids": [
+        "C"
+      ]
+    },
+    {
+      "op": "group"
+    },
+    {
+      "op": "select",
+      "ids": [
+        "C",
+        "choice1*"
+      ]
+    },
+    {
+      "op": "group"
+    },
+    {
+      "op": "select",
+      "ids": [
+        "D"
+      ]
+    },
+    {
+      "op": "group"
+    }
+  ],
+  "fsm": "{\n  \"version\": 1,\n  \"name\": \"Groups\",\n  \"type\": \"behavioral\",\n  \"initial\": { \"target\": \"A\" },\n  \"elements\": [\n    { \"name\": \"comment1*\", \"type\": \"comment\", \"text\": \"Note\" },\n    { \"name\": \"A\", \"type\": \"state\" },\n    { \"name\": \"B\", \"type\": \"state\" },\n    { \"name\": \"C\", \"type\": \"state\" },\n    { \"name\": \"choice1*\", \"type\": \"choice\" },\n    {\n      \"name\": \"P\",\n      \"type\": \"state\",\n      \"points\": [\n        { \"name\": \"in\", \"type\": \"entryPoint\" }\n      ],\n      \"elements\": [\n        { \"name\": \"D\", \"type\": \"state\" },\n        { \"name\": \"E\", \"type\": \"state\" },\n        { \"name\": \"F\", \"type\": \"state\" }\n      ]\n    }\n  ]\n}\n",
+  "layout": "{\n  \"version\": 1,\n  \"initial\": { \"x\": 40, \"y\": 60 },\n  \"elements\": [\n    {\n      \"name\": \"comment1*\",\n      \"x\": 100,\n      \"y\": 260,\n      \"width\": 160,\n      \"height\": 64\n    },\n    {\n      \"name\": \"A\",\n      \"x\": 100,\n      \"y\": 40,\n      \"width\": 120,\n      \"height\": 50,\n      \"group\": \"group1\"\n    },\n    {\n      \"name\": \"B\",\n      \"x\": 260,\n      \"y\": 40,\n      \"width\": 120,\n      \"height\": 50,\n      \"group\": \"group1\"\n    },\n    {\n      \"name\": \"C\",\n      \"x\": 100,\n      \"y\": 140,\n      \"width\": 120,\n      \"height\": 50,\n      \"group\": \"group2\"\n    },\n    {\n      \"name\": \"choice1*\",\n      \"x\": 300,\n      \"y\": 150,\n      \"group\": \"group2\"\n    },\n    {\n      \"name\": \"P\",\n      \"x\": 420,\n      \"y\": 40,\n      \"width\": 360,\n      \"height\": 260,\n      \"points\": [\n        {\n          \"name\": \"in\",\n          \"x\": -8,\n          \"y\": 110\n        }\n      ],\n      \"elements\": [\n        {\n          \"name\": \"D\",\n          \"x\": 20,\n          \"y\": 60,\n          \"width\": 120,\n          \"height\": 50\n        },\n        {\n          \"name\": \"E\",\n          \"x\": 180,\n          \"y\": 60,\n          \"width\": 120,\n          \"height\": 50\n        },\n        {\n          \"name\": \"F\",\n          \"x\": 20,\n          \"y\": 160,\n          \"width\": 120,\n          \"height\": 50\n        }\n      ]\n    }\n  ]\n}\n"
+}

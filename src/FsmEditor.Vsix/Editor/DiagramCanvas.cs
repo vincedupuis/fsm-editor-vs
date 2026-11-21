@@ -318,12 +318,12 @@ namespace FsmEditor.Editor
                 shapeWidth = 2.4;
                 fill = th.Accent;
             }
-            if (issue == IssueLevel.Warning) stroke = th.Warning;
+            if (issue == IssueLevel.Warning) stroke = th.Mark(th.Warning);
             if (issue == IssueLevel.Error)
             {
-                stroke = th.Error;
+                stroke = th.Mark(th.Error);
                 shapeWidth = 2;
-                fill = th.Error;
+                fill = th.Mark(th.Error);
             }
             // The Trace Player: active state, or pseudostate on the way of the taken transitions.
             var trace = Trace;
@@ -334,7 +334,7 @@ namespace FsmEditor.Editor
                 trace.Taken.TryGetValue(v.Id, out var takenIn);
                 if (activeIn != null || takenIn != null)
                 {
-                    stroke = fill = TraceColor((activeIn ?? takenIn)[0], activeIn != null);
+                    stroke = fill = th.Mark(TraceColor((activeIn ?? takenIn)[0], activeIn != null));
                     shapeWidth = activeIn != null ? 3 : 2.4;
                 }
                 if (trace.Current.Contains(v.Id)) DrawGlow(dc, v);
@@ -518,7 +518,7 @@ namespace FsmEditor.Editor
             {
                 for (var i = 0; i < activeIn.Count; i++)
                 {
-                    dc.DrawEllipse(th.BrushOf(TraceColor(activeIn[i])), th.PenOf(th.Background, 1), new Point(x + w - 6 - (activeIn.Count - 1 - i) * 11, y - 7), 4, 4);
+                    dc.DrawEllipse(th.BrushOf(th.Mark(TraceColor(activeIn[i]))), th.PenOf(th.Background, 1), new Point(x + w - 6 - (activeIn.Count - 1 - i) * 11, y - 7), 4, 4);
                 }
             }
             var caption = Format.Shown(v.Type == VertexType.ConnectionPointRef ? Or(Or(S.PointName(ix.Vertex(v.Parent), v.Ref), v.Ref), "?") : v.Name);
@@ -562,7 +562,7 @@ namespace FsmEditor.Editor
             var th = T;
             var selected = !_exporting && S.Selection.Contains(t.Id);
             var issue = IssueOf(t.Id);
-            var color = issue == IssueLevel.Error ? th.Error : issue == IssueLevel.Warning ? th.Warning : selected ? th.Accent : Theme.ColorOf(t.Color) ?? th.Line;
+            var color = issue == IssueLevel.Error ? th.Mark(th.Error) : issue == IssueLevel.Warning ? th.Mark(th.Warning) : selected ? th.Accent : Theme.ColorOf(t.Color) ?? th.Line;
             var width = selected ? 2 : 1.3;
             double[] markDash = null;
             if (!_exporting && !selected && issue == IssueLevel.None && DiffMarks.Of(_editor.Diff, t.Id) is DiffMarks.Mark mark)
@@ -576,7 +576,8 @@ namespace FsmEditor.Editor
             var trace = Trace;
             if (trace != null && trace.Taken.TryGetValue(t.Id, out var takenIn))
             {
-                color = (takenColor = TraceColor(takenIn[0], false)).Value;
+                takenColor = TraceColor(takenIn[0], false);
+                color = th.Mark(takenColor.Value);
                 width = 2.6;
             }
             var pen = th.PenOf(color, width, 1, markDash);
@@ -592,7 +593,7 @@ namespace FsmEditor.Editor
             if (Geo.IsDangling(ix, t))
             {
                 // The target names nothing: a marker instead of an arrow head.
-                var marker = th.PenOf(th.Error, 1.4);
+                var marker = th.PenOf(th.Mark(th.Error), 1.4);
                 dc.DrawEllipse(th.BrushOf(th.Background), marker, P(b), 6, 6);
                 dc.DrawLine(marker, new Point(b.X - 3, b.Y - 3), new Point(b.X + 3, b.Y + 3));
                 dc.DrawLine(marker, new Point(b.X + 3, b.Y - 3), new Point(b.X - 3, b.Y + 3));
@@ -615,7 +616,7 @@ namespace FsmEditor.Editor
                 var box = Rect.Empty;
                 for (var i = 0; i < lines.Count; i++)
                 {
-                    var text = Theme.ColorOf(ElementColors.Item(t.Color, t.ItemColors, lines[i].Key)) ?? takenColor ?? (selected ? th.Accent : th.Foreground);
+                    var text = Theme.ColorOf(ElementColors.Item(t.Color, t.ItemColors, lines[i].Key)) ?? (takenColor is Color taken ? th.TextOf(taken) : (Color?)null) ?? (selected ? th.Accent : th.Foreground);
                     box.Union(DrawText(dc, lp.X, Geo.LabelLineY(lp, i, lines.Count), lines[i].Text, 11, th.BrushOf(text), lp.Anchor, halo: th.Background));
                 }
                 if (!_exporting) _labels.Add((box, t.Id));

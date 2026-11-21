@@ -1,0 +1,67 @@
+# On every push and pull request: the Core tests, the VSIX build, and an install smoke test: the VSIX installed
+# quietly into the runner's Visual Studio by VSIXInstaller (which checks the manifest, its targets and prerequisites),
+# found among its extensions, then uninstalled.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      # From the release pinned by FSM_COMMON_VERSION in release.yml.
+      - name: Fetch fsm-editor-common, fsm-cli's templates, the schemas and the interface's cases
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = (Select-String -Path .github\workflows\release.yml -Pattern '^\s*FSM_COMMON_VERSION:\s*(\S+)').Matches[0].Groups[1].Value
+          $name = "fsm-editor-common-$v-windows-x64"
+          gh release download "v$v" -R vincedupuis/fsm-editor-common -p "$name.zip" -p "fsm-editor-common-*-$v.tar.gz" -D $env:RUNNER_TEMP --clobber
+          if ($LASTEXITCODE -ne 0) { throw "fsm-editor-common $v could not be downloaded" }
+          Expand-Archive "$env:RUNNER_TEMP\$name.zip" -DestinationPath $env:RUNNER_TEMP
+          New-Item -ItemType Directory -Force src\FsmEditor.Vsix\cli | Out-Null
+          Copy-Item -Recurse -Force "$env:RUNNER_TEMP\$name\*" src\FsmEditor.Vsix\cli
+          foreach ($part in 'templates', 'schemas', 'api-cases') {
+            tar xzf "$env:RUNNER_TEMP\fsm-editor-common-$part-$v.tar.gz" -C src\FsmEditor.Vsix\cli
+          }
+
+      - name: Test
+        run: dotnet test test/FsmEditor.Core.Tests
+
+      - uses: microsoft/setup-msbuild@v3
+
+      - name: Build the VSIX
+        run: msbuild src\FsmEditor.Vsix\FsmEditor.Vsix.csproj /restore /p:Configuration=Release /v:minimal
+
+      - name: Install the VSIX, then uninstall it
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $installer = "$vs\Common7\IDE\VSIXInstaller.exe"
+          [xml]$manifest = Get-Content src\FsmEditor.Vsix\source.extension.vsixmanifest
+          $id = $manifest.PackageManifest.Metadata.Identity.Id
+          $vsix = (Resolve-Path src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix).Path
+          function Run($arguments, $log) {
+            $p = Start-Process $installer -ArgumentList ($arguments + "/logFile:$log") -Wait -PassThru
+            if ($p.ExitCode -ne 0) {
+              Get-ChildItem $env:TEMP -Filter $log | Get-Content -Tail 60
+              throw "VSIXInstaller $arguments exited with $($p.ExitCode)"
+            }
+          }
+          Run @('/quiet', '/admin', "`"$vsix`"") 'fsm-install.log'
+          $installed = Get-ChildItem "$vs\Common7\IDE\Extensions" -Recurse -Filter extension.vsixmanifest |
+            Where-Object { (Get-Content $_.FullName -Raw) -match [regex]::Escape($id) }
+          if (-not $installed) { throw "$id is not among Visual Studio's extensions after the install" }
+          Write-Host "Installed in $($installed[0].DirectoryName)"
+          if (-not (Test-Path (Join-Path $installed[0].DirectoryName 'cli\fsm-editor-common.exe'))) { throw 'the install has no cli\fsm-editor-common.exe' }
+          Run @('/quiet', '/admin', "/uninstall:$id") 'fsm-uninstall.log'
