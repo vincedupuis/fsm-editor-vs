@@ -83,7 +83,12 @@ jobs:
         if: env.VS_MARKETPLACE_PAT != ''
         shell: pwsh
         run: |
-          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-          $publisher = "$vs\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe"
+          # The publisher of the Microsoft.VSSDK.BuildTools package the build restored, which carries its own
+          # dependencies: the runner's Visual Studio's can't load its Microsoft.Identity.Client (VsixPub0031).
+          $version = ([xml](Get-Content src\FsmEditor.Vsix\FsmEditor.Vsix.csproj)).Project.ItemGroup.PackageReference |
+            Where-Object { $_.Include -eq 'Microsoft.VSSDK.BuildTools' } | ForEach-Object { $_.Version }
+          $packages = (dotnet nuget locals global-packages -l) -replace '^global-packages:\s*', ''
+          $publisher = Join-Path $packages "microsoft.vssdk.buildtools\$version\tools\vssdk\bin\VsixPublisher.exe"
+          if (-not (Test-Path $publisher)) { throw "VsixPublisher not found: $publisher" }
           & $publisher publish -payload src\FsmEditor.Vsix\bin\Release\net48\FsmEditor.vsix -publishManifest vs-publish.json -personalAccessToken $env:VS_MARKETPLACE_PAT
           if ($LASTEXITCODE -ne 0) { throw "VsixPublisher failed" }
