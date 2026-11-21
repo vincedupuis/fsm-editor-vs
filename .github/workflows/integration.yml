@@ -65,8 +65,16 @@ jobs:
           }
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           $msbuild = & $vswhere -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
-          & $msbuild src\FsmEditor.Vsix\FsmEditor.Vsix.csproj /restore /p:Configuration=Release /p:DeployExtension=true /p:VSSDKTargetPlatformRegRootSuffix=Exp /v:minimal
+          & $msbuild src\FsmEditor.Vsix\FsmEditor.Vsix.csproj /restore /p:Configuration=Release /p:DeployExtension=true /p:VSSDKTargetPlatformRegRootSuffix=Exp /v:normal |
+            Select-String -Pattern 'deploy|Deploy|error|warning' | ForEach-Object { $_.Line }
           if ($LASTEXITCODE -ne 0) { throw 'the build or the deployment failed' }
+          Get-ChildItem "$env:LOCALAPPDATA\Microsoft\VisualStudio" -Recurse -Filter FsmEditor.dll -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'Exp\\Extensions' } | ForEach-Object { Write-Host "Deployed: $($_.FullName) $($_.LastWriteTime)" }
+          # The experimental instance's configuration rebuilt from its extensions: no registration left pointing at a
+          # removed copy.
+          $devenv = & $vswhere -latest -prerelease -products * -property productPath
+          & ($devenv -replace 'devenv\.exe$', 'devenv.com') /rootsuffix Exp /updateconfiguration
+          Write-Host "updateconfiguration: $LASTEXITCODE"
 
       - name: Tests inside Visual Studio
         env:
@@ -76,6 +84,7 @@ jobs:
       # The tests passing on another copy of the extension (one F5 deployed, a broken install) would prove nothing:
       # the package must have loaded, from this run's version.
       - name: The package loaded, from this run's VSIX
+        if: always()
         shell: pwsh
         run: |
           $logs = Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object { Join-Path $_.FullName 'ActivityLog.xml' } | Where-Object { Test-Path $_ }
