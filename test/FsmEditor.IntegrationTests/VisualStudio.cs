@@ -125,6 +125,7 @@ namespace FsmEditor.IntegrationTests
                 {
                     string more = null;
                     try { more = diagnose?.Invoke(); } catch (Exception e) { more = e.Message; }
+                    Screenshot(what);
                     throw new TimeoutException($"timed out: {what}" + (last != null ? $" (last: {last.Message})" : "") + (more != null ? $"; {more}" : ""));
                 }
                 Thread.Sleep(250);
@@ -251,6 +252,30 @@ namespace FsmEditor.IntegrationTests
             AutomationElement.FromHandle(MainWindow)
                 .FindAll(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "FsmPropertiesWindow"))
                 .Cast<AutomationElement>().Any(e => !e.Current.IsOffscreen);
+
+        /// <summary>
+        /// A screenshot of the whole screen, as <c>screens/&lt;name&gt;.png</c> in the runner's temporary folder (the
+        /// workflow uploads them), else in the system's; nothing when it can't be taken.
+        /// </summary>
+        public static void Screenshot(string name)
+        {
+            try
+            {
+                var dir = Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "screens");
+                Directory.CreateDirectory(dir);
+                var file = string.Concat(name.Select(c => char.IsLetterOrDigit(c) ? c : '-'));
+                var b = System.Windows.Forms.Screen.PrimaryScreen.Bounds;
+                using (var bmp = new System.Drawing.Bitmap(b.Width, b.Height))
+                {
+                    using (var g = System.Drawing.Graphics.FromImage(bmp)) g.CopyFromScreen(b.Location, System.Drawing.Point.Empty, b.Size);
+                    bmp.Save(Path.Combine(dir, $"{DateTime.UtcNow:HHmmss}-{(file.Length > 60 ? file.Substring(0, 60) : file)}.png"), System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+            catch
+            {
+                // no screen to take
+            }
+        }
 
         /// <summary>The texts Visual Studio's main window shows (UI Automation: its Text elements), with their tooltips.</summary>
         public System.Collections.Generic.List<(string Text, string Tip)> Texts()

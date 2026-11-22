@@ -154,7 +154,9 @@ jobs:
         if: failure()
         with:
           name: desktop
-          path: ${{ runner.temp }}/desktop.png
+          path: |
+            ${{ runner.temp }}/desktop.png
+            ${{ runner.temp }}/screens/*.png
           if-no-files-found: ignore
 
       # What Visual Studio logged, when a test failed: its ActivityLog, and the crashes Windows recorded.
