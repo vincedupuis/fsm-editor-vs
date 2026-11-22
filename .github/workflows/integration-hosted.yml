@@ -1,0 +1,147 @@
+# Proof of concept: the tests inside Visual Studio (test/FsmEditor.IntegrationTests) on a GitHub-hosted Windows
+# runner instead of the self-hosted one (integration.yml), with the Visual Studio of its image.
+name: Integration (hosted, PoC)
+
+on:
+  push:
+    branches: [poc/hosted-integration]
+  workflow_dispatch:
+
+concurrency: integration-hosted
+
+jobs:
+  visual-studio:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      # What the tests need from the runner: a Visual Studio with the extension SDK, and a desktop to give input to.
+      - name: The runner
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          & $vswhere -all -prerelease -products * -format text | Select-String 'displayName|installationVersion|installationPath'
+          Write-Host "VSSDK workload: $(& $vswhere -latest -products * -requires Microsoft.VisualStudio.Workload.VisualStudioExtension -property installationPath)"
+          Write-Host "UserInteractive: $([Environment]::UserInteractive), session: $((Get-Process -Id $PID).SessionId), user: $env:USERNAME"
+          Add-Type -AssemblyName System.Windows.Forms
+          Write-Host "Screen: $([System.Windows.Forms.Screen]::PrimaryScreen.Bounds)"
+          query user 2>&1 | Write-Host
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      # From the release pinned by FSM_COMMON_VERSION in release.yml, over HTTPS (the runner may have no gh).
+      - name: Fetch fsm-editor-common, fsm-cli's templates and the schemas
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path .github\workflows\release.yml -Pattern '^\s*FSM_COMMON_VERSION:\s*(\S+)').Matches[0].Groups[1].Value
+          $base = "https://github.com/vincedupuis/fsm-editor-common/releases/download/v$v"
+          $tmp = Join-Path $env:RUNNER_TEMP "common-$v"
+          New-Item -ItemType Directory -Force $tmp | Out-Null
+          $name = "fsm-editor-common-$v-windows-x64"
+          Invoke-WebRequest "$base/$name.zip" -OutFile "$tmp\$name.zip"
+          Expand-Archive -Force "$tmp\$name.zip" -DestinationPath $tmp
+          New-Item -ItemType Directory -Force src\FsmEditor.Vsix\cli | Out-Null
+          Copy-Item -Recurse -Force "$tmp\$name\*" src\FsmEditor.Vsix\cli
+          foreach ($part in 'templates', 'schemas', 'api-cases') {
+            Invoke-WebRequest "$base/fsm-editor-common-$part-$v.tar.gz" -OutFile "$tmp\$part.tar.gz"
+            tar xzf "$tmp\$part.tar.gz" -C src\FsmEditor.Vsix\cli
+          }
+
+      # As F5 does it: the build deploys the extension into the experimental instance (DeployExtension), after the
+      # copies of earlier runs are removed. (VSIXInstaller's per-user install into the experimental instance of
+      # Visual Studio 2026 fails when Visual Studio applies it at start.) A version of its own for each run
+      # (0.7.1.<run>), which the check after the tests finds.
+      - name: Deploy the extension into the experimental instance
+        shell: pwsh
+        run: |
+          Get-CimInstance Win32_Process -Filter "Name = 'devenv.exe'" | Where-Object { $_.CommandLine -match '/rootsuffix Exp' } |
+            ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+          $m = 'src\FsmEditor.Vsix\source.extension.vsixmanifest'
+          [xml]$x = Get-Content $m
+          $id = $x.PackageManifest.Metadata.Identity.Id
+          $v = $x.PackageManifest.Metadata.Identity.Version
+          (Get-Content $m -Raw) -replace "Version=`"$([regex]::Escape($v))`"", "Version=`"$v.$env:GITHUB_RUN_NUMBER`"" | Set-Content $m -NoNewline
+          Get-ChildItem "$env:LOCALAPPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object {
+            $ext = Join-Path $_.FullName 'Extensions'
+            if (Test-Path $ext) {
+              # Listed first, then removed: removing folders while listing them breaks the listing.
+              $dirs = @(Get-ChildItem $ext -Recurse -Filter extension.vsixmanifest | Where-Object { (Get-Content $_.FullName -Raw) -match [regex]::Escape($id) } |
+                ForEach-Object { $_.DirectoryName } | Sort-Object -Unique)
+              foreach ($d in $dirs) { Write-Host "Removing $d"; Remove-Item -Recurse -Force $d }
+            }
+          }
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $msbuild = & $vswhere -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+          & $msbuild src\FsmEditor.Vsix\FsmEditor.Vsix.csproj /restore /p:Configuration=Release /p:DeployExtension=true /p:VSSDKTargetPlatformRegRootSuffix=Exp /v:normal |
+            Select-String -Pattern 'deploy|Deploy|error|warning' | ForEach-Object { $_.Line }
+          if ($LASTEXITCODE -ne 0) { throw 'the build or the deployment failed' }
+          Get-ChildItem "$env:LOCALAPPDATA\Microsoft\VisualStudio" -Recurse -Filter FsmEditor.dll -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'Exp\\Extensions' } | ForEach-Object { Write-Host "Deployed: $($_.FullName) $($_.LastWriteTime)" }
+          # The experimental instance's configuration rebuilt from its extensions: no registration left pointing at a
+          # removed copy.
+          $devenv = & $vswhere -latest -prerelease -products * -property productPath
+          & ($devenv -replace 'devenv\.exe$', 'devenv.com') /rootsuffix Exp /updateconfiguration
+          Write-Host "updateconfiguration: $LASTEXITCODE"
+          # The ActivityLog of an earlier start removed: the check after the tests reads only this run's.
+          Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object { Join-Path $_.FullName 'ActivityLog.xml' } |
+            Where-Object { Test-Path $_ } | ForEach-Object { Write-Host "Removing $_"; Remove-Item -Force $_ }
+
+      - name: Tests inside Visual Studio
+        env:
+          FSM_VS_INTEGRATION: '1'
+        run: dotnet test test\FsmEditor.IntegrationTests --logger "console;verbosity=normal"
+
+      # The tests passing on another copy of the extension (one F5 deployed, a broken install) would prove nothing:
+      # the package must have loaded, from this run's version.
+      - name: The package loaded, from this run's VSIX
+        if: always()
+        shell: pwsh
+        run: |
+          $logs = Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object { Join-Path $_.FullName 'ActivityLog.xml' } | Where-Object { Test-Path $_ }
+          foreach ($log in $logs) {
+            [xml]$x = Get-Content $log
+            $bad = $x.activity.entry | Where-Object { $_.type -eq 'Error' -and $_.description -match 'FsmEditorPackage' }
+            if ($bad) { $bad | ForEach-Object { Write-Host $_.description }; throw "FsmEditorPackage failed to load ($log)" }
+          }
+          $dll = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\VisualStudio" -Recurse -Filter FsmEditor.dll -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'Exp\\Extensions' -and $_.DirectoryName -match "\.$env:GITHUB_RUN_NUMBER$" }
+          if (-not $dll) { throw "this run's version (.$env:GITHUB_RUN_NUMBER) is not in the experimental instance's extensions" }
+          Write-Host "Loaded from $($dll[0].DirectoryName)"
+
+      - name: A screenshot of the desktop
+        if: failure()
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $bmp.Save("$env:RUNNER_TEMP\desktop.png")
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: desktop
+          path: ${{ runner.temp }}/desktop.png
+          if-no-files-found: ignore
+
+      # What Visual Studio logged, when a test failed: its ActivityLog, and the crashes Windows recorded.
+      - name: Visual Studio's logs
+        if: failure()
+        shell: pwsh
+        run: |
+          Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object {
+            $log = Join-Path $_.FullName 'ActivityLog.xml'
+            if (Test-Path $log) {
+              Write-Host "== $log"
+              [xml]$x = Get-Content $log
+              $x.activity.entry | Where-Object { $_.type -ne 'Information' } | Select-Object -Last 40 |
+                ForEach-Object { Write-Host "$($_.type) $($_.source): $($_.description)" }
+            }
+          }
+          Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Level = 2; StartTime = (Get-Date).AddHours(-1) } -ErrorAction SilentlyContinue |
+            Where-Object { $_.Message -match 'devenv' } | Select-Object -First 5 | ForEach-Object { Write-Host "== $($_.TimeCreated) $($_.ProviderName)"; Write-Host $_.Message }
+
