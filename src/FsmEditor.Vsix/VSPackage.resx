@@ -16,6 +16,10 @@
     <value>FSM Editor</value>
     <comment>Name of the diagram editor (Open With dialog)</comment>
   </data>
+  <data name="113" xml:space="preserve">
+    <value>FSM Editor layout (JSON)</value>
+    <comment>Name of the text editor for layout files, X.fsm.layout (Open With dialog)</comment>
+  </data>
   <data name="111" xml:space="preserve">
     <value>FSM Editor and Codegen for Visual Studio</value>
   </data>
