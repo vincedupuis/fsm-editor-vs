@@ -27,6 +27,7 @@ jobs:
           Add-Type -AssemblyName System.Windows.Forms
           Write-Host "Screen: $([System.Windows.Forms.Screen]::PrimaryScreen.Bounds)"
           query user 2>&1 | Write-Host
+          exit 0
 
       - uses: actions/setup-dotnet@v6
         with:
