@@ -148,7 +148,9 @@ namespace FsmEditor.IntegrationTests
                 if (box == null) return false;
                 schema = ((ValuePattern)box.GetCurrentPattern(ValuePattern.Pattern)).Current.Value;
                 return true;
-            });
+            }, null, () => "combo boxes shown: " + string.Join(", ", AutomationElement.FromHandle(_vs.MainWindow)
+                .FindAll(TreeScope.Descendants, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ComboBox))
+                .Cast<AutomationElement>().Where(e => !e.Current.IsOffscreen).Select(e => $"'{e.Current.Name}'")));
             return schema;
         }
 
@@ -535,12 +537,18 @@ namespace FsmEditor.IntegrationTests
                 Assert.False(string.IsNullOrEmpty(name), $"command 0x{id:x4} has a name");
             }
             // Tools › FSM Editor, and View › Other Windows › Trace Player.
-            var (tools, windows) = _vs.Do(d =>
+            // Read again while Visual Studio rebuilds its menus (a CommandBar disposed meanwhile).
+            string[] tools = null, windows = null;
+            VisualStudio.Until("the menus read", () =>
             {
-                dynamic bars = d.CommandBars;
-                dynamic menu = bars["Tools"].Controls["FSM Editor"].CommandBar;
-                return ((string[])Captions(menu), (string[])Captions(bars["Other Windows"]));
-            });
+                (tools, windows) = _vs.Do(d =>
+                {
+                    dynamic bars = d.CommandBars;
+                    dynamic menu = bars["Tools"].Controls["FSM Editor"].CommandBar;
+                    return ((string[])Captions(menu), (string[])Captions(bars["Other Windows"]));
+                });
+                return true;
+            }, TimeSpan.FromSeconds(20));
             foreach (var caption in new[] { "New State Machine", "Generate Code", "Export as SVG", "Export as PNG", "Open as Text", "Open in FSM Editor", "Open Trace", "Compare as Diagrams" })
                 Assert.True(tools.Contains(caption), $"Tools › FSM Editor › {caption}: {string.Join(", ", tools)}");
             Assert.Contains("Trace Player", windows);

@@ -107,7 +107,7 @@ namespace FsmEditor.IntegrationTests
         });
 
         /// <summary>Waits until <paramref name="probe"/> holds, polling it; a probe that throws is false.</summary>
-        public static void Until(string what, Func<bool> probe, TimeSpan? timeout = null)
+        public static void Until(string what, Func<bool> probe, TimeSpan? timeout = null, Func<string> diagnose = null)
         {
             var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(60));
             Exception last = null;
@@ -121,7 +121,12 @@ namespace FsmEditor.IntegrationTests
                 {
                     last = e;
                 }
-                if (DateTime.UtcNow > deadline) throw new TimeoutException($"timed out: {what}" + (last != null ? $" (last: {last.Message})" : ""));
+                if (DateTime.UtcNow > deadline)
+                {
+                    string more = null;
+                    try { more = diagnose?.Invoke(); } catch (Exception e) { more = e.Message; }
+                    throw new TimeoutException($"timed out: {what}" + (last != null ? $" (last: {last.Message})" : "") + (more != null ? $"; {more}" : ""));
+                }
                 Thread.Sleep(250);
             }
         }
