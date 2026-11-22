@@ -162,7 +162,8 @@ namespace FsmEditor.IntegrationTests
             _vs.Raise(OpenAsText);
             VisualStudio.Until("the model file in the text editor", () => _vs.ActiveIsText() && ActiveIs("Payment.fsm"));
             var model = SchemaOfActiveEditor();
-            _vs.CloseAll();
+            // With the model file's text still open: Visual Studio's JSON editor, its last view closed, shuts down for a
+            // while, and a view opened meanwhile has no schema bar (Globals.Initialize can't be called during shutdown).
             _vs.Open("Payment.fsm.layout");
             Assert.True(_vs.ActiveIsText(), "the layout file opens in the text editor");
             var layout = SchemaOfActiveEditor();
@@ -537,9 +538,8 @@ namespace FsmEditor.IntegrationTests
                 Assert.False(string.IsNullOrEmpty(name), $"command 0x{id:x4} has a name");
             }
             // Tools › FSM Editor, and View › Other Windows › Trace Player.
-            // Read again while Visual Studio rebuilds its menus (a CommandBar disposed meanwhile).
-            string[] tools = null, windows = null;
-            VisualStudio.Until("the menus read", () =>
+            string[] tools, windows;
+            try
             {
                 (tools, windows) = _vs.Do(d =>
                 {
@@ -547,15 +547,13 @@ namespace FsmEditor.IntegrationTests
                     dynamic menu = bars["Tools"].Controls["FSM Editor"].CommandBar;
                     return ((string[])Captions(menu), (string[])Captions(bars["Other Windows"]));
                 });
-                return true;
-            }, TimeSpan.FromSeconds(20), () => _vs.Do(d =>
+            }
+            catch (Exception e) when (e.ToString().Contains("disposed"))
             {
-                // Which of the three fails.
-                dynamic bars = d.CommandBars;
-                string Try(Func<object> f) { try { f(); return "ok"; } catch (Exception e) { return e.GetType().Name + ": " + e.Message.Split('\n')[0]; } }
-                return $"Tools: {Try(() => bars["Tools"])}; FSM Editor: {Try(() => bars["Tools"].Controls["FSM Editor"])}; its CommandBar: {Try(() => bars["Tools"].Controls["FSM Editor"].CommandBar)}; " +
-                    $"captions: {Try(() => Captions(bars["Tools"].Controls["FSM Editor"].CommandBar))}; Other Windows: {Try(() => Captions(bars["Other Windows"]))}";
-            }));
+                // Visual Studio 2026's CommandBars can be disposed altogether: the menus read as they show, opened.
+                tools = _vs.MenuItems("Tools", "FSM Editor");
+                windows = _vs.MenuItems("View", "Other Windows");
+            }
             foreach (var caption in new[] { "New State Machine", "Generate Code", "Export as SVG", "Export as PNG", "Open as Text", "Open in FSM Editor", "Open Trace", "Compare as Diagrams" })
                 Assert.True(tools.Contains(caption), $"Tools › FSM Editor › {caption}: {string.Join(", ", tools)}");
             Assert.Contains("Trace Player", windows);

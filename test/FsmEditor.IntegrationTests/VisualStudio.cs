@@ -254,6 +254,44 @@ namespace FsmEditor.IntegrationTests
                 .Cast<AutomationElement>().Any(e => !e.Current.IsOffscreen);
 
         /// <summary>
+        /// The items of a menu of the main menu bar, through UI Automation: <paramref name="path"/> from the bar (Tools,
+        /// FSM Editor), each opened as a click would, then closed; without <c>&amp;</c> and trailing ellipses.
+        /// </summary>
+        public string[] MenuItems(params string[] path)
+        {
+            Input.Foreground(MainWindow);
+            var pid = ProcessId;
+            AutomationElement Find(AutomationElement root, string name) => root.FindFirst(TreeScope.Descendants, new AndCondition(
+                new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.MenuItem),
+                new PropertyCondition(AutomationElement.NameProperty, name),
+                new PropertyCondition(AutomationElement.ProcessIdProperty, pid)));
+            var isItem = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.MenuItem);
+            AutomationElement item = null;
+            try
+            {
+                foreach (var name in path)
+                {
+                    AutomationElement found = null;
+                    var parent = item ?? AutomationElement.FromHandle(MainWindow);
+                    Until($"the menu item {name}", () => (found = Find(parent, name) ?? Find(AutomationElement.RootElement, name)) != null, TimeSpan.FromSeconds(10));
+                    ((ExpandCollapsePattern)found.GetCurrentPattern(ExpandCollapsePattern.Pattern)).Expand();
+                    item = found;
+                }
+                string[] names = null;
+                Until($"the items of {string.Join(" › ", path)}", () =>
+                {
+                    names = item.FindAll(TreeScope.Children, isItem).Cast<AutomationElement>().Select(e => e.Current.Name).ToArray();
+                    return names.Length > 0;
+                }, TimeSpan.FromSeconds(10));
+                return names.Select(n => n.Replace("&", "").Replace("...", "").Replace("…", "")).ToArray();
+            }
+            finally
+            {
+                for (var i = 0; i <= path.Length; i++) Input.Key(0x1B);
+            }
+        }
+
+        /// <summary>
         /// A screenshot of the whole screen, as <c>screens/&lt;name&gt;.png</c> in the runner's temporary folder (the
         /// workflow uploads them), else in the system's; nothing when it can't be taken.
         /// </summary>
