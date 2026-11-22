@@ -241,6 +241,12 @@ namespace FsmEditor.IntegrationTests
             return new System.Drawing.Point((int)Math.Round(r.Left + (viewX + (v.X + v.W * fx) * z) * scale), (int)Math.Round(r.Top + (viewY + (v.Y + v.H * fy) * z) * scale));
         }
 
+        /// <summary>Whether a diagram's properties window is open (its title, automation id <c>FsmPropertiesWindow</c>).</summary>
+        public bool PropertiesWindowOpen() =>
+            AutomationElement.FromHandle(MainWindow)
+                .FindAll(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "FsmPropertiesWindow"))
+                .Cast<AutomationElement>().Any(e => !e.Current.IsOffscreen);
+
         /// <summary>The texts Visual Studio's main window shows (UI Automation: its Text elements), with their tooltips.</summary>
         public System.Collections.Generic.List<(string Text, string Tip)> Texts()
         {
@@ -366,40 +372,6 @@ namespace FsmEditor.IntegrationTests
                 // a file still open: left in the temp folder
             }
         }
-
-        /// <summary>
-        /// A DWORD of the experimental instance's user registry (its private hive, which only Visual Studio's VsRegEdit
-        /// opens without administrator rights), relative to its root: its value, or null when it has none. Read with
-        /// Visual Studio closed: it writes its hive when it exits.
-        /// </summary>
-        public static int? ExpRegistry(string key, string name)
-        {
-            var output = VsRegEdit($"read \"{InstallDir()}\" Exp HKCU \"{key}\" \"{name}\" dword", out var exit);
-            var m = System.Text.RegularExpressions.Regex.Match(output, @"Value: (\d+)");
-            return exit == 0 && m.Success ? int.Parse(m.Groups[1].Value) : (int?)null;
-        }
-
-        /// <summary>Sets (or, with null, removes) a DWORD of the experimental instance's user registry (see <see cref="ExpRegistry(string, string)"/>).</summary>
-        public static void ExpRegistry(string key, string name, int? value)
-        {
-            var args = value == null
-                ? $"remove \"{InstallDir()}\" Exp HKCU \"{key}\" \"{name}\""
-                : $"set \"{InstallDir()}\" Exp HKCU \"{key}\" \"{name}\" dword {value}";
-            var output = VsRegEdit(args, out var exit);
-            if (exit != 0 && value != null) throw new InvalidOperationException($"VsRegEdit {args}: {output}");
-        }
-
-        private static string VsRegEdit(string args, out int exit)
-        {
-            var p = Process.Start(new ProcessStartInfo(Path.Combine(Path.GetDirectoryName(DevenvPath()), "VsRegEdit.exe"), args) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true });
-            var output = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
-            p.WaitForExit();
-            exit = p.ExitCode;
-            return output;
-        }
-
-        /// <summary>The installation folder of the Visual Studio the tests start (devenv.exe is in its Common7\IDE).</summary>
-        private static string InstallDir() => Path.GetFullPath(Path.Combine(Path.GetDirectoryName(DevenvPath()), "..", ".."));
 
         private static string DevenvPath()
         {
@@ -615,6 +587,29 @@ namespace FsmEditor.IntegrationTests
                 Thread.Sleep(60);
             }
             keybd_event(0x12, 0, 2, UIntPtr.Zero);
+            Thread.Sleep(300);
+        }
+
+        /// <summary>A click with Alt held (what opens an element's properties window).</summary>
+        public static void AltClick(System.Drawing.Point p)
+        {
+            SetCursorPos(p.X, p.Y);
+            Thread.Sleep(100);
+            keybd_event(0x12, 0, 0, UIntPtr.Zero);
+            mouse_event(0x0002, 0, 0, 0, UIntPtr.Zero);
+            mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero);
+            Thread.Sleep(60);
+            keybd_event(0x12, 0, 2, UIntPtr.Zero);
+            Thread.Sleep(300);
+        }
+
+        /// <summary>A click with the middle button.</summary>
+        public static void MiddleClick(System.Drawing.Point p)
+        {
+            SetCursorPos(p.X, p.Y);
+            Thread.Sleep(100);
+            mouse_event(0x0020, 0, 0, 0, UIntPtr.Zero);
+            mouse_event(0x0040, 0, 0, 0, UIntPtr.Zero);
             Thread.Sleep(300);
         }
 

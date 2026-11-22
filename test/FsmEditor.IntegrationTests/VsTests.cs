@@ -369,6 +369,63 @@ namespace FsmEditor.IntegrationTests
             Assert.False(File.Exists(_vs.PathOf("Nowhere.fsm")));
         }
 
+        // ---------------------------------------------------------------- the diagram's own gestures (not scenarios)
+
+        [VsFact]
+        public void AltClickAndAMiddleClickOpenThePropertiesWindow()
+        {
+            OpenDiagramOf("MediaPlayer.fsm");
+            Input.AltClick(_vs.VertexOnScreen("MediaPlayer.fsm", "Off"));
+            VisualStudio.Until("the properties window, after Alt+click", _vs.PropertiesWindowOpen);
+            Input.Key(0x1B); // Esc
+            VisualStudio.Until("the window closed", () => !_vs.PropertiesWindowOpen());
+            Input.MiddleClick(_vs.VertexOnScreen("MediaPlayer.fsm", "Off"));
+            VisualStudio.Until("the properties window, after a middle click", _vs.PropertiesWindowOpen);
+            Input.Key(0x1B);
+            VisualStudio.Until("the window closed", () => !_vs.PropertiesWindowOpen());
+        }
+
+        [VsFact]
+        public void AltClickOnASubmachineStateOpensItsPropertiesWindowAfterTheDoubleClickTime()
+        {
+            OpenDiagramOf("Order.fsm");
+            Input.AltClick(_vs.VertexOnScreen("Order.fsm", "Payment"));
+            VisualStudio.Until("the properties window", _vs.PropertiesWindowOpen);
+            Assert.True(ActiveIs("Order.fsm"), "Payment.fsm not opened");
+            Input.Key(0x1B);
+        }
+
+        [VsFact]
+        public void AClickInACompositeStatesAreaSelectsIt()
+        {
+            CopyMachine("MediaPlayer.fsm", "Area.fsm");
+            OpenDiagramOf("Area.fsm");
+            // Inside On's region, near its bottom right corner, away from its states and its border.
+            Input.Click(_vs.VertexOnScreen("Area.fsm", "On", 0.96, 0.96));
+            _vs.Execute("Edit.Delete");
+            VisualStudio.Until("On deleted", () => !_vs.Do(d => d.ActiveDocument.Saved));
+            Save();
+            Assert.False(Has(Read("Area.fsm"), "On"), "On deleted: it was the selection");
+            Assert.True(Has(Read("Area.fsm"), "Off"), "Off kept");
+        }
+
+        [VsFact]
+        public void ACompositeStateMovesByItsBorder()
+        {
+            CopyMachine("MediaPlayer.fsm", "Border.fsm");
+            var model = Read("Border.fsm");
+            var layout = Read("Border.fsm.layout");
+            OpenDiagramOf("Border.fsm");
+            // On's left border, low in its region (not its title bar).
+            var edge = _vs.VertexOnScreen("Border.fsm", "On", 0, 0.9);
+            var from = new System.Drawing.Point(edge.X + 2, edge.Y);
+            Input.Drag(from, new System.Drawing.Point(from.X + 40, from.Y + 30));
+            VisualStudio.Until("On moved", () => !_vs.Do(d => d.ActiveDocument.Saved));
+            Save();
+            Assert.Equal(model, Read("Border.fsm"));
+            Assert.NotEqual(layout, Read("Border.fsm.layout"));
+        }
+
         // ---------------------------------------------------------------- editing through Visual Studio
 
         /// <summary>
@@ -455,72 +512,6 @@ namespace FsmEditor.IntegrationTests
             Save();
             Assert.Equal(model, Read("MediaPlayer.fsm"));
             Assert.NotEqual(layout, Read("MediaPlayer.fsm.layout"));
-        }
-
-        [VsFact]
-        [Trait("Scenario", "hot-exit")]
-        public void AnUnsavedChangeSurvivesAutoRecover()
-        {
-            // Visual Studio has no hot exit (closing it asks about unsaved changes): its equivalent is AutoRecover
-            // (Tools › Options › Environment › AutoRecover), which backs up the unsaved documents every few minutes
-            // and, at the next start after Visual Studio ended without closing them, offers to copy the backups over
-            // their files. Here every minute, in an instance of its own, ended as a crash would.
-            // Its interval is read from the registry at the start (settings.json's environment.autoRecover.
-            // backupIntervalMinutes isn't used there: the default 5 minutes).
-            const string key = @"General\AutoRecover", name = "AutoRecover Save Interval";
-            var interval = VisualStudio.ExpRegistry(key, name);
-            VisualStudio.ExpRegistry(key, name, 1);
-            VisualStudio vs = null, again = null;
-            try
-            {
-                vs = new VisualStudio { KeepFolder = true };
-                var model = vs.PathOf("MediaPlayer.fsm");
-                var layout = File.ReadAllText(model + ".layout");
-                var text = File.ReadAllText(model);
-                // A change of the model file (a state deleted): AutoRecover backs up a document's own file.
-                vs.Open("MediaPlayer.fsm");
-                vs.Diagram();
-                Input.Click(vs.VertexOnScreen("MediaPlayer.fsm", "Off"));
-                vs.Execute("Edit.Delete");
-                VisualStudio.Until("Off deleted", () => !vs.Do(d => d.ActiveDocument.Saved));
-                var backups = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\VisualStudio\BackupFiles", Path.GetFileName(vs.Folder));
-                VisualStudio.Until("AutoRecover's backup of MediaPlayer.fsm (waited for up to 3 minutes, for a backup every minute)", () => Directory.Exists(backups) &&
-                    Directory.EnumerateFiles(backups, "*MediaPlayer*", SearchOption.AllDirectories).Any(), TimeSpan.FromMinutes(3));
-                vs.Kill();
-                // The files unchanged: the change is in the backup only.
-                Assert.Equal(text, File.ReadAllText(model));
-                Assert.Equal(layout, File.ReadAllText(model + ".layout"));
-                // At the next start, Visual Studio offers the backups (a dialog before its DTE answers).
-                var recover = System.Threading.Tasks.Task.Run(() => RecoverAtStart(TimeSpan.FromMinutes(3)));
-                again = VisualStudio.StartOn(vs.Folder);
-                Assert.True(recover.Wait(TimeSpan.FromMinutes(3)), "the recovery offered");
-                VisualStudio.Until("the change recovered", () => !Has(File.ReadAllText(model), "Off"), TimeSpan.FromMinutes(1));
-                Assert.True(Has(File.ReadAllText(model), "Stopped"), "the rest of the machine recovered too");
-            }
-            finally
-            {
-                if (again != null) again.Dispose();
-                else if (vs != null) vs.KeepFolder = false;
-                vs?.Dispose();
-                VisualStudio.ExpRegistry(key, name, interval);
-            }
-        }
-
-        /// <summary>Answers Visual Studio's offer to recover the files backed up before it ended: recover them.</summary>
-        private static void RecoverAtStart(TimeSpan timeout)
-        {
-            var name = new PropertyCondition(AutomationElement.NameProperty, "Microsoft Visual Studio Recovered Files");
-            AutomationElement dialog = null;
-            VisualStudio.Until("Visual Studio's Recovered Files", () =>
-            {
-                var devenv = new System.Collections.Generic.HashSet<int>(Process.GetProcessesByName("devenv").Select(p => p.Id));
-                dialog = AutomationElement.RootElement.FindAll(TreeScope.Children, Condition.TrueCondition).Cast<AutomationElement>()
-                    .Where(w => devenv.Contains(w.Current.ProcessId))
-                    .Select(w => w.Current.Name == "Microsoft Visual Studio Recovered Files" ? w : w.FindFirst(TreeScope.Children, name))
-                    .FirstOrDefault(w => w != null);
-                return dialog != null;
-            }, timeout);
-            VisualStudio.Press(dialog, "Recover Selected Files");
         }
 
         // ---------------------------------------------------------------- commands and tool windows

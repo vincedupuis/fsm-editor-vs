@@ -136,3 +136,4 @@ edition.
 | --- | --- | --- |
 | text-closed-unsaved | JetBrains | The Text and Diagram tabs edit one document, and closing an editor never discards its unsaved changes: there is no "close without saving". |
 | hot-exit | JetBrains | The IDE has no backup and restore of unsaved documents: it saves changed documents itself (on losing focus, before running, at exit). |
+| hot-exit | Visual Studio | AutoRecover is Visual Studio's own backup, written on its own timer (a minute at the shortest): not tested here. |

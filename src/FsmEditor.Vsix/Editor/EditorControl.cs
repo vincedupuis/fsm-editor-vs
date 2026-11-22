@@ -384,7 +384,10 @@ namespace FsmEditor.Editor
             close.Click += (s, e) => ClosePropertiesWindow();
             SetDock(close, Dock.Right);
             head.Children.Add(close);
-            head.Children.Add(new TextBlock { Text = "Properties", FontSize = 12, Margin = new Thickness(8, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center });
+            var title = new TextBlock { Text = "Properties", FontSize = 12, Margin = new Thickness(8, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
+            // What the integration tests find the window by (the Border itself has no automation peer).
+            AutomationProperties.SetAutomationId(title, "FsmPropertiesWindow");
+            head.Children.Add(title);
             _windowProps = new PropertiesPanel(this) { Margin = new Thickness(12, 8, 12, 12) };
             var body = new DockPanel();
             SetDock(head, Dock.Top);
