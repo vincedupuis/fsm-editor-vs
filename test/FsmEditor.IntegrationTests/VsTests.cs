@@ -148,7 +148,7 @@ namespace FsmEditor.IntegrationTests
                 if (box == null) return false;
                 schema = ((ValuePattern)box.GetCurrentPattern(ValuePattern.Pattern)).Current.Value;
                 return true;
-            }, null, () => "combo boxes shown: " + string.Join(", ", AutomationElement.FromHandle(_vs.MainWindow)
+            }, null, () => $"active: {_vs.Do(d => $"{d.ActiveDocument?.Name}, language {d.ActiveDocument?.Language}, kind {d.ActiveDocument?.Kind}")}; combo boxes shown: " + string.Join(", ", AutomationElement.FromHandle(_vs.MainWindow)
                 .FindAll(TreeScope.Descendants, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ComboBox))
                 .Cast<AutomationElement>().Where(e => !e.Current.IsOffscreen).Select(e => $"'{e.Current.Name}'")));
             return schema;
@@ -550,7 +550,9 @@ namespace FsmEditor.IntegrationTests
             }
             catch (Exception e) when (e.ToString().Contains("disposed"))
             {
-                // Visual Studio 2026's CommandBars can be disposed altogether: the menus read as they show, opened.
+                // Visual Studio 2026's CommandBars can be disposed altogether: the menus read as they show, opened (with a
+                // diagram active, which shows the commands about one).
+                OpenDiagramOf("MediaPlayer.fsm");
                 tools = _vs.MenuItems("Tools", "FSM Editor");
                 windows = _vs.MenuItems("View", "Other Windows");
             }
