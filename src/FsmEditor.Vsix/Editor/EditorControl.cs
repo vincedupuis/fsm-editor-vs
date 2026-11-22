@@ -1029,7 +1029,7 @@ namespace FsmEditor.Editor
             right.Children.Add(ToolbarButton("export", "Export as SVG", _host.ExportSvg, "SVG"));
             right.Children.Add(ToolbarButton("export", "Export as PNG", _host.ExportPng, "PNG"));
             right.Children.Add(Separator(th));
-            right.Children.Add(ToolbarButton("xmi", "Open as Text: the model file in the text editor", _host.OpenAsText, "Text"));
+            right.Children.Add(ToolbarButton("json", "Open as Text: the model file (JSON) in the text editor", _host.OpenAsText, "JSON"));
             right.Children.Add(Separator(th));
             right.Children.Add(ToolbarButton("toolbox", "Show Toolbox", () => ShowPane(_toolboxPane)));
             right.Children.Add(ToolbarButton("properties", "Show Properties", () => ShowPane(_propsPane)));
@@ -1166,11 +1166,6 @@ namespace FsmEditor.Editor
             problems.Inlines.Add(new System.Windows.Documents.Run($"⚠ {warnings}") { Foreground = th.BrushOf(warnings > 0 ? th.Warning : th.Muted) });
             if (infos > 0) problems.Inlines.Add(new System.Windows.Documents.Run($"  ℹ {infos}") { Foreground = th.BrushOf(th.Muted) });
             problems.MouseLeftButtonUp += (s, e) => ToggleProblems();
-            var counts = new TextBlock
-            {
-                Foreground = th.BrushOf(th.Muted),
-                Text = Session == null ? "" : $"{Session.Model.Vertices.Count(v => v.Type == VertexType.State)} states · {Session.Model.Transitions.Count} transitions",
-            };
             var toolName = _canvas.Tool != null ? Core.Tools.ById(_canvas.Tool)?.Label : null;
             var right = new TextBlock
             {
@@ -1178,10 +1173,8 @@ namespace FsmEditor.Editor
                 Text = toolName != null ? $"Tool: {toolName}{(_canvas.ToolSticky ? " (sticky)" : "")}" : Session != null && Session.Selection.Count > 0 ? $"{Session.Selection.Count} selected" : "",
             };
             DockPanel.SetDock(problems, Dock.Left);
-            DockPanel.SetDock(counts, Dock.Left);
             DockPanel.SetDock(right, Dock.Right);
             bar.Children.Add(problems);
-            bar.Children.Add(counts);
             bar.Children.Add(right);
             if (Trace != null)
             {

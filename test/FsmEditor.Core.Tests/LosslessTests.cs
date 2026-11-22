@@ -6,17 +6,17 @@ using Xunit;
 namespace FsmEditor.Core.Tests
 {
     /// <summary>
-    /// The session doesn't offer what the file can't hold: the kinds and menu items it leaves out, and the edits it
-    /// refuses with a message, so that the writer never has to leave something out (as the VS Code edition's
-    /// webviewLossless tests). The properties panel shows a transition's kind, triggers, guard and conditions unless
-    /// <see cref="DiagramSession.IsStart"/> holds for its source.
+    /// The session doesn't offer what the file can't hold, so that the writer never has to leave something out (as the
+    /// VS Code edition's webviewLossless tests): the canvas and the properties panel ask it what to offer
+    /// (<see cref="DiagramSession.IsStart"/> for a transition's kind, triggers, guard and conditions, the ⊕ handle,
+    /// connection and reconnection targets, Reverse, kinds, submachines, drop targets, Leave Parent), and its
+    /// operations refuse the rest.
     /// </summary>
     public class LosslessTests
     {
         private const string InitialOnly = "A transition leaving an initial pseudostate holds its target and an action only.";
         private const string HistoryOnly = "A transition leaving a history pseudostate holds its target and an action only.";
         private const string Anchor = "A comment cannot be attached to an initial pseudostate or to its transition.";
-        private const string SecondInitial = "This region already has an initial pseudostate.";
 
         /// <summary>
         /// A (A → C on go, A → choice on pick), C (composite: its initial → C1, a history without a transition,
@@ -95,6 +95,33 @@ namespace FsmEditor.Core.Tests
         }
 
         [Fact]
+        public void MovesTheTransitionOfAnInitialPseudostateWhenItIsDrawnAgainAndDoesntReverseIt()
+        {
+            var f = new Fixture(Sample);
+            var init = f.TopInitial;
+            var t = f.Leaving(init)[0];
+            Assert.True(f.S.CanStartFrom(init));
+            // Drawn again to the same state: nothing, and no message.
+            Assert.True(f.S.CanConnect(init, f.Named("A").Id));
+            Assert.Same(t, f.S.Connect(init, f.Named("A").Id));
+            Assert.Equal(0, f.Commits);
+            // To C: its one transition goes there.
+            Assert.True(f.S.CanConnect(init, f.Named("C").Id));
+            Assert.Same(t, f.S.Connect(init, f.Named("C").Id));
+            Assert.Equal(f.Named("C").Id, t.Target);
+            Assert.Single(f.Leaving(init));
+            Assert.Equal(1, f.Commits);
+            Assert.Empty(f.Messages);
+            TestFiles.Write(f.M);
+            Assert.False(f.S.CanReverse(f.Leaving(init)[0]));
+            Assert.True(f.S.CanReverse(f.Leaving(f.Named("A"))[0]));
+            Assert.False(f.S.CanConnect(f.Named("note*"), init.Id));
+            Assert.False(f.S.CanConnect(f.Named("note*"), f.Leaving(init)[0].Id));
+            Assert.True(f.S.CanConnect(f.Named("note*"), f.Named("A").Id));
+            Assert.False(f.S.CanConnect(f.Named("A"), init.Id));
+        }
+
+        [Fact]
         public void RefusesToAttachACommentToAnInitialPseudostateOrItsTransition()
         {
             var f = new Fixture(Sample);
@@ -119,9 +146,11 @@ namespace FsmEditor.Core.Tests
             var init = f.TopInitial;
             init.X = region.X + region.W - 60;
             init.Y = region.Y + region.H - 60;
-            f.S.DropMoved(new[] { init }, new HashSet<string> { init.Id });
+            var moving = new HashSet<string> { init.Id };
+            Assert.Null(f.S.DropHighlight(init, moving)); // not C's region
+            f.S.DropMoved(new[] { init }, moving);
             Assert.Equal(f.S.RootRegion, init.Parent);
-            Assert.Equal(new[] { SecondInitial }, f.Messages);
+            Assert.Empty(f.Messages);
             TestFiles.Write(f.M);
         }
 
@@ -145,7 +174,7 @@ namespace FsmEditor.Core.Tests
             var count = f.M.Vertices.Count;
             f.S.Paste(data);
             Assert.Equal(count, f.M.Vertices.Count);
-            Assert.Equal(new[] { SecondInitial }, f.Messages);
+            Assert.Empty(f.Messages);
             Assert.Equal(0, f.Commits);
             // With a state: the state is pasted, the initial pseudostate and its transition are left out.
             f.S.Selection = new HashSet<string> { f.TopInitial.Id, f.Named("A").Id };
@@ -161,6 +190,10 @@ namespace FsmEditor.Core.Tests
             var f = new Fixture(@"{ ""version"": 1, ""name"": ""M"", ""type"": ""behavioral"", ""initial"": { ""target"": ""S"" }, ""elements"": [
   { ""name"": ""S"", ""type"": ""state"", ""points"": [ { ""name"": ""p"", ""type"": ""entryPoint"" } ] },
   { ""name"": ""P"", ""type"": ""state"", ""submachine"": ""Payment.fsm"", ""points"": [ { ""name"": ""retry"", ""type"": ""entryPoint"" } ] } ] }");
+            Assert.False(f.S.CanBeSubmachine(f.Named("S")));
+            Assert.False(f.S.CanBePlain(f.Named("P")));
+            Assert.True(f.S.CanBeSubmachine(f.Named("P")));
+            Assert.True(f.S.CanBePlain(f.Named("S")));
             Assert.False(f.S.SetSubmachine(f.Named("S"), "Payment.fsm"));
             Assert.False(f.S.SetSubmachine(f.Named("P"), ""));
             Assert.Equal("", f.Named("S").Submachine);
@@ -178,11 +211,14 @@ namespace FsmEditor.Core.Tests
             var history = f.Of(VertexType.ShallowHistory);
             var back = f.Leaving(c1)[0];
             var tick = f.Leaving(c1)[1];
+            Assert.False(f.S.CanReconnect(tick, true, history));
+            Assert.True(f.S.CanReconnect(tick, false, f.Named("C")));
+            Assert.False(f.S.CanReverse(back));
             f.S.Reconnect(tick, true, history);
             Assert.Equal(c1.Id, tick.Source);
             f.S.Reverse(back);
             Assert.Equal(c1.Id, back.Source);
-            Assert.Equal(new[] { HistoryOnly, "This transition cannot be reversed." }, f.Messages);
+            Assert.Equal(new[] { HistoryOnly }, f.Messages);
             Assert.Equal(0, f.Commits);
         }
     }

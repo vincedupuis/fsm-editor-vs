@@ -438,6 +438,14 @@ namespace FsmEditor.Core
                 Commit();
                 return null;
             }
+            // An initial or history pseudostate has one transition: drawn again, it moves to the new target (to the same one, nothing changes).
+            var existing = StartTransition(source);
+            if (existing != null)
+            {
+                Selection = new HashSet<string> { existing.Id };
+                if (existing.Target != target.Id) Reconnect(existing, false, target);
+                return existing;
+            }
             var problem = ConnectProblem(source, target);
             if (problem != null)
             {
@@ -474,6 +482,52 @@ namespace FsmEditor.Core
         }
 
         private bool Anchored(string id) => Model.Vertices.Any(v => v.Type == VertexType.Comment && v.Anchors.Contains(id));
+
+        /// <summary>Can a transition be drawn from <paramref name="v"/> (its ⊕ handle, the transition tool)? Not from a final state, a terminate or an entry reference.</summary>
+        public bool CanStartFrom(Vertex v) =>
+            !(v.Type == VertexType.Final || v.Type == VertexType.Terminate || (v.Type == VertexType.ConnectionPointRef && v.PointKind == PointKind.Entry));
+
+        /// <summary>The one transition of an initial or history pseudostate, which drawing from it again moves to the new target.</summary>
+        private Transition StartTransition(Vertex v) => IsStart(v) ? Model.Transitions.FirstOrDefault(t => t.Source == v.Id) : null;
+
+        /// <summary>Can a connection drawn from <paramref name="source"/> end on element <paramref name="id"/> (a vertex, or a transition for a comment's anchor)?</summary>
+        public bool CanConnect(Vertex source, string id)
+        {
+            if (source.Type == VertexType.Comment)
+            {
+                return id != source.Id && (Index.Vertex(id) != null || Index.Transition(id) != null) && AnchorProblem(id) == null;
+            }
+            var target = Index.Vertex(id);
+            if (target == null) return false;
+            if (target.Type == VertexType.Comment) return AnchorProblem(source.Id) == null;
+            var existing = StartTransition(source);
+            if (existing != null) return CanReconnect(existing, false, target);
+            return ConnectProblem(source, target) == null;
+        }
+
+        /// <summary>Can the source (<paramref name="atSource"/>) or the target of <paramref name="t"/> move to <paramref name="v"/>?</summary>
+        public bool CanReconnect(Transition t, bool atSource, Vertex v)
+        {
+            if ((atSource ? t.Source : t.Target) == v.Id) return true;
+            var source = atSource ? v : Index.Vertex(t.Source);
+            var target = atSource ? Index.Vertex(t.Target) : v;
+            return source != null && target != null && TransitionProblem(t, source, target) == null;
+        }
+
+        /// <summary>Can <paramref name="t"/> be reversed (its target becomes its source)?</summary>
+        public bool CanReverse(Transition t)
+        {
+            var s = Index.Vertex(t.Source);
+            var g = Index.Vertex(t.Target);
+            return s != null && g != null && TransitionProblem(t, g, s) == null;
+        }
+
+        /// <summary>Can state <paramref name="v"/> become a submachine state? Not with regions or entry and exit points of its own.</summary>
+        public bool CanBeSubmachine(Vertex v) =>
+            v.Regions.Count == 0 && Model.Vertices.Where(p => p.Parent == v.Id).All(p => p.Type == VertexType.ConnectionPointRef);
+
+        /// <summary>Can submachine state <paramref name="v"/> stop being one? Not with connection point references.</summary>
+        public bool CanBePlain(Vertex v) => !Model.Vertices.Any(p => p.Parent == v.Id && p.Type == VertexType.ConnectionPointRef);
 
         /// <summary>
         /// Why transition <paramref name="t"/> can't go from <paramref name="source"/> to <paramref name="target"/> (reconnected or
@@ -659,12 +713,8 @@ namespace FsmEditor.Core
         {
             var s = Index.Vertex(t.Source);
             var g = Index.Vertex(t.Target);
-            // Reversed, the target becomes the source: refused as drawing it that way would be.
-            if (g == null || s == null || TransitionProblem(t, g, s) != null)
-            {
-                Say("This transition cannot be reversed.");
-                return;
-            }
+            // Reversed, the target becomes the source: offered (CanReverse) when it could be drawn that way.
+            if (g == null || s == null || TransitionProblem(t, g, s) != null) return;
             (t.Source, t.Target) = (t.Target, t.Source);
             // A self-transition loop's bend points are its corners, in drawing order: reversed, they would reshape it.
             if (!Geometry.IsLoop(Index, t)) t.Points.Reverse();
@@ -1207,8 +1257,9 @@ namespace FsmEditor.Core
         /// <summary>Region to highlight while <paramref name="lead"/> is dragged: where it would be dropped, else its own region.</summary>
         public RegionRect DropHighlight(Vertex lead, ISet<string> moving)
         {
+            // A region that would get a second initial or history pseudostate isn't offered.
             var r = DropRegionOf(DropBox(lead), lead.Parent, moving);
-            if (r != null) return r;
+            if (r != null && RegionProblem(lead.Group.Length > 0 ? GroupMembers(lead.Group) : new List<Vertex> { lead }, r.Id) == null) return r;
             var s = RegionOwnerOf(lead.Parent);
             return s != null ? RectsOf(s).FirstOrDefault(x => x.Id == lead.Parent) : null;
         }
@@ -1369,9 +1420,7 @@ namespace FsmEditor.Core
                     // A group drops as a whole: into the region that holds all its members, or nowhere.
                     if (v != list.First(r => r.Group == v.Group)) continue;
                     var gr = DropRegionOf(DropBox(v), v.Parent, moving);
-                    var groupProblem = gr != null ? RegionProblem(GroupMembers(v.Group), gr.Id) : null;
-                    if (groupProblem != null) Say(groupProblem);
-                    else if (gr != null) foreach (var m in GroupMembers(v.Group)) m.Parent = gr.Id;
+                    if (gr != null && RegionProblem(GroupMembers(v.Group), gr.Id) == null) foreach (var m in GroupMembers(v.Group)) m.Parent = gr.Id;
                     continue;
                 }
                 if (v.Type == VertexType.EntryPoint || v.Type == VertexType.ExitPoint)
@@ -1390,9 +1439,7 @@ namespace FsmEditor.Core
                     continue;
                 }
                 var r = DropRegionOf(v, moving);
-                var problem = r != null ? RegionProblem(new[] { v }, r.Id) : null;
-                if (problem != null) Say(problem);
-                else if (r != null) v.Parent = r.Id;
+                if (r != null && RegionProblem(new[] { v }, r.Id) == null) v.Parent = r.Id;
             }
             Commit();
         }
@@ -1580,10 +1627,8 @@ namespace FsmEditor.Core
                     v.Parent = RootRegion;
                 }
                 // A region has one initial, one shallow and one deep history pseudostate at most: a copy that would be a second is left out.
-                var problem = parent == null ? RegionProblem(new[] { v }, v.Parent) : null;
-                if (problem != null)
+                if (parent == null && RegionProblem(new[] { v }, v.Parent) != null)
                 {
-                    Say(problem);
                     map.Remove(src.Id);
                     continue;
                 }

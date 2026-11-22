@@ -480,11 +480,12 @@ namespace FsmEditor.Editor
                 ("Double-click", "empty canvas to add a state; a name or label to edit it."),
                 ("Drag", "the ⊕ handle of a selected element to draw a transition."),
                 ("Double-click", "a transition to add a bend point, a bend point to remove it."),
+                ("Alt+click", "(or middle-click) an element to edit its properties in a window; Alt+double-click a submachine state to open its machine."),
                 ("Drag", "an end of a selected transition onto another element to reconnect it."),
                 ("Drag", "a corner of a selected self-transition to reshape its loop; the far corner moves it to another corner of the state."),
                 ("Drop", "an element entirely inside a region to nest it. It then stays in its region, which grows to hold it; right-click › Leave Parent takes it out."),
                 ("Drag", "the line between two regions to resize the region before it."),
-                ("Drag", "a composite state by its title bar; dragging inside its regions selects what it encloses."),
+                ("Drag", "a composite state by its title bar or its border; dragging inside its regions selects what it encloses, a click there selects the state."),
                 ("Right-drag", "Space+drag or middle-drag pans; the wheel zooms; F fits."),
                 ("Shift+click", "a tool keeps it active."),
                 ("Label syntax", m.Kind == MachineKind.Protocol ? "[isReady()] event / [isDone()]" : "event, after(2s) [isReady() && !isBusy()] / doIt(); log()"),
@@ -590,8 +591,13 @@ namespace FsmEditor.Editor
 
             Add(H4("Submachine"));
             var current = v.Submachine;
-            var options = new List<(string, string)> { ("", "(none: not a submachine state)") };
-            options.AddRange(S.Machines.Select(m => (m.Href, $"{m.Name} ({m.File})")));
+            // Only what the file can hold: a state with regions or its own entry and exit points isn't offered a submachine,
+            // and a submachine state with connection point references isn't offered none.
+            var canBeSub = S.CanBeSubmachine(v);
+            var canBePlain = S.CanBePlain(v);
+            var options = new List<(string, string)>();
+            if (current.Length == 0 || canBePlain) options.Add(("", "(none: not a submachine state)"));
+            if (current.Length > 0 || canBeSub) options.AddRange(S.Machines.Select(m => (m.Href, $"{m.Name} ({m.File})")));
             if (current.Length > 0 && !S.Machines.Any(m => m.Href == current)) options.Add((current, $"{S.MachineLabel(current)} (not found)"));
             Add(SelectField("Referenced state machine", current, options, value =>
             {
@@ -599,6 +605,8 @@ namespace FsmEditor.Editor
                 _editor.RenderProps();
             }));
             if (S.Machines.Count == 0 && current.Length == 0) Add(Muted("No other state machine (.fsm) was found in the solution."));
+            if (current.Length == 0 && !canBeSub && S.Machines.Count > 0) Add(Muted("Remove its regions and its entry and exit points to make it a submachine state."));
+            if (current.Length > 0 && !canBePlain) Add(Muted("Remove its connection point references to make it a plain state."));
             if (v.Submachine.Length > 0)
             {
                 var href = v.Submachine;
@@ -862,11 +870,15 @@ namespace FsmEditor.Editor
                 S.Straighten(t);
                 _editor.RenderProps();
             }));
-            routing.Children.Add(PButton("Reverse", () =>
+            // Reversed, the target becomes the source: offered when it could be drawn that way.
+            if (S.CanReverse(t))
             {
-                S.Reverse(t);
-                _editor.RenderProps();
-            }));
+                routing.Children.Add(PButton("Reverse", () =>
+                {
+                    S.Reverse(t);
+                    _editor.RenderProps();
+                }));
+            }
             Add(routing);
             var issues = IssuesFor(t.Id);
             if (issues != null) Add(issues);

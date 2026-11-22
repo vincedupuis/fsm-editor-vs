@@ -673,7 +673,7 @@ namespace FsmEditor.Editor
                 {
                     foreach (var corner in Corners) dc.DrawRoundedRectangle(th.BrushOf(accent), th.PenOf(th.Background, 1), ResizeHandle(v, corner), 1.5, 1.5);
                 }
-                if (v.Type != VertexType.Final && v.Type != VertexType.Terminate)
+                if (S.CanStartFrom(v))
                 {
                     var c = ConnectHandle(v);
                     var pen = th.PenOf(accent, 1.5);
@@ -741,7 +741,7 @@ namespace FsmEditor.Editor
                 if (only != null)
                 {
                     var c = ConnectHandle(only);
-                    if (only.Type != VertexType.Final && only.Type != VertexType.Terminate && Geo.Dist(p, new PointD(c.X, c.Y)) <= 7 + tolerance)
+                    if (S.CanStartFrom(only) && Geo.Dist(p, new PointD(c.X, c.Y)) <= 7 + tolerance)
                     {
                         return new Hit { Kind = HitKind.Handle, Handle = "connect" };
                     }
@@ -897,16 +897,36 @@ namespace FsmEditor.Editor
             public HashSet<string> Base;
             /// <summary>A right-button pan, which opens the context menu when the pointer doesn't move.</summary>
             public bool RightButton;
+            /// <summary>A middle-button pan, which opens the properties window of the element under it when the pointer doesn't move.</summary>
+            public bool MiddleButton;
             /// <summary>Move, resize and region drags: the layout at the start, restored at each step.</summary>
             public DiagramSession.LayoutSnapshot Snapshot;
             /// <summary>Resize, region and bend point drags: the layout before the drag changed anything, restored by Esc.</summary>
             public DiagramSession.LayoutSnapshot Undo;
             /// <summary>Move: the boxes of the roots at the start.</summary>
             public Dictionary<string, RectD> Boxes;
+            /// <summary>Move after an Alt+click: the element whose properties window opens when the pointer doesn't move, and where.</summary>
+            public string PropsId;
+            public Point PropsAt;
+            /// <summary>Band: the composite state whose area it started in, which a click (no band drawn) takes; with Alt, its properties window.</summary>
+            public string Area;
+            public bool AreaProps;
+        }
+
+        /// <summary>Longest time between the two clicks of a double-click, in ms (the reference's).</summary>
+        private const int DoubleClickMs = 500;
+        /// <summary>The properties window an Alt+click on a submachine state opens once no second click made it an Alt+double-click.</summary>
+        private System.Windows.Threading.DispatcherTimer _propsTimer;
+
+        private void StopPropsTimer()
+        {
+            _propsTimer?.Stop();
+            _propsTimer = null;
         }
 
         private static bool Additive => (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0;
         private static bool Alt => (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
+        private static bool AltOnly => Keyboard.Modifiers == ModifierKeys.Alt;
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -918,6 +938,7 @@ namespace FsmEditor.Editor
             var screen = e.GetPosition(this);
             var p = ToWorld(screen);
             e.Handled = true;
+            StopPropsTimer();
             // Double-clicks counted from the last press that ended tracking, like the reference: a press with a
             // tool, the middle or right button or Space, and a double-click itself.
             if (e.ClickCount == 1) _clickBase = 0;
@@ -926,29 +947,54 @@ namespace FsmEditor.Editor
 
             if (e.ChangedButton == MouseButton.Middle || e.ChangedButton == MouseButton.Right || _space)
             {
-                _drag = new DragState { Kind = DragKind.Pan, ScreenStart = screen, ViewX0 = ViewX, ViewY0 = ViewY, Start = p, RightButton = e.ChangedButton == MouseButton.Right && !_space };
+                _drag = new DragState { Kind = DragKind.Pan, ScreenStart = screen, ViewX0 = ViewX, ViewY0 = ViewY, Start = p, RightButton = e.ChangedButton == MouseButton.Right && !_space, MiddleButton = e.ChangedButton == MouseButton.Middle && !_space };
                 Cursor = Cursors.ScrollAll;
                 CaptureMouse();
                 return;
             }
             if (e.ChangedButton != MouseButton.Left) return;
+            // Alt+click on an element opens its properties in a window (on a state, once released without moving: Alt+drag
+            // moves it off the grid; on a submachine state, once no second click made it an Alt+double-click).
+            var altClick = AltOnly && Tool == null;
+            S.Reindex();
+            var altHit = altClick ? InRegionAsEmpty(HitTest(p), p) : default(Hit);
             // With a tool, each click uses it (a sticky tool places an element per click).
-            if (clicks == 2 && Tool == null)
+            if (clicks == 2 && Tool == null && !(altClick && altHit.Kind == HitKind.Vertex))
             {
                 _clickBase = e.ClickCount;
                 _drag = null;
                 DoubleClick(p);
                 return;
             }
-            S.Reindex();
+            if (clicks == 2 && altClick)
+            {
+                // Alt+double-click on a submachine state opens its submachine; on another element, it is an Alt+click.
+                _clickBase = e.ClickCount;
+                var sub = S.Index.Vertex(altHit.Id);
+                if (sub.Type == VertexType.State && sub.Submachine.Length > 0)
+                {
+                    _drag = null;
+                    _editor.OpenSubmachine(sub.Submachine);
+                    return;
+                }
+            }
             var hit = HitTest(p);
+            if (altClick && (hit.Kind == HitKind.Transition || hit.Kind == HitKind.Label))
+            {
+                _clickBase = e.ClickCount;
+                _editor.OpenPropertiesWindow(hit.Id, screen);
+                return;
+            }
 
             if (Tool != null)
             {
                 var def = Core.Tools.ById(Tool);
                 if (Tool == "transition")
                 {
-                    if (hit.Kind == HitKind.Vertex) StartConnect(S.Index.Vertex(hit.Id), p);
+                    if (hit.Kind == HitKind.Vertex)
+                    {
+                        if (S.CanStartFrom(S.Index.Vertex(hit.Id))) StartConnect(S.Index.Vertex(hit.Id), p);
+                    }
                     else _editor.Toast("Start the transition on a state or pseudostate.");
                 }
                 else if (Tool == "region")
@@ -978,6 +1024,9 @@ namespace FsmEditor.Editor
                 return;
             }
 
+            // A composite state moves by its title bar and its contour: its regions are empty canvas, for a selection band
+            // and for a double-click adding a state; a click there (without a drag) takes the state.
+            var area = hit.Kind == HitKind.Vertex && InRegionArea(S.Index.Vertex(hit.Id), p) ? hit.Id : null;
             hit = InRegionAsEmpty(hit, p);
             switch (hit.Kind)
             {
@@ -1032,12 +1081,20 @@ namespace FsmEditor.Editor
                         clickedSelected = true;
                     }
                     _editor.RenderProps();
-                    if (hit.Kind == HitKind.Vertex && S.Selection.Contains(id)) StartMove(p, clickedSelected ? id : null);
+                    if (hit.Kind == HitKind.Vertex && S.Selection.Contains(id))
+                    {
+                        StartMove(p, clickedSelected ? id : null);
+                        if (altClick)
+                        {
+                            _drag.PropsId = id;
+                            _drag.PropsAt = screen;
+                        }
+                    }
                     break;
                 }
                 default:
                     if (!Additive) S.Selection.Clear();
-                    _drag = new DragState { Kind = DragKind.Band, Start = p, Additive = Additive, Base = new HashSet<string>(S.Selection) };
+                    _drag = new DragState { Kind = DragKind.Band, Start = p, Additive = Additive, Base = new HashSet<string>(S.Selection), Area = area, AreaProps = altClick, PropsAt = screen };
                     _editor.RenderProps();
                     break;
             }
@@ -1050,8 +1107,18 @@ namespace FsmEditor.Editor
         /// A composite state moves by its title bar: its regions are empty canvas, for a selection band and for a
         /// double-click adding a state.
         /// </summary>
+        /// <summary>Width of a composite state's contour, in screen pixels: a press there takes the state, as its title bar does.</summary>
+        private const double ContourPx = 6;
+
+        /// <summary>Is <paramref name="p"/> inside one of composite state <paramref name="v"/>'s regions, away from its contour? There, a press is on empty canvas.</summary>
+        private bool InRegionArea(Vertex v, PointD p)
+        {
+            var m = ContourPx / Zoom;
+            return p.X > v.X + m && p.X < v.X + v.W - m && p.Y < v.Y + v.H - m && Geo.RegionRects(S.Model, v).Any(r => r.Rect.Contains(p));
+        }
+
         private Hit InRegionAsEmpty(Hit hit, PointD p) =>
-            hit.Kind == HitKind.Vertex && Geo.RegionRects(S.Model, S.Index.Vertex(hit.Id)).Any(r => r.Rect.Contains(p)) ? new Hit { Kind = HitKind.Empty } : hit;
+            hit.Kind == HitKind.Vertex && InRegionArea(S.Index.Vertex(hit.Id), p) ? new Hit { Kind = HitKind.Empty } : hit;
 
         /// <summary>Ends the drag without committing it: what it changed goes back to how it was when it started.</summary>
         private void CancelDrag()
@@ -1161,13 +1228,17 @@ namespace FsmEditor.Editor
                     break;
                 case DragKind.Connect:
                     d.Cur = p;
+                    // Only where the connection can end: elsewhere it follows the pointer, and dropping it there draws nothing.
                     d.Hover = ConnectTargetAt(p, d.Source);
-                    if (d.Hover != null && S.Index.Vertex(d.Hover) == null) d.Hover = null;
+                    if (d.Hover != null && (S.Index.Vertex(d.Hover) == null || !S.CanConnect(d.Source, d.Hover))) d.Hover = null;
                     break;
                 case DragKind.Reconnect:
+                {
                     d.Cur = p;
-                    d.Hover = ReconnectTargetAt(p);
+                    var id = ReconnectTargetAt(p);
+                    d.Hover = id != null && S.CanReconnect(d.Transition, d.AtSource, S.Index.Vertex(id)) ? id : null;
                     break;
+                }
                 case DragKind.Waypoint:
                 {
                     var q = Alt ? p : new PointD(Geo.Snap(p.X), Geo.Snap(p.Y));
@@ -1238,11 +1309,24 @@ namespace FsmEditor.Editor
             {
                 case DragKind.Pan:
                     if (d.RightButton && !d.Moved) ShowContextMenu(d.Start);
+                    // A middle click (no drag) on an element opens its properties in a window, as Alt+click does.
+                    if (d.MiddleButton && !d.Moved && Tool == null)
+                    {
+                        S.Reindex();
+                        var hit = HitTest(d.Start);
+                        if (hit.Kind == HitKind.Vertex || hit.Kind == HitKind.Transition || hit.Kind == HitKind.Label) _editor.OpenPropertiesWindow(hit.Id, d.ScreenStart);
+                    }
                     InvalidateVisual();
                     break;
                 case DragKind.Move:
                     if (!d.Moved)
                     {
+                        if (d.PropsId != null)
+                        {
+                            OpenPropertiesAfterClick(d.PropsId, d.PropsAt);
+                            InvalidateVisual();
+                            break;
+                        }
                         if (d.ClickedId != null)
                         {
                             S.Selection = new HashSet<string> { d.ClickedId };
@@ -1266,7 +1350,7 @@ namespace FsmEditor.Editor
                 case DragKind.Connect:
                 {
                     var target = ConnectTargetAt(ToWorld(e.GetPosition(this)), d.Source);
-                    if (target != null)
+                    if (target != null && S.CanConnect(d.Source, target))
                     {
                         var t = S.Connect(d.Source, target);
                         _editor.RenderProps();
@@ -1282,7 +1366,7 @@ namespace FsmEditor.Editor
                 case DragKind.Reconnect:
                 {
                     var target = ReconnectTargetAt(ToWorld(e.GetPosition(this)));
-                    if (target != null)
+                    if (target != null && S.CanReconnect(d.Transition, d.AtSource, S.Index.Vertex(target)))
                     {
                         S.Reconnect(d.Transition, d.AtSource, S.Index.Vertex(target));
                         _editor.RenderProps();
@@ -1291,6 +1375,20 @@ namespace FsmEditor.Editor
                     break;
                 }
                 case DragKind.Band:
+                    // A click in a composite state's area (no band drawn): the state, as a click on it.
+                    if (d.Area != null && (d.Cur == null || Geo.Dist(d.Cur.Value, d.Start) * Zoom < 3) && S.Index.Vertex(d.Area) != null)
+                    {
+                        if (d.AreaProps)
+                        {
+                            _editor.OpenPropertiesWindow(d.Area, d.PropsAt);
+                            InvalidateVisual();
+                            break;
+                        }
+                        var next = new HashSet<string>(d.Base);
+                        if (!d.Additive) next = new HashSet<string> { d.Area };
+                        else if (!next.Remove(d.Area)) next.Add(d.Area);
+                        S.Selection = next;
+                    }
                     _editor.RenderProps();
                     InvalidateVisual();
                     break;
@@ -1315,6 +1413,29 @@ namespace FsmEditor.Editor
             _editor.RenderStatus();
         }
 
+        /// <summary>
+        /// The properties window of <paramref name="id"/>, after an Alt+click: at once, or on a submachine state once the time of a
+        /// double-click has passed (an Alt+double-click opens its submachine instead).
+        /// </summary>
+        private void OpenPropertiesAfterClick(string id, Point at)
+        {
+            var v = S.Index.Vertex(id);
+            if (v == null || v.Type != VertexType.State || v.Submachine.Length == 0)
+            {
+                _editor.OpenPropertiesWindow(id, at);
+                return;
+            }
+            StopPropsTimer();
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(DoubleClickMs) };
+            timer.Tick += (s, e) =>
+            {
+                StopPropsTimer();
+                if (S.Index.Vertex(id) != null) _editor.OpenPropertiesWindow(id, at);
+            };
+            _propsTimer = timer;
+            timer.Start();
+        }
+
         private void DoubleClick(PointD p)
         {
             if (Tool != null) return;
@@ -1335,9 +1456,7 @@ namespace FsmEditor.Editor
                     break;
                 case HitKind.Vertex:
                 {
-                    var v = S.Index.Vertex(hit.Id);
-                    if (v.Type == VertexType.State && v.Submachine.Length > 0 && Alt) _editor.OpenSubmachine(v.Submachine);
-                    else _editor.StartInlineEdit(v.Id);
+                    _editor.StartInlineEdit(hit.Id);
                     break;
                 }
                 case HitKind.Empty:
