@@ -7,6 +7,7 @@ namespace FsmEditor
     {
         public const string PackageString = "43c53194-4f12-42ec-8fcc-0bbca916caaf";
         public const string EditorFactoryString = "66c7b80a-5999-47c1-838f-fe34d6caeb45";
+        public const string LayoutEditorFactoryString = "c478452e-e029-48f7-bf97-72d57c647b83";
         public const string FsmFileSelectedRuleString = "ad807c01-9753-4922-8090-a020f6c165e2";
         public const string CommandSetString = "17a524b9-398e-41e9-a5c4-83d740321394";
 

@@ -28,6 +28,10 @@ namespace FsmEditor
     [ProvideEditorFactory(typeof(FsmEditorFactory), 110, CommonPhysicalViewAttributes = (int)__VSPHYSICALVIEWATTRIBUTES.PVA_SupportsPreview, TrustLevel = __VSEDITORTRUSTLEVEL.ETL_AlwaysTrusted)]
     [ProvideEditorExtension(typeof(FsmEditorFactory), ".fsm", 50, NameResourceID = 110)]
     [ProvideEditorLogicalView(typeof(FsmEditorFactory), VSConstants.LOGVIEWID.Designer_string)]
+    // Layout files (X.fsm.layout) as JSON in the text editor, whatever editor the installation gives .layout files.
+    [ProvideEditorFactory(typeof(LayoutEditorFactory), 113, TrustLevel = __VSEDITORTRUSTLEVEL.ETL_AlwaysTrusted)]
+    [ProvideEditorExtension(typeof(LayoutEditorFactory), ".layout", 100, NameResourceID = 113)]
+    [ProvideEditorLogicalView(typeof(LayoutEditorFactory), VSConstants.LOGVIEWID.TextView_string)]
     [ProvideUIContextRule(PackageGuids.FsmFileSelectedRuleString, "FSM file selected", "Fsm", new[] { "Fsm" }, new[] { "HierSingleSelectionName:.fsm$" })]
     [ProvideAutoLoad(PackageGuids.FsmFileSelectedRuleString, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
@@ -66,6 +70,7 @@ namespace FsmEditor
             Validation = new Diagnostics(this, "FSM Editor", new Guid("b5c86f4e-5c2c-4b8a-9d38-2f4f5a6f1a01")) { Navigate = (file, id, line) => Reveal(file, id) };
             CodeGeneration = new Diagnostics(this, "FSM Code Generation", new Guid("b5c86f4e-5c2c-4b8a-9d38-2f4f5a6f1a02")) { Navigate = (file, id, line) => OpenAt(file, line) };
             RegisterEditorFactory(new FsmEditorFactory(this));
+            RegisterEditorFactory(new LayoutEditorFactory());
             await this.RegisterCommandsAsync();
             this.RegisterToolWindows();
         }
