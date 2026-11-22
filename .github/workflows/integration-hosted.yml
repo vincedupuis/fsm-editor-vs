@@ -90,6 +90,26 @@ jobs:
           Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object { Join-Path $_.FullName 'ActivityLog.xml' } |
             Where-Object { Test-Path $_ } | ForEach-Object { Write-Host "Removing $_"; Remove-Item -Force $_ }
 
+      # Which editors claim the .layout suffix (Visual Studio's registrations and this run's VSIX), with their priorities.
+      - name: The editors of .layout files
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $install = & $vswhere -latest -prerelease -products * -property installationPath
+          $roots = @($install, "$env:LOCALAPPDATA\Microsoft\VisualStudio")
+          foreach ($root in $roots) {
+            Get-ChildItem $root -Recurse -Filter *.pkgdef -ErrorAction SilentlyContinue | ForEach-Object {
+              $lines = Get-Content $_.FullName
+              for ($i = 0; $i -lt $lines.Count; $i++) {
+                if ($lines[$i] -match '(?i)\\Extensions\\layout\]|"layout"|\.layout') {
+                  Write-Host "== $($_.FullName):$($i + 1)"
+                  $lines[[Math]::Max(0, $i - 1)..[Math]::Min($lines.Count - 1, $i + 3)] | ForEach-Object { Write-Host "   $_" }
+                }
+              }
+            }
+          }
+          exit 0
+
       # The runner's console covers most of the 1024x768 screen: minimized, and a bigger screen when the image allows it.
       - name: The desktop
         shell: pwsh
