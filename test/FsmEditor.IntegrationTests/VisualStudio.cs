@@ -107,7 +107,7 @@ namespace FsmEditor.IntegrationTests
         });
 
         /// <summary>Waits until <paramref name="probe"/> holds, polling it; a probe that throws is false.</summary>
-        public static void Until(string what, Func<bool> probe, TimeSpan? timeout = null)
+        public static void Until(string what, Func<bool> probe, TimeSpan? timeout = null, Func<string> diagnose = null)
         {
             var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(60));
             Exception last = null;
@@ -121,7 +121,13 @@ namespace FsmEditor.IntegrationTests
                 {
                     last = e;
                 }
-                if (DateTime.UtcNow > deadline) throw new TimeoutException($"timed out: {what}" + (last != null ? $" (last: {last.Message})" : ""));
+                if (DateTime.UtcNow > deadline)
+                {
+                    string more = null;
+                    try { more = diagnose?.Invoke(); } catch (Exception e) { more = e.Message; }
+                    Screenshot(what);
+                    throw new TimeoutException($"timed out: {what}" + (last != null ? $" (last: {last.Message})" : "") + (more != null ? $"; {more}" : ""));
+                }
                 Thread.Sleep(250);
             }
         }
@@ -246,6 +252,68 @@ namespace FsmEditor.IntegrationTests
             AutomationElement.FromHandle(MainWindow)
                 .FindAll(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "FsmPropertiesWindow"))
                 .Cast<AutomationElement>().Any(e => !e.Current.IsOffscreen);
+
+        /// <summary>
+        /// The items of a menu of the main menu bar, through UI Automation: <paramref name="path"/> from the bar (Tools,
+        /// FSM Editor), each opened as a click would, then closed; without <c>&amp;</c> and trailing ellipses.
+        /// </summary>
+        public string[] MenuItems(params string[] path)
+        {
+            Input.Foreground(MainWindow);
+            var pid = ProcessId;
+            AutomationElement Find(AutomationElement root, string name) => root.FindFirst(TreeScope.Descendants, new AndCondition(
+                new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.MenuItem),
+                new PropertyCondition(AutomationElement.NameProperty, name),
+                new PropertyCondition(AutomationElement.ProcessIdProperty, pid)));
+            var isItem = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.MenuItem);
+            AutomationElement item = null;
+            try
+            {
+                foreach (var name in path)
+                {
+                    AutomationElement found = null;
+                    var parent = item ?? AutomationElement.FromHandle(MainWindow);
+                    Until($"the menu item {name}", () => (found = Find(parent, name) ?? Find(AutomationElement.RootElement, name)) != null, TimeSpan.FromSeconds(10));
+                    ((ExpandCollapsePattern)found.GetCurrentPattern(ExpandCollapsePattern.Pattern)).Expand();
+                    item = found;
+                }
+                string[] names = null;
+                Until($"the items of {string.Join(" › ", path)}", () =>
+                {
+                    names = item.FindAll(TreeScope.Children, isItem).Cast<AutomationElement>().Select(e => e.Current.Name).ToArray();
+                    return names.Length > 0;
+                }, TimeSpan.FromSeconds(10));
+                return names.Select(n => n.Replace("&", "").Replace("...", "").Replace("…", "")).ToArray();
+            }
+            finally
+            {
+                for (var i = 0; i <= path.Length; i++) Input.Key(0x1B);
+            }
+        }
+
+        /// <summary>
+        /// A screenshot of the whole screen, as <c>screens/&lt;name&gt;.png</c> in the runner's temporary folder (the
+        /// workflow uploads them), else in the system's; nothing when it can't be taken.
+        /// </summary>
+        public static void Screenshot(string name)
+        {
+            try
+            {
+                var dir = Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "screens");
+                Directory.CreateDirectory(dir);
+                var file = string.Concat(name.Select(c => char.IsLetterOrDigit(c) ? c : '-'));
+                var b = System.Windows.Forms.Screen.PrimaryScreen.Bounds;
+                using (var bmp = new System.Drawing.Bitmap(b.Width, b.Height))
+                {
+                    using (var g = System.Drawing.Graphics.FromImage(bmp)) g.CopyFromScreen(b.Location, System.Drawing.Point.Empty, b.Size);
+                    bmp.Save(Path.Combine(dir, $"{DateTime.UtcNow:HHmmss}-{(file.Length > 60 ? file.Substring(0, 60) : file)}.png"), System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+            catch
+            {
+                // no screen to take
+            }
+        }
 
         /// <summary>The texts Visual Studio's main window shows (UI Automation: its Text elements), with their tooltips.</summary>
         public System.Collections.Generic.List<(string Text, string Tip)> Texts()
