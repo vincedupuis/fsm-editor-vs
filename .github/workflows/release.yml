@@ -97,3 +97,5 @@ jobs:
           $uploaded = $lines -match 'VsixPub0038'
           if ($LASTEXITCODE -ne 0 -and -not $uploaded) { throw "VsixPublisher failed" }
           if ($LASTEXITCODE -ne 0) { Write-Warning "VsixPublisher exited with $LASTEXITCODE after the upload (VsixPub0038)" }
+          # The step would end with VsixPublisher's exit code otherwise (the runner's pwsh exits with $LASTEXITCODE).
+          exit 0
