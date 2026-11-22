@@ -236,11 +236,10 @@ namespace FsmEditor.Core
                 v.Y = Geometry.Snap(p.Y - v.H / 2);
                 var r = Geometry.RegionAt(Index, p, new HashSet<string>());
                 v.Parent = r != null ? r.Id : RootRegion;
-                // A region has one initial, one shallow and one deep history pseudostate at most (the file holds one).
-                if ((v.Type == VertexType.Initial || v.Type == VertexType.ShallowHistory || v.Type == VertexType.DeepHistory)
-                    && Model.Vertices.Any(x => x.Parent == v.Parent && x.Type == v.Type))
+                var problem = RegionProblem(new[] { v }, v.Parent);
+                if (problem != null)
                 {
-                    Say($"This region already has {(v.Type == VertexType.Initial ? "an initial pseudostate" : $"a {v.Type.Title().ToLowerInvariant()}")}.");
+                    Say(problem);
                     return null;
                 }
             }
@@ -414,6 +413,12 @@ namespace FsmEditor.Core
             if (source.Type == VertexType.Comment)
             {
                 if (targetId == source.Id) return null;
+                var anchor = AnchorProblem(targetId);
+                if (anchor != null)
+                {
+                    Say(anchor);
+                    return null;
+                }
                 if (!source.Anchors.Contains(targetId)) source.Anchors.Add(targetId);
                 Selection = new HashSet<string> { source.Id };
                 Commit();
@@ -423,6 +428,12 @@ namespace FsmEditor.Core
             if (target == null) return null;
             if (target.Type == VertexType.Comment)
             {
+                var anchor = AnchorProblem(source.Id);
+                if (anchor != null)
+                {
+                    Say(anchor);
+                    return null;
+                }
                 if (!target.Anchors.Contains(source.Id)) target.Anchors.Add(source.Id);
                 Commit();
                 return null;
@@ -439,6 +450,82 @@ namespace FsmEditor.Core
             Commit();
             return t;
         }
+
+        /// <summary>Initial and history pseudostates: the file holds their one transition's target and action only.</summary>
+        public static bool IsStart(Vertex v) =>
+            v != null && (v.Type == VertexType.Initial || v.Type == VertexType.ShallowHistory || v.Type == VertexType.DeepHistory);
+
+        /// <summary>Does <paramref name="t"/> have triggers, a guard, conditions or a kind other than external?</summary>
+        private static bool BeyondAction(Transition t) =>
+            t.Triggers.Count > 0 || t.Guard.Length > 0 || t.Precondition.Length > 0 || t.Postcondition.Length > 0 || t.Kind != TransitionKind.External;
+
+        /// <summary>Why a transition leaving <paramref name="v"/> (an initial or history pseudostate) can't have triggers, a guard, conditions or a kind.</summary>
+        public static string StartOnly(Vertex v) =>
+            $"A transition leaving a{(v.Type == VertexType.Initial ? "n initial" : " history")} pseudostate holds its target and an action only.";
+
+        private const string AnchorInitial = "A comment cannot be attached to an initial pseudostate or to its transition.";
+
+        /// <summary>Why a comment can't be attached to element <paramref name="id"/> (the file doesn't name an initial pseudostate or its transition), or null.</summary>
+        private string AnchorProblem(string id)
+        {
+            var t = Index.Transition(id);
+            var v = t != null ? Index.Vertex(t.Source) : Index.Vertex(id);
+            return v != null && v.Type == VertexType.Initial ? AnchorInitial : null;
+        }
+
+        private bool Anchored(string id) => Model.Vertices.Any(v => v.Type == VertexType.Comment && v.Anchors.Contains(id));
+
+        /// <summary>
+        /// Why transition <paramref name="t"/> can't go from <paramref name="source"/> to <paramref name="target"/> (reconnected or
+        /// reversed), or null when it can: as drawing it would be, and as the file holds it.
+        /// </summary>
+        private string TransitionProblem(Transition t, Vertex source, Vertex target)
+        {
+            var problem = ConnectProblem(source, target, t);
+            if (problem != null) return problem;
+            if (t.Kind == TransitionKind.Internal && source != target) return "An internal transition stays on its state.";
+            if (IsStart(source) && BeyondAction(t)) return StartOnly(source);
+            if (source.Type == VertexType.Initial && Anchored(t.Id)) return AnchorInitial;
+            return null;
+        }
+
+        /// <summary>
+        /// Why vertices <paramref name="vs"/> can't all be in region <paramref name="regionId"/>, or null when they can: a region
+        /// has one initial, one shallow and one deep history pseudostate at most (the file holds one).
+        /// </summary>
+        private string RegionProblem(IReadOnlyCollection<Vertex> vs, string regionId)
+        {
+            var ids = new HashSet<string>(vs.Select(v => v.Id));
+            foreach (var type in new[] { VertexType.Initial, VertexType.ShallowHistory, VertexType.DeepHistory })
+            {
+                var n = vs.Count(v => v.Type == type);
+                if (n > 0 && (n > 1 || Model.Vertices.Any(x => x.Parent == regionId && x.Type == type && !ids.Contains(x.Id))))
+                {
+                    return $"This region already has {(type == VertexType.Initial ? "an initial pseudostate" : $"a {type.Title().ToLowerInvariant()}")}.";
+                }
+            }
+            return null;
+        }
+
+        /// <summary>Why pseudostate <paramref name="v"/> can't become a <paramref name="type"/>, or null when it can.</summary>
+        private string TypeProblem(Vertex v, VertexType type)
+        {
+            if (type == v.Type) return null;
+            var outs = Model.Transitions.Where(t => t.Source == v.Id).ToList();
+            var a = v.Clone();
+            a.Type = type;
+            if (type == VertexType.Terminate && outs.Count > 0) return "A terminate cannot have outgoing transitions.";
+            if (!IsStart(a)) return null;
+            if (type == VertexType.Initial && Model.Transitions.Any(t => t.Target == v.Id)) return "An initial pseudostate cannot be the target of a transition.";
+            if (outs.Count > 1) return $"A{(type == VertexType.Initial ? "n initial pseudostate" : " history pseudostate")} has one transition only.";
+            if (outs.Any(BeyondAction)) return StartOnly(a);
+            if (type == VertexType.Initial && (Anchored(v.Id) || outs.Any(t => Anchored(t.Id)))) return AnchorInitial;
+            return RegionProblem(new[] { a }, v.Parent);
+        }
+
+        /// <summary>The kinds pseudostate <paramref name="v"/> can be swapped for (its own included): those the file can hold it as, with its transitions and region.</summary>
+        public List<VertexType> TypeOptions(Vertex v) =>
+            (Tools.Swappable.FirstOrDefault(g => g.Contains(v.Type)) ?? new VertexType[0]).Where(t => TypeProblem(v, t) == null).ToList();
 
         /// <summary>
         /// Why a transition can't go from <paramref name="source"/> to <paramref name="target"/>, or null when it can
@@ -479,7 +566,7 @@ namespace FsmEditor.Core
             var source = atSource ? v : Index.Vertex(t.Source);
             var target = atSource ? Index.Vertex(t.Target) : v;
             if (source == null || target == null) return;
-            var problem = ConnectProblem(source, target, t);
+            var problem = TransitionProblem(t, source, target);
             if (problem != null)
             {
                 Say(problem);
@@ -573,7 +660,7 @@ namespace FsmEditor.Core
             var s = Index.Vertex(t.Source);
             var g = Index.Vertex(t.Target);
             // Reversed, the target becomes the source: refused as drawing it that way would be.
-            if (g == null || s == null || ConnectProblem(g, s) != null)
+            if (g == null || s == null || TransitionProblem(t, g, s) != null)
             {
                 Say("This transition cannot be reversed.");
                 return;
@@ -608,6 +695,12 @@ namespace FsmEditor.Core
         /// <summary>Swaps a pseudostate for another kind of its group, keeping its center.</summary>
         public void ChangeType(Vertex v, VertexType type)
         {
+            var problem = TypeProblem(v, type);
+            if (problem != null)
+            {
+                Say(problem);
+                return;
+            }
             var c = v.Center;
             var old = BoxOf(v);
             v.Type = type;
@@ -638,6 +731,17 @@ namespace FsmEditor.Core
             if (href.Length > 0 && v.Regions.Count > 0)
             {
                 Say("Remove the regions first: a submachine state cannot own regions.");
+                return false;
+            }
+            var points = Model.Vertices.Where(p => p.Parent == v.Id && p.Type != VertexType.Comment).ToList();
+            if (href.Length > 0 && points.Any(p => p.Type != VertexType.ConnectionPointRef))
+            {
+                Say("Remove the entry and exit points first: a submachine state has references to its submachine's points instead.");
+                return false;
+            }
+            if (href.Length == 0 && points.Any(p => p.Type == VertexType.ConnectionPointRef))
+            {
+                Say("Remove the connection point references first: only a submachine state has them.");
                 return false;
             }
             v.Submachine = href;
@@ -1171,7 +1275,10 @@ namespace FsmEditor.Core
         private List<Vertex> LeavingElements()
         {
             var roots = WithGroupMates(SelectionRoots());
-            return roots.Count > 0 && roots.All(v => !Index.IsBorderVertex(v) && RegionOwnerOf(v.Parent) != null) ? roots : new List<Vertex>();
+            if (roots.Count == 0 || !roots.All(v => !Index.IsBorderVertex(v) && RegionOwnerOf(v.Parent) != null)) return new List<Vertex>();
+            // Not when a region would get a second initial or history pseudostate.
+            var into = roots.GroupBy(v => RegionOwnerOf(v.Parent).Parent);
+            return into.Any(g => RegionProblem(g.ToList(), g.Key) != null) ? new List<Vertex>() : roots;
         }
 
         public bool CanLeaveParent => LeavingElements().Count > 0;
@@ -1262,7 +1369,9 @@ namespace FsmEditor.Core
                     // A group drops as a whole: into the region that holds all its members, or nowhere.
                     if (v != list.First(r => r.Group == v.Group)) continue;
                     var gr = DropRegionOf(DropBox(v), v.Parent, moving);
-                    if (gr != null) foreach (var m in GroupMembers(v.Group)) m.Parent = gr.Id;
+                    var groupProblem = gr != null ? RegionProblem(GroupMembers(v.Group), gr.Id) : null;
+                    if (groupProblem != null) Say(groupProblem);
+                    else if (gr != null) foreach (var m in GroupMembers(v.Group)) m.Parent = gr.Id;
                     continue;
                 }
                 if (v.Type == VertexType.EntryPoint || v.Type == VertexType.ExitPoint)
@@ -1281,7 +1390,9 @@ namespace FsmEditor.Core
                     continue;
                 }
                 var r = DropRegionOf(v, moving);
-                if (r != null) v.Parent = r.Id;
+                var problem = r != null ? RegionProblem(new[] { v }, r.Id) : null;
+                if (problem != null) Say(problem);
+                else if (r != null) v.Parent = r.Id;
             }
             Commit();
         }
@@ -1468,13 +1579,25 @@ namespace FsmEditor.Core
                 {
                     v.Parent = RootRegion;
                 }
-                v.Anchors = v.Anchors.Where(map.ContainsKey).Select(a => map[a]).ToList();
+                // A region has one initial, one shallow and one deep history pseudostate at most: a copy that would be a second is left out.
+                var problem = parent == null ? RegionProblem(new[] { v }, v.Parent) : null;
+                if (problem != null)
+                {
+                    Say(problem);
+                    map.Remove(src.Id);
+                    continue;
+                }
                 Model.Vertices.Add(v);
                 added.Add(v);
             }
+            if (added.Count == 0) return;
             foreach (var src in data.Transitions)
             {
-                if (!map.ContainsKey(src.Source) || !map.ContainsKey(src.Target)) continue;
+                if (!map.ContainsKey(src.Source) || !map.ContainsKey(src.Target))
+                {
+                    map.Remove(src.Id);
+                    continue;
+                }
                 var t = src.Clone();
                 t.Id = map[src.Id];
                 t.Source = map[src.Source];
@@ -1482,6 +1605,7 @@ namespace FsmEditor.Core
                 t.Points = t.Points.Select(p => new PointD(p.X + offX, p.Y + offY)).ToList();
                 Model.Transitions.Add(t);
             }
+            foreach (var v in added) v.Anchors = v.Anchors.Where(map.ContainsKey).Select(a => map[a]).ToList();
             Reindex();
             var addedIds = new HashSet<string>(added.Select(v => v.Id));
             var pastedRoots = added.Where(v => !Index.Ancestors(v).Any(a => addedIds.Contains(a.Id))).ToList();

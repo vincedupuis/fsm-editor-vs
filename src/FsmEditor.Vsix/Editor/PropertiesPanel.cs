@@ -509,7 +509,8 @@ namespace FsmEditor.Editor
             var group = Core.Tools.Swappable.FirstOrDefault(g => g.Contains(v.Type));
             if (group != null)
             {
-                Add(SelectField("Kind", v.Type.Key(), group.Select(t => (t.Key(), t.Title())), value =>
+                // Only the kinds the file can hold this pseudostate as, with its transitions and region.
+                Add(SelectField("Kind", v.Type.Key(), S.TypeOptions(v).Select(t => (t.Key(), t.Title())), value =>
                 {
                     if (VertexTypes.TryParseKey(value, out var type)) S.ChangeType(v, type);
                     _editor.RenderProps();
@@ -798,44 +799,57 @@ namespace FsmEditor.Editor
             var s = S.Index.Vertex(t.Source);
             var g = S.Index.Vertex(t.Target);
             string Nm(Vertex x) => x == null ? "?" : Or(Format.Shown(x.Name), x.Type.Title());
-            Add(H3("Transition"),
-                Muted($"{Nm(s)} → {Nm(g)}"),
-                SelectField("Kind", t.Kind.ToString().ToLowerInvariant(), new[] { ("external", "External"), ("local", "Local"), ("internal", "Internal") }, value =>
+            // Leaving an initial or history pseudostate: the file holds its target and action only.
+            var start = DiagramSession.IsStart(s);
+            Add(H3("Transition"), Muted($"{Nm(s)} → {Nm(g)}"));
+            if (!start)
+            {
+                Add(SelectField("Kind", t.Kind.ToString().ToLowerInvariant(), new[] { ("external", "External"), ("local", "Local"), ("internal", "Internal") }, value =>
                 {
                     S.SetKind(t, value == "internal" ? TransitionKind.Internal : value == "local" ? TransitionKind.Local : TransitionKind.External);
                     _editor.RenderProps();
-                }),
-                ColorField(t.Color, c => SetColor(t, null, c), "the transition"));
+                }));
+            }
+            Add(ColorField(t.Color, c => SetColor(t, null, c), "the transition"));
             // Internal transitions drawn in their state's compartment take a single color.
             var inCompartment = t.Kind == TransitionKind.Internal && t.Source == t.Target && s != null && s.Type == VertexType.State;
             string Item(string key) => inCompartment ? null : key;
-            Add(WithColor(ListField("Triggers", t.Triggers, list =>
-                {
-                    t.Triggers = list;
-                    Commit();
-                }, Expressions.CheckTrigger, "event, after(500ms), after(2s)"), t, Item("triggers"), "the triggers"));
+            if (!start)
+            {
+                Add(WithColor(ListField("Triggers", t.Triggers, list =>
+                    {
+                        t.Triggers = list;
+                        Commit();
+                    }, Expressions.CheckTrigger, "event, after(500ms), after(2s)"), t, Item("triggers"), "the triggers"));
+            }
             if (S.Model.Kind == MachineKind.Protocol)
             {
-                Add(WithColor(TextField("Precondition", t.Precondition, value =>
-                    {
-                        t.Precondition = value;
-                        Commit();
-                    }, Expressions.CheckCondition, "e.g. isOpen()"), t, Item("precondition"), "the precondition"),
-                    WithColor(TextField("Postcondition", t.Postcondition, value =>
-                    {
-                        t.Postcondition = value;
-                        Commit();
-                    }, Expressions.CheckCondition, "e.g. isClosed()"), t, Item("postcondition"), "the postcondition"));
+                if (!start)
+                {
+                    Add(WithColor(TextField("Precondition", t.Precondition, value =>
+                        {
+                            t.Precondition = value;
+                            Commit();
+                        }, Expressions.CheckCondition, "e.g. isOpen()"), t, Item("precondition"), "the precondition"),
+                        WithColor(TextField("Postcondition", t.Postcondition, value =>
+                        {
+                            t.Postcondition = value;
+                            Commit();
+                        }, Expressions.CheckCondition, "e.g. isClosed()"), t, Item("postcondition"), "the postcondition"));
+                }
             }
             else
             {
                 var allowElse = Labels.AllowsElse(s);
-                Add(WithColor(TextField("Guard", t.Guard, value =>
-                    {
-                        t.Guard = value;
-                        Commit();
-                    }, text => Expressions.CheckGuard(text, allowElse), allowElse ? "e.g. hasDisc() && !isJammed(), or else" : "e.g. hasDisc() && !isJammed()"), t, Item("guard"), "the guard"),
-                    WithColor(TextField("Action", t.Action, value =>
+                if (!start)
+                {
+                    Add(WithColor(TextField("Guard", t.Guard, value =>
+                        {
+                            t.Guard = value;
+                            Commit();
+                        }, text => Expressions.CheckGuard(text, allowElse), allowElse ? "e.g. hasDisc() && !isJammed(), or else" : "e.g. hasDisc() && !isJammed()"), t, Item("guard"), "the guard"));
+                }
+                Add(WithColor(TextField("Action", t.Action, value =>
                     {
                         t.Action = value;
                         Commit();

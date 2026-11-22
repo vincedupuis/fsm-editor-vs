@@ -66,6 +66,7 @@ namespace FsmEditor.Core
                 if (!ptrig.Ok) return $"Trigger: {ptrig.Error}";
                 var post = Expressions.CheckCondition(m.Groups[3].Value);
                 if (!post.Ok) return $"Postcondition: {post.Error}";
+                if (DiagramSession.IsStart(source) && (pre.Value.Length > 0 || ptrig.Value.Count > 0 || post.Value.Length > 0)) return DiagramSession.StartOnly(source);
                 t.Precondition = pre.Value;
                 t.Triggers = ptrig.Value;
                 t.Postcondition = post.Value;
@@ -80,6 +81,7 @@ namespace FsmEditor.Core
             if (!guard.Ok) return $"Guard: {guard.Error}";
             var action = Expressions.CheckActions(slash >= 0 ? text.Substring(slash + 1) : "");
             if (!action.Ok) return $"Action: {action.Error}";
+            if (DiagramSession.IsStart(source) && (trig.Value.Count > 0 || guard.Value.Length > 0)) return DiagramSession.StartOnly(source);
             t.Triggers = trig.Value;
             t.Guard = guard.Value;
             t.Action = action.Value;
