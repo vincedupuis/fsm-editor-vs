@@ -90,6 +90,34 @@ jobs:
           Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object { Join-Path $_.FullName 'ActivityLog.xml' } |
             Where-Object { Test-Path $_ } | ForEach-Object { Write-Host "Removing $_"; Remove-Item -Force $_ }
 
+      # The runner's console covers most of the 1024x768 screen: minimized, and a bigger screen when the image allows it.
+      - name: The desktop
+        shell: pwsh
+        run: |
+          try { Set-DisplayResolution -Width 1920 -Height 1080 -Force -ErrorAction Stop } catch { Write-Host "Set-DisplayResolution: $_" }
+          (New-Object -ComObject Shell.Application).MinimizeAll()
+          Start-Sleep 2
+          Add-Type -AssemblyName System.Windows.Forms
+          Write-Host "Screen: $([System.Windows.Forms.Screen]::PrimaryScreen.Bounds)"
+
+      # Visual Studio's first start on a fresh machine (its setup, the extension's first load) took longer than a
+      # test waits: done once before the tests, on an example, then closed.
+      - name: Visual Studio's first start
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $devenv = & $vswhere -latest -prerelease -products * -property productPath
+          $started = Get-Date
+          $p = Start-Process $devenv -ArgumentList "`"$PWD\examples\MediaPlayer.fsm`" /rootsuffix Exp" -PassThru
+          while ($p.MainWindowHandle -eq 0 -and -not $p.HasExited -and ((Get-Date) - $started).TotalMinutes -lt 5) { Start-Sleep 2; $p.Refresh() }
+          Write-Host "Main window after $([int]((Get-Date) - $started).TotalSeconds) s: '$($p.MainWindowTitle)'"
+          Start-Sleep 90
+          $p.Refresh()
+          Write-Host "Window: '$($p.MainWindowTitle)'"
+          $null = $p.CloseMainWindow()
+          if (-not $p.WaitForExit(30000)) { Write-Host 'Killed'; $p.Kill() }
+          Get-CimInstance Win32_Process -Filter "Name = 'devenv.exe'" | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+
       - name: Tests inside Visual Studio
         env:
           FSM_VS_INTEGRATION: '1'
