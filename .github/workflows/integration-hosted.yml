@@ -149,6 +149,7 @@ jobs:
           $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
           [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
           $bmp.Save("$env:RUNNER_TEMP\desktop.png")
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\screens" | Out-Null
           Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object { Join-Path $_.FullName 'ActivityLog.xml' } |
             Where-Object { Test-Path $_ } | ForEach-Object { Copy-Item $_ "$env:RUNNER_TEMP\screens\ActivityLog.xml" }
 
