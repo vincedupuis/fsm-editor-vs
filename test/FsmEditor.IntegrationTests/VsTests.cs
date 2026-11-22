@@ -551,9 +551,13 @@ namespace FsmEditor.IntegrationTests
             catch (Exception e) when (e.ToString().Contains("disposed"))
             {
                 // Visual Studio 2026's CommandBars can be disposed altogether: the menus read as they show, opened (with a
-                // diagram active, which shows the commands about one).
+                // diagram active, which shows the commands about one, then its model file as text, which shows Open in
+                // FSM Editor).
                 OpenDiagramOf("MediaPlayer.fsm");
                 tools = _vs.MenuItems("Tools", "FSM Editor");
+                _vs.Raise(OpenAsText);
+                VisualStudio.Until("the model file in the text editor", () => _vs.ActiveIsText() && ActiveIs("MediaPlayer.fsm"));
+                tools = tools.Union(_vs.MenuItems("Tools", "FSM Editor")).ToArray();
                 windows = _vs.MenuItems("View", "Other Windows");
             }
             foreach (var caption in new[] { "New State Machine", "Generate Code", "Export as SVG", "Export as PNG", "Open as Text", "Open in FSM Editor", "Open Trace", "Compare as Diagrams" })
