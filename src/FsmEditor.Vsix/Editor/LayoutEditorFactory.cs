@@ -14,9 +14,9 @@ namespace FsmEditor.Editor
 {
     /// <summary>
     /// Opens a machine's layout file (<c>X.fsm.layout</c>) in the text editor, as JSON (<see cref="ContentTypes"/>).
-    /// Visual Studio picks an editor by a file's last suffix only, <c>.layout</c>, which an installation may give to
-    /// the XML editor. Other <c>.layout</c> files are refused (<c>VS_E_UNSUPPORTEDFORMAT</c>), so they open in the
-    /// editor they would have had.
+    /// Visual Studio picks an editor, and the text editor a language, by a file's last suffix only, <c>.layout</c>, which
+    /// Visual Studio gives the XML language (LINQ to SQL's <c>.dbml.layout</c> files). Other <c>.layout</c> files are
+    /// refused (<c>VS_E_UNSUPPORTEDFORMAT</c>), so they open in the editor they would have had.
     /// </summary>
     [Guid(PackageGuids.LayoutEditorFactoryString)]
     internal sealed class LayoutEditorFactory : IVsEditorFactory, IDisposable
@@ -64,6 +64,13 @@ namespace FsmEditor.Editor
                     ? adapters.CreateVsTextBufferAdapter(_site, json) as IVsTextLines
                     : adapters.CreateVsTextBufferAdapter(_site) as IVsTextLines;
                 if (lines == null) return VSConstants.E_FAIL;
+                // Not the language Visual Studio gives the .layout suffix (XML, for LINQ to SQL's .dbml.layout files):
+                // without this, the load would replace JSON with it.
+                if (lines is IVsUserData data)
+                {
+                    var detect = VSConstants.VsTextBufferUserDataGuid.VsBufferDetectLangSID_guid;
+                    ErrorHandler.ThrowOnFailure(data.SetData(ref detect, false));
+                }
             }
             else
             {
