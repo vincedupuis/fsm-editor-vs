@@ -548,7 +548,14 @@ namespace FsmEditor.IntegrationTests
                     return ((string[])Captions(menu), (string[])Captions(bars["Other Windows"]));
                 });
                 return true;
-            }, TimeSpan.FromSeconds(20));
+            }, TimeSpan.FromSeconds(20), () => _vs.Do(d =>
+            {
+                // Which of the three fails.
+                dynamic bars = d.CommandBars;
+                string Try(Func<object> f) { try { f(); return "ok"; } catch (Exception e) { return e.GetType().Name + ": " + e.Message.Split('\n')[0]; } }
+                return $"Tools: {Try(() => bars["Tools"])}; FSM Editor: {Try(() => bars["Tools"].Controls["FSM Editor"])}; its CommandBar: {Try(() => bars["Tools"].Controls["FSM Editor"].CommandBar)}; " +
+                    $"captions: {Try(() => Captions(bars["Tools"].Controls["FSM Editor"].CommandBar))}; Other Windows: {Try(() => Captions(bars["Other Windows"]))}";
+            }));
             foreach (var caption in new[] { "New State Machine", "Generate Code", "Export as SVG", "Export as PNG", "Open as Text", "Open in FSM Editor", "Open Trace", "Compare as Diagrams" })
                 Assert.True(tools.Contains(caption), $"Tools › FSM Editor › {caption}: {string.Join(", ", tools)}");
             Assert.Contains("Trace Player", windows);

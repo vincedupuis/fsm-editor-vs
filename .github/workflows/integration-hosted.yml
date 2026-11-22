@@ -149,6 +149,8 @@ jobs:
           $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
           [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
           $bmp.Save("$env:RUNNER_TEMP\desktop.png")
+          Get-ChildItem "$env:APPDATA\Microsoft\VisualStudio" -Directory -Filter '*Exp' | ForEach-Object { Join-Path $_.FullName 'ActivityLog.xml' } |
+            Where-Object { Test-Path $_ } | ForEach-Object { Copy-Item $_ "$env:RUNNER_TEMP\screens\ActivityLog.xml" }
 
       - uses: actions/upload-artifact@v7
         if: failure()
@@ -157,6 +159,7 @@ jobs:
           path: |
             ${{ runner.temp }}/desktop.png
             ${{ runner.temp }}/screens/*.png
+            ${{ runner.temp }}/screens/ActivityLog.xml
           if-no-files-found: ignore
 
       # What Visual Studio logged, when a test failed: its ActivityLog, and the crashes Windows recorded.
