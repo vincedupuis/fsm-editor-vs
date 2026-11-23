@@ -65,6 +65,26 @@ namespace FsmEditor.Core
             }
         }
 
+        /// <summary>
+        /// Starts the sidecar now if it isn't running, so that the first request doesn't wait for it: starting a process
+        /// can take seconds on Windows (an antivirus scanning it, the IDE starting). Called from a background thread when
+        /// the extension loads; a failure is left to the first request to report.
+        /// </summary>
+        public static void EnsureStarted()
+        {
+            lock (Lock)
+            {
+                try
+                {
+                    Start();
+                }
+                catch (Exception e) when (e is IOException || e is InvalidOperationException || e is System.ComponentModel.Win32Exception)
+                {
+                    Stop();
+                }
+            }
+        }
+
         /// <summary>Arguments as a JSON object: values are JSON texts already (see <see cref="Str"/>).</summary>
         public static string Args(params (string Key, string Json)[] fields)
         {

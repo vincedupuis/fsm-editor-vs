@@ -90,5 +90,13 @@ namespace FsmEditor.Core.Tests
             Assert.False(Expressions.CheckGuard("else", false).Ok);
             Assert.Equal(new[] { "go", "after(2s)" }, Expressions.CheckList("go, after( 2 s )", Expressions.CheckTrigger).Value);
         }
+
+        [Fact]
+        public void StartsTheSidecarAheadOfTheFirstRequest()
+        {
+            Common.EnsureStarted();
+            Common.EnsureStarted();
+            Assert.True(Expressions.CheckGuard("a()", false).Ok);
+        }
     }
 }

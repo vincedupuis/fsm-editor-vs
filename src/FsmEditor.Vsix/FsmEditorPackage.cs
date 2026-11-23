@@ -60,9 +60,10 @@ namespace FsmEditor
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             Instance = this;
-            // fsm-editor-common's sidecar, started on first use: reading, writing, converting, validating, comparing,
-            // merging and code generation go through it.
+            // fsm-editor-common's sidecar: reading, writing, converting, validating, comparing, merging and code
+            // generation go through it. Started now in the background, so that opening a diagram doesn't wait for it.
             Core.Common.ExecutablePath = CodeGenerator.CommonPath;
+            _ = System.Threading.Tasks.Task.Run(Core.Common.EnsureStarted);
             Sessions = new DiagramSessions(this);
             CompareFiles.CleanUp();
             // Advised for the life of Visual Studio, as the package is.
