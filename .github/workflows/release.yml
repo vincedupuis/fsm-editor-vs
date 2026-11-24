@@ -13,7 +13,7 @@ env:
   # Release of fsm-editor-common (github.com/vincedupuis/fsm-editor-common) whose sidecar
   # (fsm-editor-common-<version>-windows-x64.zip), templates and schemas archives the VSIX bundles, and whose
   # api-cases archive the tests replay.
-  FSM_COMMON_VERSION: 0.1.2
+  FSM_COMMON_VERSION: 0.1.3
 
 jobs:
   release:
