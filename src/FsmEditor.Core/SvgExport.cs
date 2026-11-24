@@ -287,7 +287,9 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
         {
             foreach (var a in comment.Anchors)
             {
-                var target = ix.Vertex(a);
+                // An internal transition drawn in its state's compartment: the line goes to the state.
+                var target = ix.Vertex(a) ?? (ix.Transition(a) is Transition it && it.Kind == TransitionKind.Internal && it.Source == it.Target
+                    && ix.Vertex(it.Source) is Vertex s && s.Type == VertexType.State ? s : null);
                 PointD? p = null;
                 if (target != null)
                 {
