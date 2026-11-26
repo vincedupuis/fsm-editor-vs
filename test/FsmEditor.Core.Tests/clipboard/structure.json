@@ -320,7 +320,7 @@
         "id": "S.entry1*#1",
         "source": "S.entry1*",
         "target": "S2",
-        "kind": "external",
+        "kind": "local",
         "triggers": [],
         "guard": "",
         "action": ""
@@ -329,7 +329,7 @@
         "id": "S.entry2*#1",
         "source": "S.entry2*",
         "target": "S2",
-        "kind": "external",
+        "kind": "local",
         "triggers": [],
         "guard": "",
         "action": ""
@@ -455,7 +455,7 @@
         "id": "Dup.entry1*#1",
         "source": "Dup.entry1*",
         "target": "S2",
-        "kind": "external",
+        "kind": "local",
         "triggers": [],
         "guard": "",
         "action": ""
@@ -464,7 +464,7 @@
         "id": "Dup.entry2*#1",
         "source": "Dup.entry2*",
         "target": "S2",
-        "kind": "external",
+        "kind": "local",
         "triggers": [],
         "guard": "",
         "action": ""

@@ -141,6 +141,9 @@ namespace FsmEditor
         internal async Task NewStateMachineAsync(string folder)
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync();
+            // The kind is chosen once: the diagram doesn't change it.
+            var kind = Dialogs.Choose("New State Machine", "The kind of the new state machine:", "Behavioral state machine", "Protocol state machine");
+            if (kind < 0) return;
             var name = Dialogs.AskMachineName();
             if (name == null) return;
             if (folder == null)
@@ -157,7 +160,7 @@ namespace FsmEditor
             try
             {
                 // Its two files: the model, then its layout.
-                var files = MachineFiles.Write(FsmModel.CreateDefault(name));
+                var files = MachineFiles.Write(FsmModel.CreateDefault(name, kind == 1 ? MachineKind.Protocol : MachineKind.Behavioral));
                 File.WriteAllText(path, files.ModelText, new UTF8Encoding(false));
                 File.WriteAllText(MachineFiles.LayoutPathOf(path), files.LayoutText, new UTF8Encoding(false));
             }

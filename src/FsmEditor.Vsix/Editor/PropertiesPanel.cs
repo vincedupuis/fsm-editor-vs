@@ -461,13 +461,23 @@ namespace FsmEditor.Editor
                     m.Name = v;
                     Commit();
                 }, text => S.NameCheck(m, text)),
-                SelectField("Kind", m.Kind == MachineKind.Protocol ? "protocol" : "behavioral",
-                    new[] { ("behavioral", "Behavioral state machine"), ("protocol", "Protocol state machine") }, v =>
-                    {
-                        m.Kind = v == "protocol" ? MachineKind.Protocol : MachineKind.Behavioral;
-                        Commit(true);
-                    }),
-                TextField("Documentation", m.Documentation, v =>
+                // Chosen when the machine is created.
+                Field("Kind", Muted(m.Kind == MachineKind.Protocol ? "Protocol state machine" : "Behavioral state machine")),
+                TextField("Context", m.Context, v =>
+                {
+                    m.Context = v;
+                    Commit();
+                }, Expressions.CheckName, "e.g. DoorController"));
+            // The machine's region, when it has one: it can be named (several are named in the file only).
+            if (m.Regions.Count == 1)
+            {
+                Add(TextField("Region", Format.Shown(m.Regions[0].Name), v =>
+                {
+                    m.Regions[0].Name = v;
+                    Commit();
+                }, text => S.NameCheck(m.Regions[0], text), "no name"));
+            }
+            Add(TextField("Documentation", m.Documentation, v =>
                 {
                     m.Documentation = v;
                     Commit();
@@ -529,12 +539,15 @@ namespace FsmEditor.Editor
                     Commit();
                 }, multiline: true, rows: 5));
                 Add(H4("Annotated elements"));
-                var anchors = v.Anchors.Select(a => (object)ix.Vertex(a) ?? ix.Transition(a)).Where(a => a != null).ToList();
+                var anchors = v.Anchors.Select(a => (object)ix.Vertex(a) ?? (object)ix.Transition(a) ?? (a == DiagramSession.MachineAnchor ? (object)S.Model : S.AllRegions().FirstOrDefault(r => r.Id == a))).Where(a => a != null).ToList();
                 if (anchors.Count == 0) Add(Muted("Drag the ⊕ handle onto an element to attach this comment."));
                 foreach (var a in anchors)
                 {
-                    var id = a is Vertex av ? av.Id : ((Transition)a).Id;
-                    var text = a is Transition at ? $"Transition {Labels.TransitionLabel(S.Model, at)}" : Or(Format.Shown(((Vertex)a).Name), ((Vertex)a).Type.Title());
+                    var id = a is Vertex av ? av.Id : a is Transition atr ? atr.Id : a is Region ar ? ar.Id : DiagramSession.MachineAnchor;
+                    var text = a is Transition at ? $"Transition {Labels.TransitionLabel(S.Model, at)}"
+                        : a is Region rg ? $"Region {Or(Format.Shown(rg.Name), "(unnamed)")}"
+                        : a is FsmModel ? "The state machine"
+                        : Or(Format.Shown(((Vertex)a).Name), ((Vertex)a).Type.Title());
                     Add(Row(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis },
                         PButton("✕", () =>
                         {
@@ -543,8 +556,9 @@ namespace FsmEditor.Editor
                         }, "Detach", true)));
                 }
             }
-            else
+            else if (!DiagramSession.IsStart(v))
             {
+                // Initial and history pseudostates have no name in the file.
                 Add(TextField("Name", Format.Shown(v.Name), value =>
                 {
                     v.Name = value;
@@ -578,11 +592,13 @@ namespace FsmEditor.Editor
                 Commit();
             };
             Add(TextField("Stereotype", v.Stereotype, Set(x => v.Stereotype = x), Expressions.CheckName, "e.g. Critical"),
-                H4("Behaviors"),
-                WithColor(TextField("entry /", v.Entry, Set(x => v.Entry = x), Expressions.CheckActions, "e.g. start(); log()"), v, "entry", "entry"),
-                WithColor(TextField("exit /", v.Exit, Set(x => v.Exit = x), Expressions.CheckActions, "e.g. stop()"), v, "exit", "exit"),
-                WithColor(TextField("do /", v.DoActivity, Set(x => v.DoActivity = x), Expressions.CheckActions, "e.g. poll()"), v, "doActivity", "do"),
-                WithColor(ListField("Deferrable events", v.Deferrable, list =>
+                H4("Behaviors"));
+            // A protocol state machine's states have no entry, exit or do behaviors (shown when they do, to remove them).
+            var behaviors = S.Model.Kind != MachineKind.Protocol;
+            if (behaviors || v.Entry.Length > 0) Add(WithColor(TextField("entry /", v.Entry, Set(x => v.Entry = x), Expressions.CheckActions, "e.g. start(); log()"), v, "entry", "entry"));
+            if (behaviors || v.Exit.Length > 0) Add(WithColor(TextField("exit /", v.Exit, Set(x => v.Exit = x), Expressions.CheckActions, "e.g. stop()"), v, "exit", "exit"));
+            if (behaviors || v.DoActivity.Length > 0) Add(WithColor(TextField("do /", v.DoActivity, Set(x => v.DoActivity = x), Expressions.CheckActions, "e.g. poll()"), v, "doActivity", "do"));
+            Add(WithColor(ListField("Deferrable events", v.Deferrable, list =>
                 {
                     v.Deferrable = list;
                     Commit();
@@ -621,7 +637,6 @@ namespace FsmEditor.Editor
                     var region = v.Regions[i];
                     var tb = Input(Format.Shown(region.Name));
                     // A single region has no name shown: named only beside others.
-                    tb.IsEnabled = v.Regions.Count > 1;
                     var committed = tb.Text;
                     void Apply()
                     {
@@ -642,7 +657,7 @@ namespace FsmEditor.Editor
                     {
                         if (e.Key == Key.Enter) Apply();
                     };
-                    Add(Row(WithPlaceholder(tb, v.Regions.Count > 1 ? $"Region {i + 1}" : "no name (one region)"), PButton("✕", () =>
+                    Add(Row(WithPlaceholder(tb, v.Regions.Count > 1 ? $"Region {i + 1}" : "no name"), PButton("✕", () =>
                     {
                         S.RemoveRegion(v, region.Id);
                         _editor.RenderProps();
@@ -810,9 +825,11 @@ namespace FsmEditor.Editor
             // Leaving an initial or history pseudostate: the file holds its target and action only.
             var start = DiagramSession.IsStart(s);
             Add(H3("Transition"), Muted($"{Nm(s)} → {Nm(g)}"));
-            if (!start)
+            // Only the kinds the transition can be, and triggers only where it can have them (or has them, to remove them).
+            var kinds = S.KindOptions(t);
+            if (!start && kinds.Count > 1)
             {
-                Add(SelectField("Kind", t.Kind.ToString().ToLowerInvariant(), new[] { ("external", "External"), ("local", "Local"), ("internal", "Internal") }, value =>
+                Add(SelectField("Kind", t.Kind.ToString().ToLowerInvariant(), kinds.Select(k => (k.ToString().ToLowerInvariant(), k.ToString())), value =>
                 {
                     S.SetKind(t, value == "internal" ? TransitionKind.Internal : value == "local" ? TransitionKind.Local : TransitionKind.External);
                     _editor.RenderProps();
@@ -822,7 +839,7 @@ namespace FsmEditor.Editor
             // Internal transitions drawn in their state's compartment take a single color.
             var inCompartment = t.Kind == TransitionKind.Internal && t.Source == t.Target && s != null && s.Type == VertexType.State;
             string Item(string key) => inCompartment ? null : key;
-            if (!start)
+            if (!start && (DiagramSession.TakesTriggers(s, g) || t.Triggers.Count > 0))
             {
                 Add(WithColor(ListField("Triggers", t.Triggers, list =>
                     {
@@ -832,36 +849,77 @@ namespace FsmEditor.Editor
             }
             if (S.Model.Kind == MachineKind.Protocol)
             {
-                if (!start)
+                // A protocol transition's precondition is its guard: `else` on a choice's or junction's branch.
+                var branch = Labels.AllowsElse(s);
+                if (DiagramSession.TakesGuard(s, g) || t.Precondition.Length > 0)
                 {
                     Add(WithColor(TextField("Precondition", t.Precondition, value =>
                         {
                             t.Precondition = value;
                             Commit();
-                        }, Expressions.CheckCondition, "e.g. isOpen()"), t, Item("precondition"), "the precondition"),
-                        WithColor(TextField("Postcondition", t.Postcondition, value =>
+                        }, text => branch && text.Trim() == "else" && DiagramSession.ElseTaken(S.Model, s, t) ? Check<string>.Fail(DiagramSession.ElseTakenMessage(s))
+                            : branch ? Expressions.CheckGuard(text, true) : Expressions.CheckCondition(text), branch ? "e.g. isOpen(), or else" : "e.g. isOpen()"), t, Item("precondition"), "the precondition"));
+                }
+                if (!start)
+                {
+                    Add(WithColor(TextField("Postcondition", t.Postcondition, value =>
                         {
                             t.Postcondition = value;
                             Commit();
                         }, Expressions.CheckCondition, "e.g. isClosed()"), t, Item("postcondition"), "the postcondition"));
                 }
-            }
-            else
-            {
-                var allowElse = Labels.AllowsElse(s);
-                if (!start)
+                // A protocol transition has no guard or action: shown when it has one, to remove it.
+                if (t.Guard.Length > 0)
                 {
                     Add(WithColor(TextField("Guard", t.Guard, value =>
                         {
                             t.Guard = value;
                             Commit();
-                        }, text => Expressions.CheckGuard(text, allowElse), allowElse ? "e.g. hasDisc() && !isJammed(), or else" : "e.g. hasDisc() && !isJammed()"), t, Item("guard"), "the guard"));
+                        }, text => Expressions.CheckGuard(text, branch)), t, Item("guard"), "the guard"));
+                }
+                if (t.Action.Length > 0)
+                {
+                    Add(WithColor(TextField("Action", t.Action, value =>
+                        {
+                            t.Action = value;
+                            Commit();
+                        }, Expressions.CheckActions), t, Item("action"), "the action"));
+                }
+            }
+            else
+            {
+                var allowElse = Labels.AllowsElse(s);
+                if (DiagramSession.TakesGuard(s, g) || t.Guard.Length > 0)
+                {
+                    Add(WithColor(TextField("Guard", t.Guard, value =>
+                        {
+                            t.Guard = value;
+                            Commit();
+                        }, text => allowElse && text.Trim() == "else" && DiagramSession.ElseTaken(S.Model, s, t) ? Check<string>.Fail(DiagramSession.ElseTakenMessage(s))
+                            : Expressions.CheckGuard(text, allowElse), allowElse ? "e.g. hasDisc() && !isJammed(), or else" : "e.g. hasDisc() && !isJammed()"), t, Item("guard"), "the guard"));
                 }
                 Add(WithColor(TextField("Action", t.Action, value =>
                     {
                         t.Action = value;
                         Commit();
                     }, Expressions.CheckActions, "e.g. notify(); log()"), t, Item("action"), "the action"));
+                // Pre/postconditions only count in a protocol state machine: shown when the transition has them, to remove them.
+                if (t.Precondition.Length > 0)
+                {
+                    Add(WithColor(TextField("Precondition", t.Precondition, value =>
+                        {
+                            t.Precondition = value;
+                            Commit();
+                        }, Expressions.CheckCondition), t, Item("precondition"), "the precondition"));
+                }
+                if (t.Postcondition.Length > 0)
+                {
+                    Add(WithColor(TextField("Postcondition", t.Postcondition, value =>
+                        {
+                            t.Postcondition = value;
+                            Commit();
+                        }, Expressions.CheckCondition), t, Item("postcondition"), "the postcondition"));
+                }
             }
             Add(H4("Routing"));
             var routing = new WrapPanel();

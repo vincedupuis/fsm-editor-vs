@@ -16,7 +16,6 @@ namespace FsmEditor.Core.Tests
     {
         private const string InitialOnly = "A transition leaving an initial pseudostate holds its target and an action only.";
         private const string HistoryOnly = "A transition leaving a history pseudostate holds its target and an action only.";
-        private const string Anchor = "A comment cannot be attached to an initial pseudostate or to its transition.";
 
         /// <summary>
         /// A (A → C on go, A → choice on pick), C (composite: its initial → C1, a history without a transition,
@@ -94,6 +93,129 @@ namespace FsmEditor.Core.Tests
             Assert.Equal(0, f.Commits);
         }
 
+        /// <summary>A protocol machine: A (A → choice on go), the choice ([ok()] → B, → A), B.</summary>
+        private const string Protocol = @"{ ""version"": 1, ""name"": ""P"", ""type"": ""protocol"", ""context"": ""Door"",
+  ""initial"": { ""target"": ""A"" },
+  ""elements"": [
+    { ""name"": ""A"", ""type"": ""state"", ""transitions"": [ { ""type"": ""external"", ""trigger"": ""go"", ""target"": ""ch*"" } ] },
+    { ""name"": ""ch*"", ""type"": ""choice"", ""transitions"": [
+      { ""type"": ""external"", ""precondition"": ""ok()"", ""target"": ""B"" },
+      { ""type"": ""external"", ""target"": ""A"" } ] },
+    { ""name"": ""B"", ""type"": ""state"" }
+  ] }";
+
+        [Fact]
+        public void OffersAProtocolMachineNoHistoryAndElseOnlyOnABranchsPrecondition()
+        {
+            var f = new Fixture(Protocol);
+            Assert.Equal("Door", f.M.Context);
+            Assert.False(Tools.Allowed(f.M, "shallowHistory"));
+            Assert.False(Tools.Allowed(f.M, "deepHistory"));
+            Assert.True(Tools.Allowed(f.M, "choice"));
+            Assert.Null(f.S.CreateVertex("shallowHistory", new PointD(400, 300)));
+            Assert.Equal(new[] { VertexType.Choice, VertexType.Junction }, f.S.TypeOptions(f.Of(VertexType.Choice)));
+            Assert.Equal(new[] { VertexType.Initial, VertexType.Choice, VertexType.Junction }, f.S.TypeOptions(f.TopInitial));
+            Assert.StartsWith("Precondition:", f.S.ApplyLabel(f.Leaving(f.Named("A"))[0], "[else] go"));
+            var branch = f.Leaving(f.Of(VertexType.Choice))[1];
+            Assert.Null(f.S.ApplyLabel(branch, "[else]"));
+            Assert.Equal("else", branch.Precondition);
+            Assert.Contains("\"context\": \"Door\"", TestFiles.Write(f.M).Model);
+            f.M.Kind = MachineKind.Behavioral;
+            Assert.True(Tools.Allowed(f.M, "shallowHistory"));
+            // A new machine of either kind.
+            Assert.Contains("\"type\": \"protocol\"", TestFiles.Write(FsmModel.CreateDefault("Door", MachineKind.Protocol)).Model);
+            Assert.Contains("\"type\": \"behavioral\"", TestFiles.Write(FsmModel.CreateDefault("Door")).Model);
+        }
+
+        [Fact]
+        public void OffersATransitionLeavingAPseudostateNoTriggersAndNoOtherKind()
+        {
+            var f = new Fixture(Sample);
+            var branch = f.Leaving(f.Of(VertexType.Choice))[0];
+            Assert.False(DiagramSession.TakesTriggers(f.Of(VertexType.Choice), f.Named("A")));
+            Assert.True(DiagramSession.TakesTriggers(f.Named("A"), f.Named("C")));
+            Assert.Equal(new[] { TransitionKind.External }, f.S.KindOptions(branch));
+            Assert.Equal(DiagramSession.NoTriggers, f.S.ApplyLabel(branch, "go [ok()]"));
+            Assert.Null(f.S.ApplyLabel(branch, "[ready()]"));
+            // A, simple: internal, not local; C, composite, to C1 inside it: local too.
+            Assert.Equal(new[] { TransitionKind.External, TransitionKind.Internal }, f.S.KindOptions(f.Leaving(f.Named("A"))[0]));
+            var inside = new Transition { Id = "t_in", Source = f.Named("C").Id, Target = f.Named("C1").Id };
+            f.M.Transitions.Add(inside);
+            Assert.Equal(new[] { TransitionKind.External, TransitionKind.Local, TransitionKind.Internal }, f.S.KindOptions(inside));
+        }
+
+        /// <summary>A → fork → X, Y (the regions of C, X2 beside X); X, Y → join → A; C's entry point in → X; a choice → A.</summary>
+        private static string Segments(string type) => @"{ ""version"": 1, ""name"": ""S"", ""type"": """ + type + @""",
+  ""initial"": { ""target"": ""A"" },
+  ""elements"": [
+    { ""name"": ""A"", ""type"": ""state"", ""transitions"": [ { ""type"": ""external"", ""target"": ""f*"" } ] },
+    { ""name"": ""f*"", ""type"": ""fork"", ""transitions"": [ { ""type"": ""external"", ""target"": ""X"" }, { ""type"": ""external"", ""target"": ""Y"" } ] },
+    { ""name"": ""C"", ""type"": ""state"", ""points"": [ { ""name"": ""in"", ""type"": ""entryPoint"", ""transitions"": [ { ""type"": ""local"", ""target"": ""X"" } ] } ],
+      ""regions"": [
+        { ""name"": ""r1"", ""elements"": [ { ""name"": ""X"", ""type"": ""state"", ""transitions"": [ { ""type"": ""external"", ""target"": ""j*"" } ] }, { ""name"": ""X2"", ""type"": ""state"" } ] },
+        { ""name"": ""r2"", ""elements"": [ { ""name"": ""Y"", ""type"": ""state"", ""transitions"": [ { ""type"": ""external"", ""target"": ""j*"" } ] } ] } ] },
+    { ""name"": ""j*"", ""type"": ""join"", ""transitions"": [ { ""type"": ""external"", ""target"": ""A"" } ] },
+    { ""name"": ""ch*"", ""type"": ""choice"", ""transitions"": [ { ""type"": ""external"", ""target"": ""A"" } ] }
+  ] }";
+
+        [Theory]
+        [InlineData("behavioral")]
+        [InlineData("protocol")]
+        public void OffersNoGuardOrTriggersOnAForkAnEntryPointOrAJoinAndDrawsNoneTheyCantHave(string type)
+        {
+            var f = new Fixture(Segments(type));
+            Vertex V(string id) => f.M.Vertices.Single(v => v.Id == id);
+            Transition T(string id) => f.M.Transitions.Single(t => t.Id == id);
+            Assert.False(DiagramSession.TakesGuard(V("f*"), V("X")));
+            Assert.False(DiagramSession.TakesGuard(V("C.in"), V("X")));
+            Assert.False(DiagramSession.TakesGuard(V("X"), V("j*")));
+            Assert.False(DiagramSession.TakesTriggers(V("X"), V("j*")));
+            Assert.True(DiagramSession.TakesGuard(V("ch*"), V("A")));
+            var guard = type == "protocol" ? "precondition" : "guard";
+            Assert.Equal($"A transition leaving a fork or an entry point, or entering a join, cannot have a {guard}.", f.S.ApplyLabel(T("X#1"), "[ok()]"));
+            Assert.Equal(DiagramSession.NoTriggers, f.S.ApplyLabel(T("X#1"), "go"));
+            // Drawn: a fork to a choice, a choice to a join, a second transition from the entry point into r1.
+            Assert.False(f.S.CanConnect(V("f*"), "ch*"));
+            Assert.False(f.S.CanConnect(V("ch*"), "j*"));
+            Assert.False(f.S.CanConnect(V("C.in"), "X2"));
+            Assert.True(f.S.CanConnect(V("C.in"), "Y"));
+            Assert.Equal(0, f.Commits);
+            // Drawn from an entry point: local, the only kind it can be (UML's state_is_external).
+            var drawn = f.S.Connect(V("C.in"), "Y");
+            Assert.Equal(TransitionKind.Local, drawn.Kind);
+            Assert.Equal(new[] { TransitionKind.Local }, f.S.KindOptions(drawn));
+        }
+
+        /// <summary>A (A → ch* on go), ch* ([else] → A), C (its points in and out, X inside), the machine's exit point stop.</summary>
+        private const string Points = @"{ ""version"": 1, ""name"": ""M"", ""type"": ""behavioral"",
+  ""points"": [ { ""name"": ""stop"", ""type"": ""exitPoint"" } ],
+  ""initial"": { ""target"": ""A"" },
+  ""elements"": [
+    { ""name"": ""A"", ""type"": ""state"", ""transitions"": [ { ""type"": ""external"", ""trigger"": ""go"", ""target"": ""ch*"" } ] },
+    { ""name"": ""ch*"", ""type"": ""choice"", ""transitions"": [ { ""type"": ""external"", ""guard"": ""else"", ""target"": ""A"" } ] },
+    { ""name"": ""C"", ""type"": ""state"", ""points"": [ { ""name"": ""in"", ""type"": ""entryPoint"" }, { ""name"": ""out"", ""type"": ""exitPoint"" } ],
+      ""elements"": [ { ""name"": ""X"", ""type"": ""state"" } ] }
+  ] }";
+
+        [Fact]
+        public void DrawsNoTransitionFromAnEntryPointOutOfItsStateFromAnExitPointIntoItOrFromTheMachinesExitPoint()
+        {
+            var f = new Fixture(Points);
+            Vertex V(string id) => f.M.Vertices.Single(v => v.Id == id);
+            Assert.False(f.S.CanConnect(V("C.in"), "A"));
+            Assert.True(f.S.CanConnect(V("C.in"), "X"));
+            Assert.False(f.S.CanConnect(V("C.out"), "X"));
+            Assert.True(f.S.CanConnect(V("C.out"), "A"));
+            Assert.False(f.S.CanStartFrom(V("M.stop")));
+            // The [else] branch can't be reversed: A would be its source.
+            Assert.False(f.S.CanReverse(f.Leaving(V("ch*"))[0]));
+            // The entry point swapped for an exit point: in and out then both leave C.
+            var t = new Transition { Id = "t_in", Source = "C.in", Target = "X" };
+            f.M.Transitions.Add(t);
+            Assert.DoesNotContain(VertexType.ExitPoint, f.S.TypeOptions(V("C.in")));
+            Assert.Equal(0, f.Commits);
+        }
+
         [Fact]
         public void MovesTheTransitionOfAnInitialPseudostateWhenItIsDrawnAgainAndDoesntReverseIt()
         {
@@ -115,23 +237,31 @@ namespace FsmEditor.Core.Tests
             TestFiles.Write(f.M);
             Assert.False(f.S.CanReverse(f.Leaving(init)[0]));
             Assert.True(f.S.CanReverse(f.Leaving(f.Named("A"))[0]));
-            Assert.False(f.S.CanConnect(f.Named("note*"), init.Id));
-            Assert.False(f.S.CanConnect(f.Named("note*"), f.Leaving(init)[0].Id));
+            Assert.True(f.S.CanConnect(f.Named("note*"), init.Id));
+            Assert.True(f.S.CanConnect(f.Named("note*"), f.Leaving(init)[0].Id));
             Assert.True(f.S.CanConnect(f.Named("note*"), f.Named("A").Id));
             Assert.False(f.S.CanConnect(f.Named("A"), init.Id));
         }
 
         [Fact]
-        public void RefusesToAttachACommentToAnInitialPseudostateOrItsTransition()
+        public void AttachesACommentToAnInitialPseudostateItsTransitionARegionAndTheMachine()
         {
             var f = new Fixture(Sample);
             var note = f.Named("note*");
-            Assert.Null(f.S.Connect(note, f.TopInitial.Id));
-            Assert.Null(f.S.Connect(note, f.Leaving(f.TopInitial)[0].Id));
-            Assert.Null(f.S.Connect(f.TopInitial, note.Id));
-            Assert.Equal(new[] { Anchor, Anchor, Anchor }, f.Messages);
-            Assert.Empty(note.Anchors);
-            Assert.Equal(0, f.Commits);
+            var region = f.Named("C").Regions[0].Id;
+            Assert.True(f.S.CanConnect(note, region));
+            Assert.True(f.S.CanConnect(note, DiagramSession.MachineAnchor));
+            f.S.Connect(note, f.TopInitial.Id);
+            f.S.Connect(note, f.Leaving(f.TopInitial)[0].Id);
+            f.S.Connect(note, region);
+            f.S.Connect(note, DiagramSession.MachineAnchor);
+            Assert.Empty(f.Messages);
+            // C's region, unnamed, gets a generated name, which references it.
+            var model = TestFiles.Write(f.M).Model;
+            Assert.Contains("\"M.initial\",", model);
+            Assert.Contains("{ \"source\": \"M.initial\", \"target\": \"A\" }", model);
+            Assert.Contains("\"region1*\",", model);
+            Assert.Contains("\"M\"\n", model);
         }
 
         [Fact]

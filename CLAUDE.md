@@ -36,9 +36,9 @@ On macOS or Linux, `dotnet test` covers `FsmEditor.Core`, and `dotnet build` in 
 ## Project rules
 
 - Keep parity with the VS Code extension for the UI: editor behavior, clipboard JSON. The file format, the grammar, validation, conversion, comparing and merging are fsm-editor-common's and fsm-cli's: don't reimplement them here; change them there (fsm-cli, then fsm-editor-common), then fetch the sidecar again (`scripts/fetch-common.sh --build`) and run `dotnet test`. `Geometry.cs` mirrors `media/editor.js` of the VS Code edition: compare it by hand. `../fsm-editor-jb` ports this Core to Kotlin file for file, so a Core change goes there next.
-- **Text grammar:** behaviors are argument-less calls separated by `;`; conditions combine calls with `!`, `&&`, `||` and parentheses; `else` only on choice/junction branches; triggers are event names or `after(<number><ms|s|m|h>)`. The editor refuses invalid text, and the validator reports it.
+- **Text grammar:** behaviors are argument-less calls separated by `;`; conditions combine calls with `!`, `&&`, `||` and parentheses; `else` only on choice/junction branches; in a protocol machine, a precondition instead of a guard (`else` on branches), no actions, no entry/exit/do and no history pseudostates, which the editor doesn't offer; triggers are event names or `after(<number><ms|s|m|h>)`. The editor refuses invalid text, and the validator reports it.
 - **Out of scope:** state machine extension/inheritance and the transition-oriented notation.
 - Don't reimplement code generation: templates and the code model belong to fsm-cli.
 - `.fsm` files hold no model hash: fsm-cli computes it from the file.
 - Core must not reference Visual Studio assemblies. VS code must respect the threading analyzers (the build has no warnings).
-- User-facing docs: `README.md`, `docs/UML-CONFORMANCE.md` (update when behavior or rules change), `docs/CODEGEN.md`.
+- User-facing docs: `README.md`, `docs/UML-CONFORMANCE.md` (only what is supported, different and not supported of UML, the same file in the three editions) and `docs/REFERENCE.md` (text syntax, submachines, file format, validation rules, colors, exports): update them when behavior or rules change; `docs/CODEGEN.md`.

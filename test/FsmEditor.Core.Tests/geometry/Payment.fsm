@@ -8,7 +8,7 @@
       "name": "retry",
       "type": "entryPoint",
       "transitions": [
-        { "type": "external", "action": "resetAttempt()", "target": "Authorizing" }
+        { "type": "local", "action": "resetAttempt()", "target": "Authorizing" }
       ]
     },
     { "name": "failed", "type": "exitPoint" },

@@ -7,7 +7,7 @@
       "name": "mep",
       "type": "entryPoint",
       "transitions": [
-        { "type": "external", "target": "mj" }
+        { "type": "local", "target": "mj" }
       ]
     }
   ],
@@ -140,7 +140,7 @@
           "name": "ep",
           "type": "entryPoint",
           "transitions": [
-            { "type": "external", "target": "ec" }
+            { "type": "local", "target": "ec" }
           ]
         }
       ],

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "name": "Anchors",
+  "type": "behavioral",
+  "initial": { "target": "C" },
+  "elements": [
+    {
+      "name": "note1*",
+      "type": "comment",
+      "text": "On the machine, a region,\nan initial pseudostate\nand its transition.",
+      "anchors": [
+        "Anchors",
+        "inner",
+        "inner.initial",
+        { "source": "inner.initial", "target": "C1" }
+      ]
+    },
+    {
+      "name": "C",
+      "type": "state",
+      "regions": [
+        {
+          "name": "inner",
+          "initial": { "target": "C1" },
+          "elements": [
+            { "name": "C1", "type": "state" }
+          ]
+        }
+      ]
+    }
+  ]
+}

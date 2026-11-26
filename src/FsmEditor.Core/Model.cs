@@ -226,6 +226,8 @@ namespace FsmEditor.Core
     {
         public string Name { get; set; } = "";
         public MachineKind Kind { get; set; }
+        /// <summary>The name of the classifier the machine belongs to.</summary>
+        public string Context { get; set; } = "";
         public string Documentation { get; set; } = "";
         public List<Region> Regions { get; set; } = new List<Region>();
         public List<Vertex> Vertices { get; set; } = new List<Vertex>();
@@ -240,9 +242,10 @@ namespace FsmEditor.Core
             return m;
         }
 
-        public static FsmModel CreateDefault(string name = "StateMachine") => new FsmModel
+        public static FsmModel CreateDefault(string name = "StateMachine", MachineKind kind = MachineKind.Behavioral) => new FsmModel
         {
             Name = name,
+            Kind = kind,
             Regions = { new Region { Id = "r_root" } },
             Vertices =
             {
@@ -256,6 +259,7 @@ namespace FsmEditor.Core
         public FsmModel Normalize()
         {
             Name = Name ?? "";
+            Context = Context ?? "";
             Documentation = Documentation ?? "";
             Regions = Regions ?? new List<Region>();
             if (Regions.Count == 0) Regions.Add(new Region { Id = "r_root" });

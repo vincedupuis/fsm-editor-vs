@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Item template of a new protocol state machine (StateMachine.vstemplate: a behavioral one). The build writes one copy per project
+  type, filling in the type below (General: File › New › File and solution
+  items; CSharp, VisualBasic, VC: Add › New Item in those projects), and its
+  layout file's item for the projects only (see the project file).
+-->
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>Protocol State Machine</Name>
+    <Description>A UML protocol state machine (.fsm, with its layout in .fsm.layout), edited as a diagram in FSM Editor.</Description>
+    <Icon>icon.png</Icon>
+    <TemplateID>FsmEditor.ProtocolStateMachine.@ProjectType@</TemplateID>
+    <ProjectType>@ProjectType@</ProjectType>
+    <DefaultName>ProtocolStateMachine.fsm</DefaultName>
+    <AppendDefaultFileExtension>true</AppendDefaultFileExtension>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.fsm" OpenInEditor="true">StateMachine.fsm</ProjectItem>
+    @LayoutItem@
+  </TemplateContent>
+</VSTemplate>

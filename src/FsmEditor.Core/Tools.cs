@@ -123,6 +123,10 @@ namespace FsmEditor.Core
 
         public static ToolDefinition ByKey(char key) => All.FirstOrDefault(t => t.Key == char.ToLowerInvariant(key));
 
+        /// <summary>Whether <paramref name="model"/> may have what tool <paramref name="id"/> makes: a protocol state machine has no history pseudostates.</summary>
+        public static bool Allowed(FsmModel model, string id) =>
+            !(model != null && model.Kind == MachineKind.Protocol && (id == "shallowHistory" || id == "deepHistory"));
+
         /// <summary>Pseudostate kinds that can be swapped for one another from the properties panel.</summary>
         public static readonly IReadOnlyList<VertexType[]> Swappable = new[]
         {

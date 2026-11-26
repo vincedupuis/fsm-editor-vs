@@ -131,6 +131,7 @@ namespace FsmEditor.Core
                 var m = ModelJson.Read(changed);
                 model.Name = m.Name;
                 model.Kind = m.Kind;
+                model.Context = m.Context;
                 model.Documentation = m.Documentation;
                 model.Regions = m.Regions;
                 model.Vertices = m.Vertices;

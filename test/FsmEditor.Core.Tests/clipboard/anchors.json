@@ -1,0 +1,96 @@
+{
+  "machine": "anchors",
+  "select": "*",
+  "clipboard": {
+    "fsmClipboard": 1,
+    "vertices": [
+      {
+        "id": "Anchors.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "Anchors.",
+        "x": 40,
+        "y": 100,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "note1*",
+        "type": "comment",
+        "name": "note1*",
+        "parent": "Anchors.",
+        "x": 40,
+        "y": 260,
+        "w": 170,
+        "h": 64,
+        "regions": [],
+        "text": "On the machine, a region,\nan initial pseudostate\nand its transition.",
+        "anchors": [
+          "",
+          "inner",
+          "inner.initial",
+          "inner.initial#1"
+        ]
+      },
+      {
+        "id": "C",
+        "type": "state",
+        "name": "C",
+        "parent": "Anchors.",
+        "x": 120,
+        "y": 60,
+        "w": 260,
+        "h": 150,
+        "regions": [
+          {
+            "id": "inner",
+            "name": "inner"
+          }
+        ]
+      },
+      {
+        "id": "inner.initial",
+        "type": "initial",
+        "name": "",
+        "parent": "inner",
+        "x": 150,
+        "y": 120,
+        "w": 20,
+        "h": 20,
+        "regions": []
+      },
+      {
+        "id": "C1",
+        "type": "state",
+        "name": "C1",
+        "parent": "inner",
+        "x": 220,
+        "y": 105,
+        "w": 120,
+        "h": 50,
+        "regions": []
+      }
+    ],
+    "transitions": [
+      {
+        "id": "Anchors.initial#1",
+        "source": "Anchors.initial",
+        "target": "C",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      },
+      {
+        "id": "inner.initial#1",
+        "source": "inner.initial",
+        "target": "C1",
+        "kind": "external",
+        "triggers": [],
+        "guard": "",
+        "action": ""
+      }
+    ]
+  }
+}

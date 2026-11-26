@@ -113,6 +113,7 @@ namespace FsmEditor.Editor
 
         public void SetTool(string id, bool sticky = false)
         {
+            if (id != null && !Core.Tools.Allowed(S?.Model, id)) return;
             Tool = id != null && Tool == id && !sticky ? null : id;
             ToolSticky = Tool != null && sticky;
             Cursor = Tool != null ? Cursors.Cross : null;
@@ -847,8 +848,18 @@ namespace FsmEditor.Editor
         private string ConnectTargetAt(PointD p, Vertex source)
         {
             var hit = ItemAt(p, true);
+            if (source.Type == VertexType.Comment)
+            {
+                // A comment's connection: an element or a transition, the region of a composite state around it, or the
+                // state machine on empty canvas.
+                if (hit.Kind == HitKind.Vertex && S.Index.Vertex(hit.Id) is Vertex v && v.Type == VertexType.State && v.Regions.Count > 0 && InRegionArea(v, p))
+                {
+                    return Geo.RegionRects(S.Model, v).FirstOrDefault(r => r.Rect.Contains(p))?.Id ?? hit.Id;
+                }
+                if (hit.Kind == HitKind.Vertex || hit.Kind == HitKind.Transition || hit.Kind == HitKind.Label) return hit.Id;
+                return DiagramSession.MachineAnchor;
+            }
             if (hit.Kind == HitKind.Vertex) return hit.Id;
-            if ((hit.Kind == HitKind.Transition || hit.Kind == HitKind.Label) && source.Type == VertexType.Comment) return hit.Id;
             return null;
         }
 
@@ -1230,7 +1241,7 @@ namespace FsmEditor.Editor
                     d.Cur = p;
                     // Only where the connection can end: elsewhere it follows the pointer, and dropping it there draws nothing.
                     d.Hover = ConnectTargetAt(p, d.Source);
-                    if (d.Hover != null && (S.Index.Vertex(d.Hover) == null || !S.CanConnect(d.Source, d.Hover))) d.Hover = null;
+                    if (d.Hover != null && ((S.Index.Vertex(d.Hover) == null && d.Source.Type != VertexType.Comment) || !S.CanConnect(d.Source, d.Hover))) d.Hover = null;
                     break;
                 case DragKind.Reconnect:
                 {

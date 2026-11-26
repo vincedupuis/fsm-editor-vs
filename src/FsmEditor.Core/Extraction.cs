@@ -320,7 +320,8 @@ namespace FsmEditor.Core
                     {
                         var entry = NewPoint(Fresh(machineIds, "v"), VertexType.EntryPoint, PointName("to" + TargetName(ix.Vertex(t.Target))), region.Id);
                         entries.Add(entry);
-                        machineTransitions.Add(Plain(Fresh(machineIds, "t"), entry.Id, t.Target));
+                        // UML: a transition leaving an entry point is local.
+                        machineTransitions.Add(Plain(Fresh(machineIds, "t"), entry.Id, t.Target, TransitionKind.Local));
                         var r = Reference(Fresh(parentIds, "v"), state.Id, entry.Id, PointKind.Entry);
                         entryRefs.Add(r);
                         entryRefFor[t.Target] = refId = r.Id;
@@ -441,7 +442,8 @@ namespace FsmEditor.Core
         private static Vertex Reference(string id, string parent, string pointId, PointKind kind) =>
             new Vertex { Id = id, Type = VertexType.ConnectionPointRef, Parent = parent, W = Point, H = Point, Ref = pointId, PointKind = kind };
 
-        private static Transition Plain(string id, string source, string target) => new Transition { Id = id, Source = source, Target = target };
+        private static Transition Plain(string id, string source, string target, TransitionKind kind = TransitionKind.External) =>
+            new Transition { Id = id, Source = source, Target = target, Kind = kind };
 
         private static RectD UnionBox(IReadOnlyCollection<Vertex> vs)
         {

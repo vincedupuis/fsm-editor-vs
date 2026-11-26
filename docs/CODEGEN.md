@@ -7,8 +7,9 @@ Handlebars templates (`.hbs`), which earlier versions used, are no longer suppor
 - [From Visual Studio](#from-visual-studio)
 - [From the Command Window or a key binding](#from-the-command-window-or-a-key-binding)
 - [From the command line and builds](#from-the-command-line-and-builds)
-- [Which fsm is used](#which-fsm-is-used)
+- [Which generator is used](#which-generator-is-used)
 - [Templates and the code model](#templates-and-the-code-model)
+- [UML semantics](#uml-semantics)
 
 ## From Visual Studio
 
@@ -68,3 +69,22 @@ The one bundled with the extension (`cli\fsm-editor-common.exe`, with fsm-cli's 
 A template is a Jinja file, with optional front matter. One template writes any number of files per machine through `{% filter file("path") %}` blocks. Templates can't run code: every filter and function is built into the generator.
 
 The template language is documented in [fsm-cli's README](https://github.com/vincedupuis/fsm-cli#writing-a-template). The bundled templates, TypeScript (`ts`) and C++17 for Boost.SML (`sml`), the files they write, the [code model](https://github.com/vincedupuis/fsm-cli/blob/main/docs/CODEGEN.md#code-model-reference) the templates receive, and the [semantics of the generated code](https://github.com/vincedupuis/fsm-cli/blob/main/docs/CODEGEN.md#semantics-of-the-generated-code) are documented in [fsm-cli's docs/CODEGEN.md](https://github.com/vincedupuis/fsm-cli/blob/main/docs/CODEGEN.md). Templates in your solution are listed in the Generate Code dialog, so you can keep them next to your models.
+
+## UML semantics
+
+The generated code follows UML's run-to-completion semantics, with these choices where UML leaves room or the tool simplifies:
+
+| UML | Generated code |
+| --- | --- |
+| Conflicting transitions in orthogonal regions: the choice among them isn't specified | The first transition selected fires; a transition whose source has been left meanwhile is skipped. |
+| Order of the actions of orthogonal regions isn't specified | Regions are exited and entered in document order. |
+| Junction: static conditional branch | Expanded into one transition per path with the guards combined, so a transition only fires when a complete path is enabled. |
+| Choice with no enabled branch: ill-formed | The generated code throws an error. |
+| Guards on the transitions leaving an entry point | None: all of them are taken, like a fork's, and the validator reports a guard there. |
+| A region last exited through its final state, re-entered through history | Default entry, as if there were no history. |
+| Protocol violations are left to the implementation | `onConstraintViolation('precondition', …)` when an event finds no transition because a precondition is false. Postconditions are checked after the transition, invariants after every step. |
+| Do activities run concurrently with the state | `start…()`/`stop…()` calls. Their end is reported with `activityDone()`, which completes the state. |
+
+The Boost.SML template keeps these semantics, with one exception: Boost.SML fires the transitions of orthogonal regions region after region, so when several regions react to the same event, a later region's guards are evaluated after the earlier regions' transitions fired. The template warns where this can happen.
+
+It stops with an error, and nothing is written, where Boost.SML can't express the machine: a transition between top-level regions, a local transition of a state with several regions, and names that would not compile (see fsm-cli's [docs/CODEGEN.md](https://github.com/vincedupuis/fsm-cli/blob/main/docs/CODEGEN.md#the-boostsml-template)).

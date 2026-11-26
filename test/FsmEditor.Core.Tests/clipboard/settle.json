@@ -214,7 +214,7 @@
         "id": "C.entry1*#1",
         "source": "C.entry1*",
         "target": "In",
-        "kind": "external",
+        "kind": "local",
         "triggers": [],
         "guard": "",
         "action": "",

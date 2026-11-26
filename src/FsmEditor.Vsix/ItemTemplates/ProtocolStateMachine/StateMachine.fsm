@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "name": "$fileinputname$",
+  "type": "protocol",
+  "initial": { "target": "Idle" },
+  "elements": [
+    { "name": "Idle", "type": "state" }
+  ]
+}

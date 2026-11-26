@@ -770,7 +770,7 @@
         "id": "E.ep#1",
         "source": "E.ep",
         "target": "ec",
-        "kind": "external",
+        "kind": "local",
         "triggers": [],
         "guard": "",
         "action": ""
@@ -970,7 +970,7 @@
         "id": "Cycles.mep#1",
         "source": "Cycles.mep",
         "target": "mj",
-        "kind": "external",
+        "kind": "local",
         "triggers": [],
         "guard": "",
         "action": ""

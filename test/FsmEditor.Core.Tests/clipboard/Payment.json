@@ -160,7 +160,7 @@
         "id": "Payment.retry#1",
         "source": "Payment.retry",
         "target": "Authorizing",
-        "kind": "external",
+        "kind": "local",
         "triggers": [],
         "guard": "",
         "action": "resetAttempt()"

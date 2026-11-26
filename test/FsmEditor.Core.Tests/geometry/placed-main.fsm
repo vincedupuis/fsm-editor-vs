@@ -26,7 +26,7 @@
           "name": "again",
           "type": "entryPoint",
           "transitions": [
-            { "type": "external", "target": "A" }
+            { "type": "local", "target": "A" }
           ]
         },
         {

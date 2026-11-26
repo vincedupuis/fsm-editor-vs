@@ -137,10 +137,10 @@ namespace FsmEditor.Core
                 var owner = Index.Vertex(p.Parent);
                 var mates = Model.Vertices.Where(q => q != p && (q.Type == VertexType.EntryPoint || q.Type == VertexType.ExitPoint)
                     && (owner != null ? q.Parent == owner.Id : Index.Vertex(q.Parent) == null));
-                var reserved = n == "history" || n == "deepHistory";
+                var reserved = n == "initial" || n == "history" || n == "deepHistory";
                 if (mates.Any(q => q.Name == n) || reserved)
                 {
-                    return Check<string>.Fail($"'{n}' can't name this point: {(reserved ? "it names history pseudostates" : "another point of its state has it")}.");
+                    return Check<string>.Fail($"'{n}' can't name this point: {(reserved ? "it names initial and history pseudostates" : "another point of its state has it")}.");
                 }
                 return Check<string>.Success(n);
             }
@@ -185,7 +185,7 @@ namespace FsmEditor.Core
         public Vertex CreateVertex(string toolId, PointD p)
         {
             var def = Tools.ById(toolId);
-            if (def?.Create == null) return null;
+            if (def?.Create == null || !Tools.Allowed(Model, toolId)) return null;
             Reindex();
             var v = def.Create(this);
             v.Id = NewId("v");
@@ -215,6 +215,11 @@ namespace FsmEditor.Core
                         v.Ref = pick.Id;
                         v.PointKind = pick.Kind;
                     }
+                }
+                if (s != null && v.Type != VertexType.ConnectionPointRef && s.Regions.Count == 0)
+                {
+                    Say($"Only composite states have entry and exit points: add a region to '{Or(Format.Shown(s.Name), "the state")}' first.");
+                    return null;
                 }
                 if (s != null)
                 {
@@ -315,6 +320,12 @@ namespace FsmEditor.Core
 
         public void RemoveRegion(Vertex state, string regionId)
         {
+            // Its last region: the state would keep entry or exit points that only composite states have.
+            if (state.Regions.Count == 1 && Model.Vertices.Any(p => p.Parent == state.Id && (p.Type == VertexType.EntryPoint || p.Type == VertexType.ExitPoint)))
+            {
+                Say($"'{Or(Format.Shown(state.Name), "The state")}' has entry or exit points, which only composite states have: remove them first.");
+                return;
+            }
             var doomed = new HashSet<string>();
             foreach (var v in Model.Vertices)
             {
@@ -362,7 +373,10 @@ namespace FsmEditor.Core
             Model.Transitions = Model.Transitions
                 .Where(t => !transitionIds.Contains(t.Id) && !ids.Contains(t.Source) && !ids.Contains(t.Target))
                 .ToList();
-            var alive = new HashSet<string>(Model.Vertices.Select(v => v.Id).Concat(Model.Transitions.Select(t => t.Id)));
+            var alive = new HashSet<string>(Model.Vertices.Select(v => v.Id).Concat(Model.Transitions.Select(t => t.Id)).Concat(AllRegions().Select(r => r.Id)))
+            {
+                MachineAnchor,
+            };
             // An anchor that named nothing in the file (U+E001/U+E002 and its reference) is kept as it is.
             foreach (var v in Model.Vertices)
             {
@@ -413,12 +427,6 @@ namespace FsmEditor.Core
             if (source.Type == VertexType.Comment)
             {
                 if (targetId == source.Id) return null;
-                var anchor = AnchorProblem(targetId);
-                if (anchor != null)
-                {
-                    Say(anchor);
-                    return null;
-                }
                 if (!source.Anchors.Contains(targetId)) source.Anchors.Add(targetId);
                 Selection = new HashSet<string> { source.Id };
                 Commit();
@@ -428,12 +436,6 @@ namespace FsmEditor.Core
             if (target == null) return null;
             if (target.Type == VertexType.Comment)
             {
-                var anchor = AnchorProblem(source.Id);
-                if (anchor != null)
-                {
-                    Say(anchor);
-                    return null;
-                }
                 if (!target.Anchors.Contains(source.Id)) target.Anchors.Add(source.Id);
                 Commit();
                 return null;
@@ -452,7 +454,8 @@ namespace FsmEditor.Core
                 Say(problem);
                 return null;
             }
-            var t = new Transition { Id = NewId("t"), Source = source.Id, Target = target.Id };
+            // UML: a transition leaving an entry point is local.
+            var t = new Transition { Id = NewId("t"), Source = source.Id, Target = target.Id, Kind = source.Type == VertexType.EntryPoint ? TransitionKind.Local : TransitionKind.External };
             Model.Transitions.Add(t);
             Selection = new HashSet<string> { t.Id };
             Commit();
@@ -471,21 +474,112 @@ namespace FsmEditor.Core
         public static string StartOnly(Vertex v) =>
             $"A transition leaving a{(v.Type == VertexType.Initial ? "n initial" : " history")} pseudostate holds its target and an action only.";
 
-        private const string AnchorInitial = "A comment cannot be attached to an initial pseudostate or to its transition.";
+        /// <summary>May a transition from <paramref name="source"/> to <paramref name="target"/> have triggers? Only one leaving a state (a pseudostate's are taken at once), and not into a join.</summary>
+        public static bool TakesTriggers(Vertex source, Vertex target) =>
+            source != null && source.Type == VertexType.State && !(target != null && target.Type == VertexType.Join);
 
-        /// <summary>Why a comment can't be attached to element <paramref name="id"/> (the file doesn't name an initial pseudostate or its transition), or null.</summary>
-        private string AnchorProblem(string id)
+        public const string NoTriggers = "A transition leaving a pseudostate, or entering a join, cannot have triggers.";
+
+        /// <summary>
+        /// May a transition from <paramref name="source"/> to <paramref name="target"/> have a guard (a precondition, in a
+        /// protocol machine)? Not one leaving an initial or history pseudostate, a fork or an entry point (whose
+        /// transitions are all taken), or entering a join.
+        /// </summary>
+        public static bool TakesGuard(Vertex source, Vertex target) =>
+            source != null && !IsStart(source) && source.Type != VertexType.Fork && source.Type != VertexType.EntryPoint
+            && !(target != null && target.Type == VertexType.Join);
+
+        public static string NoGuard(FsmModel model) =>
+            $"A transition leaving a fork or an entry point, or entering a join, cannot have a {(model.Kind == MachineKind.Protocol ? "precondition" : "guard")}.";
+
+        /// <summary>The region of <paramref name="state"/> (null: the machine's top-level regions) holding <paramref name="v"/>, itself or through the states around it.</summary>
+        private string StateRegionOf(Vertex v, Vertex state)
         {
-            var t = Index.Transition(id);
-            var v = t != null ? Index.Vertex(t.Source) : Index.Vertex(id);
-            return v != null && v.Type == VertexType.Initial ? AnchorInitial : null;
+            foreach (var w in new[] { v }.Concat(Index.Ancestors(v)))
+            {
+                if (state != null ? Index.RegionOwner.TryGetValue(w.Parent ?? "", out var o) && o == state : Model.Regions.Any(r => r.Id == w.Parent)) return w.Parent;
+            }
+            return null;
         }
 
-        private bool Anchored(string id) => Model.Vertices.Any(v => v.Type == VertexType.Comment && v.Anchors.Contains(id));
+        /// <summary>
+        /// The kinds <paramref name="t"/> can be, its own included: external; internal, leaving a state; local, from a
+        /// composite state or an entry point to what it contains.
+        /// </summary>
+        public List<TransitionKind> KindOptions(Transition t)
+        {
+            var s = Index.Vertex(t.Source);
+            var local = LocalOk(s, Index.Vertex(t.Target));
+            var internalOk = s != null && s.Type == VertexType.State;
+            // UML: a transition leaving an entry point is local, never external.
+            var external = s == null || s.Type != VertexType.EntryPoint;
+            return new[] { TransitionKind.External, TransitionKind.Local, TransitionKind.Internal }
+                .Where(k => k == t.Kind || (k == TransitionKind.External && external) || (k == TransitionKind.Local && local) || (k == TransitionKind.Internal && internalOk)).ToList();
+        }
 
-        /// <summary>Can a transition be drawn from <paramref name="v"/> (its ⊕ handle, the transition tool)? Not from a final state, a terminate or an entry reference.</summary>
+        /// <summary>May a transition from <paramref name="s"/> to <paramref name="g"/> be local: from a composite state or an entry point to what it contains?</summary>
+        private bool LocalOk(Vertex s, Vertex g)
+        {
+            // The machine's own entry point: everything is inside the machine.
+            if (s != null && s.Type == VertexType.EntryPoint && Index.Vertex(s.Parent) == null) return g != null;
+            var container = s == null ? null : s.Type == VertexType.EntryPoint ? s.Parent : s.Id;
+            return s != null && ((s.Type == VertexType.State && s.Regions.Count > 0) || s.Type == VertexType.EntryPoint) && g != null && (g == s || Index.IsInside(g, container));
+        }
+
+        private const string ElseOnly = "[else] is only allowed on transitions leaving a choice or junction.";
+
+        private static string Or(string a, string b) => a.Length > 0 ? a : b;
+
+        /// <summary>A comment's anchor to the state machine itself (which has no id of its own).</summary>
+        public const string MachineAnchor = "";
+
+        /// <summary>Every region: the machine's and its states'.</summary>
+        public IEnumerable<Region> AllRegions() => Model.Regions.Concat(Model.Vertices.SelectMany(v => v.Regions));
+
+        /// <summary>Does another branch of choice or junction <paramref name="s"/> than <paramref name="t"/> have [else] (its guard, or in a protocol machine its precondition)?</summary>
+        public static bool ElseTaken(FsmModel model, Vertex s, Transition t) =>
+            s != null && model.Transitions.Any(x => x != t && x.Source == s.Id && (model.Kind == MachineKind.Protocol ? x.Precondition : x.Guard).Trim() == "else");
+
+        public static string ElseTakenMessage(Vertex s) => $"This {s.Type.Title().ToLowerInvariant()} already has an [else] branch.";
+
+        /// <summary>The transitions leaving an entry or exit point that break its rule (inside its state; outside it), with the message.</summary>
+        private Dictionary<string, string> PointViolations()
+        {
+            var out_ = new Dictionary<string, string>();
+            string Nm(Vertex x) => $"'{Or(Format.Shown(x.Name), x.Type.Title())}'";
+            foreach (var t in Model.Transitions)
+            {
+                var p = Index.Vertex(t.Source);
+                var g = Index.Vertex(t.Target);
+                var s = p != null && (p.Type == VertexType.EntryPoint || p.Type == VertexType.ExitPoint) ? Index.Vertex(p.Parent) : null;
+                if (s == null || g == null) continue;
+                var inside = Index.IsInside(g, s.Id);
+                if (p.Type == VertexType.EntryPoint && !inside) out_[t.Id] = $"{Nm(g)} is the target of entry point '{Format.Shown(p.Name)}': it stays inside {Nm(s)}.";
+                if (p.Type == VertexType.ExitPoint && (g == s || inside)) out_[t.Id] = $"{Nm(g)} is the target of exit point '{Format.Shown(p.Name)}': it stays outside {Nm(s)}.";
+            }
+            return out_;
+        }
+
+        /// <summary>Why moving vertices to the regions of <paramref name="moves"/> (vertex → region id) would break the rule of a point's transition, or null.</summary>
+        public string MoveProblem(IReadOnlyDictionary<Vertex, string> moves)
+        {
+            var before = PointViolations();
+            var old = moves.Keys.ToDictionary(v => v, v => v.Parent);
+            foreach (var m in moves) m.Key.Parent = m.Value;
+            Reindex();
+            var after = PointViolations();
+            foreach (var o in old) o.Key.Parent = o.Value;
+            Reindex();
+            return after.Where(a => !before.ContainsKey(a.Key)).Select(a => a.Value).FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Can a transition be drawn from <paramref name="v"/> (its ⊕ handle, the transition tool)? Not from a final state, a
+        /// terminate, an entry reference or an exit point of the state machine.
+        /// </summary>
         public bool CanStartFrom(Vertex v) =>
-            !(v.Type == VertexType.Final || v.Type == VertexType.Terminate || (v.Type == VertexType.ConnectionPointRef && v.PointKind == PointKind.Entry));
+            !(v.Type == VertexType.Final || v.Type == VertexType.Terminate || (v.Type == VertexType.ConnectionPointRef && v.PointKind == PointKind.Entry)
+              || (v.Type == VertexType.ExitPoint && Index.Vertex(v.Parent) == null));
 
         /// <summary>The one transition of an initial or history pseudostate, which drawing from it again moves to the new target.</summary>
         private Transition StartTransition(Vertex v) => IsStart(v) ? Model.Transitions.FirstOrDefault(t => t.Source == v.Id) : null;
@@ -495,11 +589,11 @@ namespace FsmEditor.Core
         {
             if (source.Type == VertexType.Comment)
             {
-                return id != source.Id && (Index.Vertex(id) != null || Index.Transition(id) != null) && AnchorProblem(id) == null;
+                return id != source.Id && (Index.Vertex(id) != null || Index.Transition(id) != null || id == MachineAnchor || AllRegions().Any(r => r.Id == id));
             }
             var target = Index.Vertex(id);
             if (target == null) return false;
-            if (target.Type == VertexType.Comment) return AnchorProblem(source.Id) == null;
+            if (target.Type == VertexType.Comment) return true;
             var existing = StartTransition(source);
             if (existing != null) return CanReconnect(existing, false, target);
             return ConnectProblem(source, target) == null;
@@ -538,8 +632,14 @@ namespace FsmEditor.Core
             var problem = ConnectProblem(source, target, t);
             if (problem != null) return problem;
             if (t.Kind == TransitionKind.Internal && source != target) return "An internal transition stays on its state.";
+            if (t.Kind == TransitionKind.Local && !LocalOk(source, target)) return "A local transition goes from a composite state or an entry point to what it contains.";
+            if (source.Type == VertexType.EntryPoint && t.Kind != TransitionKind.Local) return "A transition leaving an entry point is local.";
             if (IsStart(source) && BeyondAction(t)) return StartOnly(source);
-            if (source.Type == VertexType.Initial && Anchored(t.Id)) return AnchorInitial;
+            if (t.Guard.Trim() == "else" && !Labels.AllowsElse(source)) return ElseOnly;
+            if (Model.Kind == MachineKind.Protocol && t.Precondition.Trim() == "else" && !Labels.AllowsElse(source)) return ElseOnly;
+            if (Labels.AllowsElse(source) && (Model.Kind == MachineKind.Protocol ? t.Precondition : t.Guard).Trim() == "else" && ElseTaken(Model, source, t)) return ElseTakenMessage(source);
+            if (t.Triggers.Count > 0 && !TakesTriggers(source, target)) return NoTriggers;
+            if ((t.Guard.Length > 0 || (Model.Kind == MachineKind.Protocol && t.Precondition.Length > 0)) && !TakesGuard(source, target)) return NoGuard(Model);
             return null;
         }
 
@@ -569,17 +669,30 @@ namespace FsmEditor.Core
             var a = v.Clone();
             a.Type = type;
             if (type == VertexType.Terminate && outs.Count > 0) return "A terminate cannot have outgoing transitions.";
+            if (type == VertexType.Fork || type == VertexType.Join || type == VertexType.EntryPoint || type == VertexType.ExitPoint)
+            {
+                foreach (var t in outs)
+                {
+                    var problem = TransitionProblem(t, a, Index.Vertex(t.Target) ?? a);
+                    if (problem != null) return problem;
+                }
+                foreach (var t in Model.Transitions.Where(t => t.Target == v.Id))
+                {
+                    var problem = Index.Vertex(t.Source) is Vertex s ? TransitionProblem(t, s, a) : null;
+                    if (problem != null) return problem;
+                }
+            }
             if (!IsStart(a)) return null;
             if (type == VertexType.Initial && Model.Transitions.Any(t => t.Target == v.Id)) return "An initial pseudostate cannot be the target of a transition.";
             if (outs.Count > 1) return $"A{(type == VertexType.Initial ? "n initial pseudostate" : " history pseudostate")} has one transition only.";
             if (outs.Any(BeyondAction)) return StartOnly(a);
-            if (type == VertexType.Initial && (Anchored(v.Id) || outs.Any(t => Anchored(t.Id)))) return AnchorInitial;
             return RegionProblem(new[] { a }, v.Parent);
         }
 
-        /// <summary>The kinds pseudostate <paramref name="v"/> can be swapped for (its own included): those the file can hold it as, with its transitions and region.</summary>
+        /// <summary>The kinds pseudostate <paramref name="v"/> can be swapped for (its own included): those the file can hold it as, with its transitions and region, and the machine can have.</summary>
         public List<VertexType> TypeOptions(Vertex v) =>
-            (Tools.Swappable.FirstOrDefault(g => g.Contains(v.Type)) ?? new VertexType[0]).Where(t => TypeProblem(v, t) == null).ToList();
+            (Tools.Swappable.FirstOrDefault(g => g.Contains(v.Type)) ?? new VertexType[0])
+                .Where(t => TypeProblem(v, t) == null && (t == v.Type || Tools.Allowed(Model, t.Key()))).ToList();
 
         /// <summary>
         /// Why a transition can't go from <paramref name="source"/> to <paramref name="target"/>, or null when it can
@@ -600,6 +713,34 @@ namespace FsmEditor.Core
                 return $"A {source.Type.Title().ToLowerInvariant()} cannot have outgoing transitions.";
             }
             if (target.Type == VertexType.Initial) return "An initial pseudostate cannot be the target of a transition.";
+            if (source.Type == VertexType.Fork && target.Type != VertexType.State && target.Type != VertexType.Final) return "A transition leaving a fork must target a state.";
+            if (target.Type == VertexType.Join && source.Type != VertexType.State) return "A transition entering a join must come from a state.";
+            if (source.Type == VertexType.Fork && Model.Transitions.Any(t => t.Source == source.Id && t != moving && Index.Vertex(t.Target)?.Parent == target.Parent))
+            {
+                return "The targets of a fork are in different orthogonal regions.";
+            }
+            if (target.Type == VertexType.Join && Model.Transitions.Any(t => t.Target == target.Id && t != moving && Index.Vertex(t.Source)?.Parent == source.Parent))
+            {
+                return "The sources of a join are in different orthogonal regions.";
+            }
+            var sourceState = Index.Vertex(source.Parent);
+            if (source.Type == VertexType.ExitPoint && sourceState == null) return "An exit point of the state machine has no outgoing transitions: the submachine state using it continues from its reference.";
+            if (source.Type == VertexType.EntryPoint && sourceState != null && !Index.IsInside(target, sourceState.Id)) return "A transition leaving an entry point goes to a vertex inside its state.";
+            if (source.Type == VertexType.ExitPoint && sourceState != null && (target.Id == sourceState.Id || Index.IsInside(target, sourceState.Id))) return "A transition leaving an exit point goes to a vertex outside its state.";
+            if (target.Type == VertexType.ConnectionPointRef && target.PointKind == PointKind.Entry && (source.Id == target.Parent || Index.IsInside(source, target.Parent)))
+            {
+                return "A transition into an entry reference comes from outside its submachine state.";
+            }
+            if (source.Type == VertexType.EntryPoint)
+            {
+                // One transition into each region of its state (of the machine, for the machine's own).
+                var state = Index.Vertex(source.Parent);
+                var region = StateRegionOf(target, state);
+                if (region != null && Model.Transitions.Any(t => t.Source == source.Id && t != moving && Index.Vertex(t.Target) is Vertex g && StateRegionOf(g, state) == region))
+                {
+                    return "An entry point has one transition into each region.";
+                }
+            }
             if (source.Type == VertexType.Initial || source.Type == VertexType.ShallowHistory || source.Type == VertexType.DeepHistory)
             {
                 if (Model.Transitions.Any(t => t.Source == source.Id && t != moving))
@@ -1339,6 +1480,12 @@ namespace FsmEditor.Core
         {
             var roots = LeavingElements();
             if (roots.Count == 0) return;
+            var problem = MoveProblem(roots.ToDictionary(v => v, v => RegionOwnerOf(v.Parent).Parent));
+            if (problem != null)
+            {
+                Say(problem);
+                return;
+            }
             foreach (var v in roots) v.Parent = RegionOwnerOf(v.Parent).Parent;
             Commit();
         }
@@ -1420,7 +1567,12 @@ namespace FsmEditor.Core
                     // A group drops as a whole: into the region that holds all its members, or nowhere.
                     if (v != list.First(r => r.Group == v.Group)) continue;
                     var gr = DropRegionOf(DropBox(v), v.Parent, moving);
-                    if (gr != null && RegionProblem(GroupMembers(v.Group), gr.Id) == null) foreach (var m in GroupMembers(v.Group)) m.Parent = gr.Id;
+                    if (gr != null && RegionProblem(GroupMembers(v.Group), gr.Id) == null)
+                    {
+                        var problem = MoveProblem(GroupMembers(v.Group).ToDictionary(m => m, m => gr.Id));
+                        if (problem != null) Say(problem);
+                        else foreach (var m in GroupMembers(v.Group)) m.Parent = gr.Id;
+                    }
                     continue;
                 }
                 if (v.Type == VertexType.EntryPoint || v.Type == VertexType.ExitPoint)
@@ -1439,7 +1591,12 @@ namespace FsmEditor.Core
                     continue;
                 }
                 var r = DropRegionOf(v, moving);
-                if (r != null && RegionProblem(new[] { v }, r.Id) == null) v.Parent = r.Id;
+                if (r != null && RegionProblem(new[] { v }, r.Id) == null)
+                {
+                    var problem = r.Id != v.Parent ? MoveProblem(new Dictionary<Vertex, string> { [v] = r.Id }) : null;
+                    if (problem != null) Say(problem);
+                    else v.Parent = r.Id;
+                }
             }
             Commit();
         }

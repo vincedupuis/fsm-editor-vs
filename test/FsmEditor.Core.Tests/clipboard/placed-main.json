@@ -247,7 +247,7 @@
         "id": "Run.again#1",
         "source": "Run.again",
         "target": "A",
-        "kind": "external",
+        "kind": "local",
         "triggers": [],
         "guard": "",
         "action": ""

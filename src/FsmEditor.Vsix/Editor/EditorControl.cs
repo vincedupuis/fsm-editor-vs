@@ -313,6 +313,7 @@ namespace FsmEditor.Editor
             }
             _canvas.InvalidateVisual();
             UpdateTitle();
+            UpdateToolbox();
             RenderStatus();
             if (_problems.Visibility == Visibility.Visible) RenderProblems();
         }
@@ -336,6 +337,7 @@ namespace FsmEditor.Editor
             if (problem != null) Toast(problem);
             _canvas.InvalidateVisual();
             UpdateTitle();
+            UpdateToolbox();
             RenderStatus();
         }
 
@@ -1148,8 +1150,11 @@ namespace FsmEditor.Editor
         private void UpdateToolbox()
         {
             var th = Theme.Current;
+            if (_canvas.Tool != null && !Core.Tools.Allowed(Session?.Model, _canvas.Tool)) _canvas.SetTool(null);
             foreach (var pair in _toolButtons)
             {
+                // A protocol state machine has no history pseudostates.
+                pair.Value.Visibility = Core.Tools.Allowed(Session?.Model, pair.Key) ? Visibility.Visible : Visibility.Collapsed;
                 var active = pair.Key == _canvas.Tool;
                 pair.Value.Background = active ? th.BrushOf(th.Accent, 0.2) : Brushes.Transparent;
                 pair.Value.BorderBrush = active ? th.BrushOf(th.Accent) : Brushes.Transparent;

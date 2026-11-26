@@ -283,12 +283,20 @@ text{font-family:-apple-system,""Segoe UI"",Helvetica,Arial,sans-serif;fill:#1f1
         }
 
         /// <summary>The dashed lines linking a comment to the elements it annotates.</summary>
+        /// <summary>The area of region <paramref name="id"/> of a composite state, as a box to draw a comment's anchor to, or null (the machine's regions have none).</summary>
+        private static Vertex RegionArea(ModelIndex ix, string id)
+        {
+            if (!ix.RegionOwner.TryGetValue(id ?? "", out var owner) || owner == null) return null;
+            var r = Geometry.RegionRects(ix.Model, owner).FirstOrDefault(x => x.Id == id);
+            return r == null ? null : new Vertex { Type = VertexType.State, X = r.Rect.X, Y = r.Rect.Y, W = r.Rect.W, H = r.Rect.H };
+        }
+
         public static IEnumerable<(PointD From, PointD To)> AnchorLines(ModelIndex ix, Vertex comment)
         {
             foreach (var a in comment.Anchors)
             {
-                // An internal transition drawn in its state's compartment: the line goes to the state.
-                var target = ix.Vertex(a) ?? (ix.Transition(a) is Transition it && it.Kind == TransitionKind.Internal && it.Source == it.Target
+                // An internal transition drawn in its state's compartment: the line goes to the state; a region: to its area.
+                var target = ix.Vertex(a) ?? RegionArea(ix, a) ?? (ix.Transition(a) is Transition it && it.Kind == TransitionKind.Internal && it.Source == it.Target
                     && ix.Vertex(it.Source) is Vertex s && s.Type == VertexType.State ? s : null);
                 PointD? p = null;
                 if (target != null)

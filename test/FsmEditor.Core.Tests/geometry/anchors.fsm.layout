@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "initial": { "x": 40, "y": 100 },
+  "elements": [
+    {
+      "name": "note1*",
+      "x": 40,
+      "y": 260,
+      "width": 170,
+      "height": 64
+    },
+    {
+      "name": "C",
+      "x": 120,
+      "y": 60,
+      "width": 260,
+      "height": 150,
+      "regions": [
+        {
+          "name": "inner",
+          "initial": { "x": 30, "y": 60 },
+          "elements": [
+            {
+              "name": "C1",
+              "x": 100,
+              "y": 45,
+              "width": 120,
+              "height": 50
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

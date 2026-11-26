@@ -40,6 +40,8 @@ namespace FsmEditor.Core
             return lines.Where(l => l.Item2.Length > 0).ToList();
         }
 
+        private static Vertex Target(FsmModel model, Transition t) => model.Vertices.FirstOrDefault(v => v.Id == t.Target);
+
         /// <summary>May transitions leaving <paramref name="source"/> use the [else] guard?</summary>
         public static bool AllowsElse(Vertex source) =>
             source != null && (source.Type == VertexType.Choice || source.Type == VertexType.Junction);
@@ -60,13 +62,17 @@ namespace FsmEditor.Core
             {
                 var m = ProtocolLabel.Match(text);
                 if (!m.Success) return "Write the label as [precondition] event / [postcondition].";
-                var pre = Expressions.CheckCondition(m.Groups[1].Value);
+                // A protocol transition's precondition is its guard: `else` on a choice's or junction's branch.
+                var pre = AllowsElse(source) ? Expressions.CheckGuard(m.Groups[1].Value, true) : Expressions.CheckCondition(m.Groups[1].Value);
                 if (!pre.Ok) return $"Precondition: {pre.Error}";
                 var ptrig = Expressions.CheckList(m.Groups[2].Value, Expressions.CheckTrigger);
                 if (!ptrig.Ok) return $"Trigger: {ptrig.Error}";
                 var post = Expressions.CheckCondition(m.Groups[3].Value);
                 if (!post.Ok) return $"Postcondition: {post.Error}";
                 if (DiagramSession.IsStart(source) && (pre.Value.Length > 0 || ptrig.Value.Count > 0 || post.Value.Length > 0)) return DiagramSession.StartOnly(source);
+                if (ptrig.Value.Count > 0 && !DiagramSession.TakesTriggers(source, Target(model, t))) return DiagramSession.NoTriggers;
+                if (pre.Value.Length > 0 && !DiagramSession.TakesGuard(source, Target(model, t))) return DiagramSession.NoGuard(model);
+                if (pre.Value == "else" && DiagramSession.ElseTaken(model, source, t)) return DiagramSession.ElseTakenMessage(source);
                 t.Precondition = pre.Value;
                 t.Triggers = ptrig.Value;
                 t.Postcondition = post.Value;
@@ -82,6 +88,9 @@ namespace FsmEditor.Core
             var action = Expressions.CheckActions(slash >= 0 ? text.Substring(slash + 1) : "");
             if (!action.Ok) return $"Action: {action.Error}";
             if (DiagramSession.IsStart(source) && (trig.Value.Count > 0 || guard.Value.Length > 0)) return DiagramSession.StartOnly(source);
+            if (trig.Value.Count > 0 && !DiagramSession.TakesTriggers(source, Target(model, t))) return DiagramSession.NoTriggers;
+            if (guard.Value.Length > 0 && !DiagramSession.TakesGuard(source, Target(model, t))) return DiagramSession.NoGuard(model);
+            if (guard.Value == "else" && DiagramSession.ElseTaken(model, source, t)) return DiagramSession.ElseTakenMessage(source);
             t.Triggers = trig.Value;
             t.Guard = guard.Value;
             t.Action = action.Value;

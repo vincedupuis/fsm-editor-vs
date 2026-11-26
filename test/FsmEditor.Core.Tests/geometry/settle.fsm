@@ -55,7 +55,7 @@
           "name": "entry1*",
           "type": "entryPoint",
           "transitions": [
-            { "type": "external", "target": "In" }
+            { "type": "local", "target": "In" }
           ]
         }
       ],

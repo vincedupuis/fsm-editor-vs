@@ -13,7 +13,7 @@ namespace FsmEditor.Core
         public static string Write(FsmModel m)
         {
             var o = new ClipboardJson.JsonObjectWriter();
-            o.Num("version", 1).Str("name", m.Name).Str("kind", m.Kind == MachineKind.Protocol ? "protocol" : "behavioral").Str("documentation", m.Documentation)
+            o.Num("version", 1).Str("name", m.Name).Str("kind", m.Kind == MachineKind.Protocol ? "protocol" : "behavioral").Str("context", m.Context).Str("documentation", m.Documentation)
                 .Raw("regions", "[" + string.Join(",", m.Regions.Select(ClipboardJson.WriteRegion)) + "]")
                 .Raw("vertices", "[" + string.Join(",", m.Vertices.Select(ClipboardJson.WriteVertex)) + "]")
                 .Raw("transitions", "[" + string.Join(",", m.Transitions.Select(ClipboardJson.WriteTransition)) + "]");
@@ -28,6 +28,7 @@ namespace FsmEditor.Core
             {
                 Name = Str(o, "name"),
                 Kind = Str(o, "kind") == "protocol" ? MachineKind.Protocol : MachineKind.Behavioral,
+                Context = Str(o, "context"),
                 Documentation = Str(o, "documentation"),
                 Regions = Objects(o, "regions").Select(ReadRegion).ToList(),
             };
